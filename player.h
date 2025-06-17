@@ -1,5 +1,4 @@
 #pragma once
-#define NOMINMAX
 #include "DxLib.h"
 #include "camera.h"
 #include "platform.h"

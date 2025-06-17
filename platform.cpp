@@ -1,18 +1,20 @@
-#define NOMINMAX
-#include "DxLib.h"
 #include "platform.h"
 
 Platform::Platform(const VECTOR& min_, const VECTOR& max_)
-    : minPos(min_), maxPos(max_)
+    : minV(min_), maxV(max_)
 {
 }
 
 void Platform::draw(int r, int g, int b) const {
-    DrawCube3D(minPos, maxPos, GetColor(r, g, b), GetColor(r, g, b), TRUE);
+    DrawCube3D(minV, maxV,
+        GetColor(r, g, b),
+        GetColor(r, g, b),
+        TRUE);
 }
 
-bool Platform::checkCollision(const VECTOR& objMin, const VECTOR& objMax) const {
-    return (objMin.x <= maxPos.x && objMax.x >= minPos.x)
-        && (objMin.y <= maxPos.y && objMax.y >= minPos.y)
-        && (objMin.z <= maxPos.z && objMax.z >= minPos.z);
+bool Platform::checkCollision(const VECTOR& objMin,
+    const VECTOR& objMax) const {
+    return (objMin.x <= maxV.x && objMax.x >= minV.x) &&
+        (objMin.y <= maxV.y && objMax.y >= minV.y) &&
+        (objMin.z <= maxV.z && objMax.z >= minV.z);
 }

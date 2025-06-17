@@ -1,10 +1,12 @@
-#define NOMINMAX
-#include "DxLib.h"
+﻿#include "DxLib.h"
 #include "game.h"
 
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     if (DxLib_Init() == -1) return -1;
     SetDrawScreen(DX_SCREEN_BACK);
+
+    // Расширяем ближнюю/дальнюю плоскость — убираем «обрезание»
+    SetCameraNearFar(0.1f, 500.0f);
 
     Game game;
     while (ProcessMessage() == 0 && CheckHitKey(KEY_INPUT_ESCAPE) == 0) {
