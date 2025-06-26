@@ -9,6 +9,7 @@ public:
     Game();
     void update();
     void draw();
+
 private:
     Camera   camera;
     Player   player;

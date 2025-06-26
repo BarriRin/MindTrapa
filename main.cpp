@@ -1,6 +1,7 @@
 ﻿#include "DxLib.h"
 #include "game.h"
 
+
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 {
     // 1) Устанавливаем желаемую резолюцию
