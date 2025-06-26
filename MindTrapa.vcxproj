@@ -147,6 +147,7 @@
   <ItemGroup>
     <ClInclude Include="camera.h" />
     <ClInclude Include="game.h" />
+    <ClInclude Include="gameManager.h" />
     <ClInclude Include="level.h" />
     <ClInclude Include="platform.h" />
     <ClInclude Include="player.h" />
