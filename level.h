@@ -17,19 +17,23 @@ enum class BlockType {
 
 // „R„„„‚„…„{„„„…„‚„p „q„|„€„{„p
 struct Block {
-    VECTOR pos;
-    VECTOR size;
-    BlockType type;
+    VECTOR pos;         // „S„u„{„…„‹„p„‘ „„€„x„y„ˆ„y„‘
+    VECTOR size;        // „Q„p„x„}„u„‚ „q„|„€„{„p
+    BlockType type;     // „S„y„ „q„|„€„{„p
 
     // „D„€„„€„|„~„y„„„u„|„„~„„u „„p„‚„p„}„u„„„‚„ „t„|„‘ „}„u„‡„p„~„y„{
+    VECTOR originalPos; // „N„p„‰„p„|„„~„p„‘ „„€„x„y„ˆ„y„‘ („t„|„‘ „t„r„y„w„…„‹„y„‡„ƒ„‘ „„|„p„„„†„€„‚„})
+    VECTOR prevPos;     // „P„‚„u„t„„t„…„‹„p„‘ „„€„x„y„ˆ„y„‘ („t„|„‘ „r„„‰„y„ƒ„|„u„~„y„‘ „ƒ„{„€„‚„€„ƒ„„„y)
     float timer;        // „D„|„‘ „y„ƒ„‰„u„x„p„„‹„y„‡ „q„|„€„{„€„r, „„„p„z„}„u„‚„€„r
     bool isActive;      // „D„|„‘ „{„~„€„„€„{, „p„{„„„y„r„~„„‡ „„|„u„}„u„~„„„€„r
-    VECTOR moveTarget;  // „D„|„‘ „t„r„y„w„…„‹„y„‡„ƒ„‘ „„|„p„„„†„€„‚„}
+    VECTOR moveTarget;  // „D„|„‘ „t„r„y„w„…„‹„y„‡„ƒ„‘ „„|„p„„„†„€„‚„} („{„€„~„u„‰„~„p„‘ „„„€„‰„{„p)
     int linkId;         // „D„|„‘ „ƒ„r„‘„x„p„~„~„„‡ „„|„u„}„u„~„„„€„r („{„~„€„„{„p¨„t„r„u„‚„)
 
     Block(VECTOR position, VECTOR blockSize, BlockType blockType,
         float time = 0.0f, bool active = true, VECTOR target = VGet(0, 0, 0), int link = 0)
         : pos(position), size(blockSize), type(blockType),
+        originalPos(position), // „H„p„„€„}„y„~„p„u„} „~„p„‰„p„|„„~„…„ „„€„x„y„ˆ„y„!
+        prevPos(position),     // „I„x„~„p„‰„p„|„„~„€ prevPos = pos
         timer(time), isActive(active), moveTarget(target), linkId(link) {
     }
 };
@@ -47,13 +51,14 @@ public:
 
     // „O„ƒ„~„€„r„~„„u „}„u„„„€„t„
     void LoadLevelData(int id);
-    void Update(float deltaTime); // „N„€„r„„z „}„u„„„€„t „t„|„‘ „€„q„~„€„r„|„u„~„y„‘ „}„u„‡„p„~„y„{!
+    void Update(float deltaTime); // „O„q„~„€„r„|„u„~„y„u „}„u„‡„p„~„y„{
     void Draw() const;
-    bool CheckCollision(VECTOR playerPos, VECTOR playerSize, VECTOR& newPos, VECTOR& velocity, bool& onGround) const;
+
+    bool CheckCollision(VECTOR playerPos, VECTOR playerSize, VECTOR& newPos, VECTOR& velocity, bool& onGround, VECTOR& platformVelocity);
     bool CheckWinTrigger(VECTOR playerPos, VECTOR playerSize) const;
-    bool CheckDeadlyTrigger(VECTOR playerPos, VECTOR playerSize) const; // „P„‚„€„r„u„‚„{„p „Š„y„„€„r
-    bool CheckTeleportTrigger(VECTOR playerPos, VECTOR playerSize, VECTOR& teleportTarget) const; // „S„u„|„u„„€„‚„„„
-    void ActivateButton(VECTOR playerPos, VECTOR playerSize, bool keyPressed); // „K„~„€„„{„y
+    bool CheckDeadlyTrigger(VECTOR playerPos, VECTOR playerSize) const;
+    bool CheckTeleportTrigger(VECTOR playerPos, VECTOR playerSize, VECTOR& teleportTarget) const;
+    void ActivateButton(VECTOR playerPos, VECTOR playerSize, bool keyPressed);
 
     // „C„u„„„„„u„‚„
     VECTOR GetPlayerSpawn() const { return playerSpawn; }
