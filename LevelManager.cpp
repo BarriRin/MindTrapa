@@ -1,7 +1,7 @@
 ﻿#include "LevelManager.h"
 
 LevelManager::LevelManager()
-    : currentLevelId(1), totalLevels(8), deathCount(0) {
+    : currentLevelId(1), totalLevels(10), deathCount(0) {
     LoadLevel(1);
 }
 
@@ -49,6 +49,9 @@ void LevelManager::DrawLevelInfo() const {
     }
     if (currentLevelId == 8) {
         DrawFormatString(10, 90, GetColor(255, 50, 50), L"WARNING: Platforms disappear 1.5 sec after touch!");
+    }
+    if (currentLevelId == 9) {
+        DrawFormatString(10, 90, GetColor(255, 150, 50), L"Watch the spikes! They retract every 2 seconds!");
     }
 
     if (currentLevel) {
