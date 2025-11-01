@@ -50,7 +50,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
     // Система контроля скорости игры
     float gameSpeed = 1.0f;
-    float targetDeltaTime = 0.016f;
+
+    // Измерение реального времени для deltaTime
+    int lastFrameTime = GetNowCount();  // Время в миллисекундах
+    const float maxDeltaTime = 0.1f;    // Ограничение deltaTime (защита от лагов)
 
     // Антиспам для телепортов
     float teleportCooldown = 0.0f;
@@ -62,8 +65,18 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     while (ProcessMessage() == 0) {
         ClearDrawScreen();
 
-        // Вычисляем эффективный deltaTime с учётом скорости игры
-        float effectiveDeltaTime = targetDeltaTime * gameSpeed;
+        // Вычисляем РЕАЛЬНЫЙ deltaTime на основе времени между кадрами
+        int currentFrameTime = GetNowCount();
+        float realDeltaTime = (currentFrameTime - lastFrameTime) / 1000.0f;  // Конвертируем мс в секунды
+        lastFrameTime = currentFrameTime;
+
+        // Ограничиваем deltaTime чтобы избежать больших скачков при лагах
+        if (realDeltaTime > maxDeltaTime) {
+            realDeltaTime = maxDeltaTime;
+        }
+
+        // Применяем контроль скорости игры (для тестирования)
+        float effectiveDeltaTime = realDeltaTime * gameSpeed;
 
         // === ОБРАБОТКА В ЗАВИСИМОСТИ ОТ СОСТОЯНИЯ ===
         if (gameState == GameState::MAIN_MENU || gameState == GameState::LEVEL_SELECT) {
@@ -290,7 +303,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
             VECTOR forward = VGet(sin(cameraAngleY), 0, cos(cameraAngleY));
             VECTOR right = VGet(cos(cameraAngleY), 0, -sin(cameraAngleY));
 
-            float moveSpeed = speed * (effectiveDeltaTime / 0.016f);
+            // Скорость движения, нормализованная к 60 FPS (для совместимости со старыми значениями speed)
+            float moveSpeed = speed * (effectiveDeltaTime * 60.0f);
 
             if (CheckHitKey(KEY_INPUT_W)) move = VAdd(move, VScale(forward, -moveSpeed));
             if (CheckHitKey(KEY_INPUT_S)) move = VAdd(move, VScale(forward, moveSpeed));
@@ -301,7 +315,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
             static bool jumpPressed = false;
             if (CheckHitKey(KEY_INPUT_SPACE)) {
                 if (!jumpPressed && onGround) {
-                    playerVel.y = jumpPower * gameSpeed;
+                    // jumpPower нормализован к 60 FPS, не нужно умножать на deltaTime (это начальная скорость)
+                    playerVel.y = jumpPower;
                     onGround = false;
                 }
                 jumpPressed = true;
@@ -338,9 +353,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
             }
 
             // === ФИЗИКА ===
-            playerVel.y += gravity * gameSpeed;
+            // Применяем гравитацию (нормализуем к 60 FPS)
+            playerVel.y += gravity * (effectiveDeltaTime * 60.0f);
 
-            VECTOR newPos = VAdd(playerPos, VAdd(move, VGet(0, playerVel.y, 0)));
+            // Применяем вертикальную скорость (с учётом deltaTime)
+            VECTOR verticalMove = VGet(0, playerVel.y * (effectiveDeltaTime * 60.0f), 0);
+            VECTOR newPos = VAdd(playerPos, VAdd(move, verticalMove));
 
             // === КОЛЛИЗИИ ===
             Level* currentLevel = levelManager.GetCurrentLevel();
@@ -410,6 +428,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
             if (gameSpeed > 1.0f) speedColor = GetColor(255, 200, 100);
             if (gameSpeed < 1.0f) speedColor = GetColor(100, 200, 255);
             DrawFormatString(10, 160, speedColor, L"Game Speed: %.2fx ([ ] to change, 0 to reset)", gameSpeed);
+
+            // FPS счётчик для отладки
+            int currentFPS = (realDeltaTime > 0.0001f) ? (int)(1.0f / realDeltaTime) : 0;
+            DrawFormatString(10, 180, GetColor(200, 200, 200), L"FPS: %d (deltaTime: %.4fs)", currentFPS, realDeltaTime);
         }
 
         ScreenFlip();
