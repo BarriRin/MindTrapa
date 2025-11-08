@@ -2,6 +2,86 @@
 #include "LevelManager.h"
 #include "Menu.h"
 #include <cmath>
+#include <random>
+
+// Функция для рисования простого космического скайбокса
+void DrawSpaceSkybox(VECTOR playerPos) {
+    // Рисуем большой куб вокруг игрока с градиентом
+    float skySize = 500.0f;
+    VECTOR skyMin = VGet(playerPos.x - skySize, playerPos.y - skySize, playerPos.z - skySize);
+    VECTOR skyMax = VGet(playerPos.x + skySize, playerPos.y + skySize, playerPos.z + skySize);
+
+    // Отключаем Z-buffer для неба (всегда сзади)
+    SetUseZBuffer3D(FALSE);
+    SetWriteZBuffer3D(FALSE);
+
+    // Рисуем градиент неба (тёмно-синий → почти чёрный)
+    // Верхняя половина - темнее
+    DrawCube3D(
+        VGet(skyMin.x, playerPos.y, skyMin.z),
+        VGet(skyMax.x, skyMax.y, skyMax.z),
+        GetColor(5, 5, 20), GetColor(10, 10, 30), TRUE
+    );
+
+    // Нижняя половина - чуть светлее
+    DrawCube3D(
+        VGet(skyMin.x, skyMin.y, skyMin.z),
+        VGet(skyMax.x, playerPos.y, skyMax.z),
+        GetColor(10, 10, 30), GetColor(15, 10, 25), TRUE
+    );
+
+    // Включаем Z-buffer обратно для остальных объектов
+    SetUseZBuffer3D(TRUE);
+    SetWriteZBuffer3D(TRUE);
+}
+
+// Функция для рисования звёзд (вызывается один раз при старте)
+struct Star {
+    VECTOR pos;
+    float size;
+    unsigned int color;
+};
+
+std::vector<Star> GenerateStars(int count, float radius) {
+    std::vector<Star> stars;
+    std::random_device rd;
+    std::mt19937 gen(42); // Фиксированный seed для одинаковых звёзд каждый раз
+    std::uniform_real_distribution<float> dist(-radius, radius);
+    std::uniform_real_distribution<float> sizeDist(0.3f, 1.5f);
+
+    for (int i = 0; i < count; i++) {
+        Star star;
+        star.pos = VGet(dist(gen), dist(gen), dist(gen));
+        star.size = sizeDist(gen);
+
+        // Разные цвета звёзд (белые, голубоватые, желтоватые)
+        int colorType = i % 3;
+        if (colorType == 0) star.color = GetColor(255, 255, 255); // Белые
+        else if (colorType == 1) star.color = GetColor(200, 220, 255); // Голубые
+        else star.color = GetColor(255, 240, 200); // Желтоватые
+
+        stars.push_back(star);
+    }
+
+    return stars;
+}
+
+void DrawStars(const std::vector<Star>& stars, VECTOR cameraPos) {
+    SetUseZBuffer3D(FALSE);
+    SetWriteZBuffer3D(FALSE);
+
+    for (const auto& star : stars) {
+        // Звёзды не двигаются (фиксированы в мировых координатах)
+        DrawCube3D(
+            VGet(star.pos.x - star.size/2, star.pos.y - star.size/2, star.pos.z - star.size/2),
+            VGet(star.pos.x + star.size/2, star.pos.y + star.size/2, star.pos.z + star.size/2),
+            star.color, star.color, TRUE
+        );
+    }
+
+    SetUseZBuffer3D(TRUE);
+    SetWriteZBuffer3D(TRUE);
+}
 
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     // Инициализация DxLib
@@ -24,9 +104,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     LevelManager levelManager;
     Menu menu(10); // 10 уровней - первый блок завершён!
 
+    // Генерируем звёзды для космического фона
+    std::vector<Star> stars = GenerateStars(500, 400.0f);
+
     // ОТЛАДКА - проверяем что меню создалось правильно
     char debug[100];
-    sprintf_s(debug, "Menu created with 10 levels");
+    sprintf_s(debug, "Menu created with 10 levels, %d stars generated", (int)stars.size());
     OutputDebugStringA(debug);
 
     // Состояние игры
@@ -412,10 +495,65 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
             SetUseLighting(FALSE);
             SetUseBackCulling(FALSE);
 
+            // Рисуем космический фон и звёзды (сначала, чтобы были позади всего)
+            DrawSpaceSkybox(playerPos);
+            DrawStars(stars, cameraPos);
+
             if (levelManager.GetCurrentLevel()) {
                 levelManager.GetCurrentLevel()->Draw();
             }
 
+            // === ТЕНЬ ПОД ИГРОКОМ (для depth perception) ===
+            // Находим платформу под игроком для проекции тени
+            if (levelManager.GetCurrentLevel()) {
+                Level* currentLevelForShadow = levelManager.GetCurrentLevel();
+                float shadowY = -100.0f; // По умолчанию очень низко
+                float closestDistance = 1000.0f;
+
+                // Ищем ближайшую платформу снизу
+                for (const auto& block : currentLevelForShadow->GetBlocks()) {
+                    if (block.type == BlockType::PLATFORM ||
+                        block.type == BlockType::TRIGGER ||
+                        (block.type == BlockType::DISAPPEARING && block.isActive)) {
+
+                        // Проверяем что платформа под игроком (по X и Z)
+                        if (playerPos.x >= block.pos.x - 2.0f && playerPos.x <= block.pos.x + block.size.x + 2.0f &&
+                            playerPos.z >= block.pos.z - 2.0f && playerPos.z <= block.pos.z + block.size.z + 2.0f) {
+
+                            // Платформа снизу
+                            if (block.pos.y + block.size.y < playerPos.y) {
+                                float distance = playerPos.y - (block.pos.y + block.size.y);
+                                if (distance < closestDistance) {
+                                    closestDistance = distance;
+                                    shadowY = block.pos.y + block.size.y + 0.01f; // Чуть выше платформы
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Рисуем тень если нашли платформу
+                if (shadowY > -99.0f) {
+                    // Размер тени зависит от высоты (выше = больше тень)
+                    float shadowSize = 0.8f + (closestDistance * 0.05f);
+                    if (shadowSize > 2.0f) shadowSize = 2.0f; // Макс размер
+
+                    // Полупрозрачная чёрная тень
+                    int alpha = (int)(100.0f - (closestDistance * 5.0f));
+                    if (alpha < 20) alpha = 20;
+                    if (alpha > 100) alpha = 100;
+
+                    SetDrawBlendMode(DX_BLENDMODE_ALPHA, alpha);
+                    DrawCube3D(
+                        VGet(playerPos.x - shadowSize/2, shadowY, playerPos.z - shadowSize/2),
+                        VGet(playerPos.x + shadowSize/2, shadowY + 0.05f, playerPos.z + shadowSize/2),
+                        GetColor(0, 0, 0), GetColor(0, 0, 0), TRUE
+                    );
+                    SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+                }
+            }
+
+            // Рисуем игрока
             DrawCube3D(playerPos, VAdd(playerPos, playerSize),
                 GetColor(100, 255, 100), GetColor(50, 200, 50), TRUE);
 
