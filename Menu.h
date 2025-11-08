@@ -3,36 +3,44 @@
 #include <vector>
 #include <string>
 
-// ÑRÑÄÑÉÑÑÑÄÑëÑ~ÑyÑë ÑyÑsÑÇÑç
+// –°–æ—Å—Ç–æ—è–Ω–∏—è –∏–≥—Ä—ã
 enum class GameState {
     MAIN_MENU,
-    LEVEL_SELECT,
+    LEVEL_SELECT_BLOCKS,   // –í—ã–±–æ—Ä –±–ª–æ–∫–∞ (10 –±–ª–æ–∫–æ–≤)
+    LEVEL_SELECT_LEVELS,   // –í—ã–±–æ—Ä —É—Ä–æ–≤–Ω—è –≤–Ω—É—Ç—Ä–∏ –±–ª–æ–∫–∞ (10 —É—Ä–æ–≤–Ω–µ–π)
+    SETTINGS,              // –ù–∞—Å—Ç—Ä–æ–π–∫–∏ (–º—É–∑—ã–∫–∞, –∑–≤—É–∫, —è–∑—ã–∫)
+    MUSIC_SELECT,          // –í—ã–±–æ—Ä –º—É–∑—ã–∫–∞–ª—å–Ω–æ–≥–æ —Ç—Ä–µ–∫–∞
     PLAYING,
     PAUSED
 };
 
-// ÑDÑuÑzÑÉÑÑÑrÑyÑë Ñ{Ñ~ÑÄÑÅÑÄÑ{
+// –î–µ–π—Å—Ç–≤–∏—è –∫–Ω–æ–ø–æ–∫
 enum class ButtonAction {
     START_GAME,
-    LEVEL_SELECT,
+    OPEN_SETTINGS,
+    OPEN_MUSIC_SELECT,
+    OPEN_LEVEL_SELECT,
     EXIT_GAME,
     CONTINUE,
     RESTART,
+    LEVEL_SELECT,
     BACK_TO_MENU,
-    LOAD_LEVEL_1,
-    LOAD_LEVEL_2,
-    LOAD_LEVEL_3,
-    LOAD_LEVEL_4,
-    LOAD_LEVEL_5,
-    LOAD_LEVEL_6,
-    LOAD_LEVEL_7,
-    LOAD_LEVEL_8,
-    LOAD_LEVEL_9,
-    LOAD_LEVEL_10,
+    BACK_TO_SETTINGS,
+    SELECT_BLOCK_1,
+    SELECT_BLOCK_2,
+    SELECT_BLOCK_3,
+    SELECT_BLOCK_4,
+    SELECT_BLOCK_5,
+    SELECT_BLOCK_6,
+    SELECT_BLOCK_7,
+    SELECT_BLOCK_8,
+    SELECT_BLOCK_9,
+    SELECT_BLOCK_10,
+    LOAD_LEVEL,
     NONE
 };
 
-// ÑRÑÑÑÇÑÖÑ{ÑÑÑÖÑÇÑp Ñ{Ñ~ÑÄÑÅÑ{Ñy
+// –°—Ç—Ä—É–∫—Ç—É—Ä–∞ –∫–Ω–æ–ø–∫–∏
 struct Button {
     std::wstring text;
     int x, y;
@@ -44,24 +52,24 @@ struct Button {
         : text(txt), x(posX), y(posY), width(w), height(h), action(act), isHovered(false) {
     }
 
-    // ÑPÑÇÑÄÑrÑuÑÇÑ{Ñp ÑÅÑÄÑÅÑpÑtÑpÑ~ÑyÑë Ñ}ÑçÑäÑy
+    // –ü—Ä–æ–≤–µ—Ä–∫–∞ –ø–æ–ø–∞–¥–∞–Ω–∏—è –º—ã—à–∏
     bool Contains(int mouseX, int mouseY) const {
         return mouseX >= x && mouseX <= x + width &&
             mouseY >= y && mouseY <= y + height;
     }
 
-    // ÑOÑÑÑÇÑyÑÉÑÄÑrÑ{Ñp Ñ{Ñ~ÑÄÑÅÑ{Ñy
+    // –û—Ç—Ä–∏—Å–æ–≤–∫–∞ –∫–Ω–æ–ø–∫–∏
     void Draw() const {
         unsigned int bgColor = isHovered ? GetColor(100, 150, 255) : GetColor(50, 50, 100);
         unsigned int borderColor = isHovered ? GetColor(150, 200, 255) : GetColor(100, 100, 150);
         unsigned int textColor = GetColor(255, 255, 255);
 
-        // ÑUÑÄÑ~ Ñ{Ñ~ÑÄÑÅÑ{Ñy
+        // –§–æ–Ω –∫–Ω–æ–ø–∫–∏
         DrawBox(x, y, x + width, y + height, bgColor, TRUE);
-        // ÑQÑpÑ}Ñ{Ñp
+        // –†–∞–º–∫–∞
         DrawBox(x, y, x + width, y + height, borderColor, FALSE);
 
-        // ÑSÑuÑ{ÑÉÑÑ ÑÅÑÄ ÑàÑuÑ~ÑÑÑÇÑÖ (ÑyÑÉÑÅÑÄÑ|ÑéÑxÑÖÑuÑ} ÑÉÑÑÑpÑ~ÑtÑpÑÇÑÑÑ~ÑÖÑê ÑÜÑÖÑ~Ñ{ÑàÑyÑê)
+        // –¢–µ–∫—Å—Ç –ø–æ —Ü–µ–Ω—Ç—Ä—É
         int textWidth = GetDrawStringWidth(text.c_str(), wcslen(text.c_str()));
         int textX = x + (width - textWidth) / 2;
         int textY = y + (height - 20) / 2;
@@ -69,34 +77,70 @@ struct Button {
     }
 };
 
-// ÑKÑ|ÑpÑÉÑÉ Ñ}ÑuÑ~Ñê
+// –ù–∞—Å—Ç—Ä–æ–π–∫–∏ –∏–≥—Ä—ã
+struct Settings {
+    int musicVolume = 80;      // 0-100
+    int soundVolume = 60;      // 0-100
+    std::string language = "EN"; // –ó–∞–≥–ª—É—à–∫–∞ –ø–æ–∫–∞
+    int selectedMusicTrack = 0;  // 0=Default, 1-4=Custom (–ø–æ–∫–∞ –≤—Å—ë –ª–æ–∫–¥)
+};
+
+// –ö–ª–∞—Å—Å –º–µ–Ω—é
 class Menu {
 private:
     GameState currentState;
-    int selectedButtonIndex; // ÑDÑ|Ñë Ñ~ÑpÑrÑyÑsÑpÑàÑyÑy Ñ{Ñ|ÑpÑrÑyÑpÑÑÑÖÑÇÑÄÑz
+    int selectedButtonIndex;
     std::vector<Button> buttons;
 
-    int totalLevels; // ÑRÑ{ÑÄÑ|ÑéÑ{ÑÄ ÑÖÑÇÑÄÑrÑ~ÑuÑz ÑtÑÄÑÉÑÑÑÖÑÅÑ~ÑÄ
+    int totalLevels;
+    int selectedBlock;       // –ö–∞–∫–æ–π –±–ª–æ–∫ –≤—ã–±—Ä–∞–Ω (1-10)
+    int unlockedBlocks;      // –°–∫–æ–ª—å–∫–æ –±–ª–æ–∫–æ–≤ —Ä–∞–∑–±–ª–æ–∫–∏—Ä–æ–≤–∞–Ω–æ (–ø–æ–∫–∞ —Ç–æ–ª—å–∫–æ 1)
+    Settings settings;       // –ù–∞—Å—Ç—Ä–æ–π–∫–∏ –∏–≥—Ä—ã
 
-    // ÑBÑÉÑÅÑÄÑ}ÑÄÑsÑpÑÑÑuÑ|ÑéÑ~ÑçÑu Ñ}ÑuÑÑÑÄÑtÑç
+    // –°—Ç–µ–∫ –Ω–∞–≤–∏–≥–∞—Ü–∏–∏ (–¥–ª—è ESC/Back)
+    std::vector<GameState> stateHistory;
+
+    // –°–æ—Å—Ç–æ—è–Ω–∏—è –≤–≤–æ–¥–∞ (member variables, –Ω–µ static)
+    bool mousePressed;
+    bool upPressed;
+    bool downPressed;
+    bool enterPressed;
+    bool escPressed;
+
+    // –°–æ–∑–¥–∞–Ω–∏–µ –∫–Ω–æ–ø–æ–∫
     void CreateMainMenuButtons();
+    void CreateBlockSelectButtons();
     void CreateLevelSelectButtons();
+    void CreateSettingsButtons();
+    void CreateMusicSelectButtons();
     void CreatePauseMenuButtons();
     void UpdateHover(int mouseX, int mouseY);
+
+    // –ü–æ–ª–∑—É–Ω–∫–∏
+    void DrawSlider(int x, int y, int width, int value, const wchar_t* label) const;
+    int HandleSliderClick(int x, int y, int width, int mouseX, int mouseY);
 
 public:
     Menu(int levels);
     ~Menu();
 
-    // ÑOÑÉÑ~ÑÄÑrÑ~ÑçÑu Ñ}ÑuÑÑÑÄÑtÑç
-    void SetState(GameState state);
+    // –û—Å–Ω–æ–≤–Ω—ã–µ –º–µ—Ç–æ–¥—ã
+    void SetState(GameState state);          // –ü–µ—Ä–µ—Ö–æ–¥ –±–µ–∑ —Å–æ—Ö—Ä–∞–Ω–µ–Ω–∏—è –∏—Å—Ç–æ—Ä–∏–∏
+    void PushState(GameState newState);      // –ü–µ—Ä–µ—Ö–æ–¥ —Å —Å–æ—Ö—Ä–∞–Ω–µ–Ω–∏–µ–º –≤ —Å—Ç–µ–∫
+    void PopState();                         // –í–æ–∑–≤—Ä–∞—Ç –Ω–∞–∑–∞–¥ –ø–æ —Å—Ç–µ–∫—É
+    void ClearHistory();                     // –û—á–∏—Å—Ç–∏—Ç—å —Å—Ç–µ–∫ (–ø—Ä–∏ —Å—Ç–∞—Ä—Ç–µ –∏–≥—Ä—ã)
     GameState GetState() const { return currentState; }
 
     void Draw() const;
-    ButtonAction HandleInput(int& levelToLoad); // ÑBÑÄÑxÑrÑÇÑpÑãÑpÑuÑÑ ÑtÑuÑzÑÉÑÑÑrÑyÑu Ñy Ñ~ÑÄÑ}ÑuÑÇ ÑÖÑÇÑÄÑrÑ~Ñë ÑuÑÉÑ|Ñy Ñ~ÑÖÑwÑuÑ~
+    ButtonAction HandleInput(int& blockToLoad, int& levelToLoad);
 
-    // ÑNÑpÑrÑyÑsÑpÑàÑyÑë Ñ{Ñ|ÑpÑrÑyÑpÑÑÑÖÑÇÑÄÑz
+    // –ì–µ—Ç—Ç–µ—Ä—ã
+    int GetSelectedBlock() const { return selectedBlock; }
+    void SetSelectedBlock(int block) { selectedBlock = block; }
+    Settings& GetSettings() { return settings; }
+
+    // –ù–∞–≤–∏–≥–∞—Ü–∏—è –∫–ª–∞–≤–∏–∞—Ç—É—Ä–æ–π
     void SelectNextButton();
     void SelectPrevButton();
-    ButtonAction ActivateSelectedButton(int& levelToLoad);
+    ButtonAction ActivateSelectedButton(int& blockToLoad, int& levelToLoad);
 };

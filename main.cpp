@@ -162,33 +162,24 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
         float effectiveDeltaTime = realDeltaTime * gameSpeed;
 
         // === ОБРАБОТКА В ЗАВИСИМОСТИ ОТ СОСТОЯНИЯ ===
-        if (gameState == GameState::MAIN_MENU || gameState == GameState::LEVEL_SELECT) {
+        if (gameState == GameState::MAIN_MENU || gameState == GameState::LEVEL_SELECT_BLOCKS ||
+            gameState == GameState::LEVEL_SELECT_LEVELS || gameState == GameState::SETTINGS ||
+            gameState == GameState::MUSIC_SELECT) {
             // Показываем курсор в меню
             SetMouseDispFlag(TRUE);
 
-            // Отрисовка меню
-            menu.SetState(gameState);
+            // Отрисовка меню (не меняем состояние, меню само управляет стеком)
             menu.Draw();
 
-            // Обработка ввода в меню паузы
+            // Обработка ввода в меню
+            int blockToLoad = -1;
             int levelToLoad = -1;
-            ButtonAction action = menu.HandleInput(levelToLoad);
-
-            // ESC для возврата в игру из паузы (отдельная обработка)
-            static bool pauseEscPressed = false;
-            if (CheckHitKey(KEY_INPUT_ESCAPE)) {
-                if (!pauseEscPressed) {
-                    gameState = GameState::PLAYING;
-                    SetMouseDispFlag(FALSE);
-                }
-                pauseEscPressed = true;
-            }
-            else {
-                pauseEscPressed = false;
-            }
+            ButtonAction action = menu.HandleInput(blockToLoad, levelToLoad);
 
             switch (action) {
             case ButtonAction::START_GAME:
+                // Быстрый старт - сразу загружаем Level 1
+                menu.ClearHistory();  // Очищаем стек при старте игры
                 levelManager.LoadLevel(1);
                 playerPos = levelManager.GetCurrentLevel()->GetPlayerSpawn();
                 playerVel = VGet(0, 0, 0);
@@ -196,25 +187,38 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
                 SetMouseDispFlag(FALSE);
                 break;
 
-            case ButtonAction::LEVEL_SELECT:
-                gameState = GameState::LEVEL_SELECT;
+            case ButtonAction::OPEN_LEVEL_SELECT:
+                menu.PushState(GameState::LEVEL_SELECT_BLOCKS);
+                gameState = menu.GetState();
+                break;
+
+            case ButtonAction::OPEN_SETTINGS:
+                menu.PushState(GameState::SETTINGS);
+                gameState = menu.GetState();
+                break;
+
+            case ButtonAction::OPEN_MUSIC_SELECT:
+                menu.PushState(GameState::MUSIC_SELECT);
+                gameState = menu.GetState();
                 break;
 
             case ButtonAction::EXIT_GAME:
-                goto END_GAME; // Выход из игры
-
-            case ButtonAction::BACK_TO_MENU:
-                gameState = GameState::MAIN_MENU;
-                break;
+                goto END_GAME;
 
             default:
                 // Загрузка конкретного уровня
                 if (levelToLoad > 0) {
+                    menu.ClearHistory();  // Очищаем стек при загрузке уровня
                     levelManager.LoadLevel(levelToLoad);
                     playerPos = levelManager.GetCurrentLevel()->GetPlayerSpawn();
                     playerVel = VGet(0, 0, 0);
                     gameState = GameState::PLAYING;
                     SetMouseDispFlag(FALSE);
+                }
+                else {
+                    // Если ничего не произошло в switch (например, ESC вызвал PopState),
+                    // синхронизируем состояние из меню
+                    gameState = menu.GetState();
                 }
                 break;
             }
@@ -242,12 +246,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
             }
 
             // Рисуем меню паузы поверх
-            menu.SetState(GameState::PAUSED);
             menu.Draw();
 
             // Обработка ввода
+            int blockToLoad = -1;
             int levelToLoad = -1;
-            ButtonAction action = menu.HandleInput(levelToLoad);
+            ButtonAction action = menu.HandleInput(blockToLoad, levelToLoad);
 
             switch (action) {
             case ButtonAction::CONTINUE:
@@ -263,14 +267,41 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
                 SetMouseDispFlag(FALSE);
                 break;
 
+            case ButtonAction::OPEN_SETTINGS:
+                menu.PushState(GameState::SETTINGS);
+                gameState = menu.GetState();
+                break;
+
             case ButtonAction::LEVEL_SELECT:
-                gameState = GameState::LEVEL_SELECT;
+                menu.SetSelectedBlock(0); // Сброс выбранного блока
+                menu.PushState(GameState::LEVEL_SELECT_BLOCKS);
+                gameState = menu.GetState();
                 SetMouseDispFlag(TRUE);
                 break;
 
             case ButtonAction::BACK_TO_MENU:
-                gameState = GameState::MAIN_MENU;
+                menu.SetSelectedBlock(0); // Сброс выбранного блока
+                menu.ClearHistory(); // Очищаем стек при возврате в главное меню
+                menu.SetState(GameState::MAIN_MENU);
+                gameState = menu.GetState();
                 SetMouseDispFlag(TRUE);
+                break;
+
+            default:
+                // Загрузка уровня из меню паузы (через Level Select)
+                if (levelToLoad > 0) {
+                    menu.ClearHistory();  // Очищаем стек при загрузке уровня
+                    levelManager.LoadLevel(levelToLoad);
+                    playerPos = levelManager.GetCurrentLevel()->GetPlayerSpawn();
+                    playerVel = VGet(0, 0, 0);
+                    gameState = GameState::PLAYING;
+                    SetMouseDispFlag(FALSE);
+                }
+                else {
+                    // Если ничего не произошло в switch (например, ESC вызвал PopState),
+                    // синхронизируем состояние из меню
+                    gameState = menu.GetState();
+                }
                 break;
             }
         }
@@ -288,7 +319,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
             if (CheckHitKey(KEY_INPUT_ESCAPE)) {
                 if (!escPressed && escDelay <= 0.0f) {
-                    gameState = GameState::PAUSED;
+                    menu.PushState(GameState::PAUSED);
+                    gameState = menu.GetState();
                     SetMouseDispFlag(TRUE);
                     escDelay = 0.3f; // Задержка 0.3 секунды
                 }

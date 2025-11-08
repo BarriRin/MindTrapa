@@ -1,7 +1,11 @@
 #include "Menu.h"
 
 Menu::Menu(int levels)
-    : currentState(GameState::MAIN_MENU), selectedButtonIndex(0), totalLevels(levels) {
+    : currentState(GameState::MAIN_MENU), selectedButtonIndex(0), totalLevels(levels),
+      selectedBlock(0), unlockedBlocks(1),
+      mousePressed(false), upPressed(false), downPressed(false),
+      enterPressed(false), escPressed(false) {
+    stateHistory.clear(); // –ù–∞—á–∏–Ω–∞–µ–º —Å –ø—É—Å—Ç–æ–≥–æ —Å—Ç–µ–∫–∞
     CreateMainMenuButtons();
 }
 
@@ -18,16 +22,51 @@ void Menu::SetState(GameState state) {
     case GameState::MAIN_MENU:
         CreateMainMenuButtons();
         break;
-    case GameState::LEVEL_SELECT:
+    case GameState::LEVEL_SELECT_BLOCKS:
+        // –ù–ï –æ–±–Ω—É–ª—è–µ–º selectedBlock - –æ–Ω —É–∂–µ —É—Å—Ç–∞–Ω–æ–≤–ª–µ–Ω –µ—Å–ª–∏ –ø—Ä–∏—à–ª–∏ –∏–∑ –≤—ã–±–æ—Ä–∞ –±–ª–æ–∫–∞
+        CreateBlockSelectButtons();
+        break;
+    case GameState::LEVEL_SELECT_LEVELS:
         CreateLevelSelectButtons();
+        break;
+    case GameState::SETTINGS:
+        CreateSettingsButtons();
+        break;
+    case GameState::MUSIC_SELECT:
+        CreateMusicSelectButtons();
         break;
     case GameState::PAUSED:
         CreatePauseMenuButtons();
         break;
     case GameState::PLAYING:
-        buttons.clear(); // ÑB ÑyÑsÑÇÑu Ñ{Ñ~ÑÄÑÅÑÄÑ{ Ñ~ÑuÑÑ
+        buttons.clear();
         break;
     }
+}
+
+void Menu::PushState(GameState newState) {
+    // –°–æ—Ö—Ä–∞–Ω—è–µ–º —Ç–µ–∫—É—â–µ–µ —Å–æ—Å—Ç–æ—è–Ω–∏–µ –≤ —Å—Ç–µ–∫
+    stateHistory.push_back(currentState);
+    // –ü–µ—Ä–µ—Ö–æ–¥–∏–º –≤ –Ω–æ–≤–æ–µ
+    SetState(newState);
+}
+
+void Menu::PopState() {
+    // –ï—Å–ª–∏ —Å—Ç–µ–∫ –ø—É—Å—Ç, –Ω–∏—á–µ–≥–æ –Ω–µ –¥–µ–ª–∞–µ–º
+    if (stateHistory.empty()) {
+        return;
+    }
+
+    // –î–æ—Å—Ç–∞—ë–º –ø—Ä–µ–¥—ã–¥—É—â–µ–µ —Å–æ—Å—Ç–æ—è–Ω–∏–µ
+    GameState previousState = stateHistory.back();
+    stateHistory.pop_back();
+
+    // –ü–µ—Ä–µ—Ö–æ–¥–∏–º –≤ –Ω–µ–≥–æ
+    SetState(previousState);
+}
+
+void Menu::ClearHistory() {
+    stateHistory.clear();
 }
 
 void Menu::CreateMainMenuButtons() {
@@ -38,8 +77,38 @@ void Menu::CreateMainMenuButtons() {
     int spacing = 80;
 
     buttons.push_back(Button(L"Start Game", centerX - buttonWidth / 2, startY, buttonWidth, buttonHeight, ButtonAction::START_GAME));
-    buttons.push_back(Button(L"Level Select", centerX - buttonWidth / 2, startY + spacing, buttonWidth, buttonHeight, ButtonAction::LEVEL_SELECT));
-    buttons.push_back(Button(L"Exit", centerX - buttonWidth / 2, startY + spacing * 2, buttonWidth, buttonHeight, ButtonAction::EXIT_GAME));
+    buttons.push_back(Button(L"Level Select", centerX - buttonWidth / 2, startY + spacing, buttonWidth, buttonHeight, ButtonAction::OPEN_LEVEL_SELECT));
+    buttons.push_back(Button(L"Settings", centerX - buttonWidth / 2, startY + spacing * 2, buttonWidth, buttonHeight, ButtonAction::OPEN_SETTINGS));
+    buttons.push_back(Button(L"Exit", centerX - buttonWidth / 2, startY + spacing * 3, buttonWidth, buttonHeight, ButtonAction::EXIT_GAME));
+}
+
+void Menu::CreateBlockSelectButtons() {
+    int startX = 500;
+    int startY = 250;
+    int buttonWidth = 220;
+    int buttonHeight = 120;
+    int spacingX = 260;
+    int spacingY = 150;
+    int buttonsPerRow = 3;
+
+    // –°–æ–∑–¥–∞—ë–º 10 –∫–Ω–æ–ø–æ–∫ –±–ª–æ–∫–æ–≤ (–ø–ª–∞–Ω–µ—Ç—ã)
+    for (int i = 0; i < 10; i++) {
+        int row = i / buttonsPerRow;
+        int col = i % buttonsPerRow;
+        int x = startX + col * spacingX;
+        int y = startY + row * spacingY;
+
+        std::wstring blockText = L"Block " + std::to_wstring(i + 1);
+        if (i >= unlockedBlocks) {
+            blockText += L"\n(LOCKED)";
+        }
+
+        ButtonAction action = (ButtonAction)((int)ButtonAction::SELECT_BLOCK_1 + i);
+        buttons.push_back(Button(blockText, x, y, buttonWidth, buttonHeight, action));
+    }
+
+    // –ö–Ω–æ–ø–∫–∞ –Ω–∞–∑–∞–¥
+    buttons.push_back(Button(L"< Back", 100, 950, 200, 60, ButtonAction::BACK_TO_MENU));
 }
 
 void Menu::CreateLevelSelectButtons() {
@@ -51,15 +120,8 @@ void Menu::CreateLevelSelectButtons() {
     int spacingY = 100;
     int buttonsPerRow = 5;
 
-    // ÑOÑSÑLÑ@ÑDÑKÑ@: ÑrÑçÑrÑÄÑtÑyÑ} Ñ{ÑÄÑ|ÑyÑâÑuÑÉÑÑÑrÑÄ ÑÖÑÇÑÄÑrÑ~ÑuÑz
-    char debug[100];
-    sprintf_s(debug, "Creating buttons for %d levels", totalLevels);
-    OutputDebugStringA(debug);
-
-    // ÑKÑ~ÑÄÑÅÑ{Ñy ÑÖÑÇÑÄÑrÑ~ÑuÑz - ÑëÑrÑ~ÑÄ ÑÉÑÄÑxÑtÑpÑvÑ} 10 Ñ{Ñ~ÑÄÑÅÑÄÑ{
-    int maxButtons = (totalLevels < 10) ? totalLevels : 10;
-
-    for (int i = 0; i < maxButtons; i++) {
+    // 10 levels per block
+    for (int i = 0; i < 10; i++) {
         int row = i / buttonsPerRow;
         int col = i % buttonsPerRow;
         int x = startX + col * spacingX;
@@ -67,26 +129,51 @@ void Menu::CreateLevelSelectButtons() {
 
         std::wstring levelText = L"Level " + std::to_wstring(i + 1);
 
-        ButtonAction action = ButtonAction::NONE;
-        if (i == 0) action = ButtonAction::LOAD_LEVEL_1;
-        else if (i == 1) action = ButtonAction::LOAD_LEVEL_2;
-        else if (i == 2) action = ButtonAction::LOAD_LEVEL_3;
-        else if (i == 3) action = ButtonAction::LOAD_LEVEL_4;
-        else if (i == 4) action = ButtonAction::LOAD_LEVEL_5;
-        else if (i == 5) action = ButtonAction::LOAD_LEVEL_6;
-        else if (i == 6) action = ButtonAction::LOAD_LEVEL_7;
-        else if (i == 7) action = ButtonAction::LOAD_LEVEL_8;
-        else if (i == 8) action = ButtonAction::LOAD_LEVEL_9;
-        else if (i == 9) action = ButtonAction::LOAD_LEVEL_10;
+        // Only Block 1 has implemented levels
+        if (selectedBlock > 1 || i >= totalLevels) {
+            levelText += L"\n(LOCKED)";
+        }
 
-        buttons.push_back(Button(levelText, x, y, buttonWidth, buttonHeight, action));
-
-        sprintf_s(debug, "Created button %d: %ls", i + 1, levelText.c_str());
-        OutputDebugStringA(debug);
+        buttons.push_back(Button(levelText, x, y, buttonWidth, buttonHeight, ButtonAction::LOAD_LEVEL));
     }
 
-    // ÑKÑ~ÑÄÑÅÑ{Ñp Back
-    buttons.push_back(Button(L"Back", 100, 900, 200, 60, ButtonAction::BACK_TO_MENU));
+    // Back button - returns to block selection
+    buttons.push_back(Button(L"< Back to Blocks", 100, 900, 250, 60, ButtonAction::BACK_TO_MENU));
+}
+
+void Menu::CreateSettingsButtons() {
+    int centerX = 1920 / 2;
+    int startY = 350;
+    int buttonWidth = 300;
+    int buttonHeight = 60;
+    int spacing = 120;
+
+    // Sliders will be drawn in Draw(), buttons just for navigation
+    buttons.push_back(Button(L"Music Select", centerX - buttonWidth / 2, startY + spacing * 2, buttonWidth, buttonHeight, ButtonAction::OPEN_MUSIC_SELECT));
+    buttons.push_back(Button(L"< Back", 100, 950, 200, 60, ButtonAction::BACK_TO_MENU));
+}
+
+void Menu::CreateMusicSelectButtons() {
+    int centerX = 1920 / 2;
+    int startY = 300;
+    int buttonWidth = 400;
+    int buttonHeight = 70;
+    int spacing = 90;
+
+    // 5 music tracks: Default + 4 custom (unlocked by achievements)
+    const wchar_t* trackNames[] = {
+        L"Default Theme",
+        L"Track 1 (LOCKED)",
+        L"Track 2 (LOCKED)",
+        L"Track 3 (LOCKED)",
+        L"Track 4 (LOCKED)"
+    };
+
+    for (int i = 0; i < 5; i++) {
+        buttons.push_back(Button(trackNames[i], centerX - buttonWidth / 2, startY + i * spacing, buttonWidth, buttonHeight, ButtonAction::NONE));
+    }
+
+    buttons.push_back(Button(L"< Back", 100, 950, 200, 60, ButtonAction::BACK_TO_SETTINGS));
 }
 
 void Menu::CreatePauseMenuButtons() {
@@ -98,28 +185,29 @@ void Menu::CreatePauseMenuButtons() {
 
     buttons.push_back(Button(L"Continue", centerX - buttonWidth / 2, startY, buttonWidth, buttonHeight, ButtonAction::CONTINUE));
     buttons.push_back(Button(L"Restart Level", centerX - buttonWidth / 2, startY + spacing, buttonWidth, buttonHeight, ButtonAction::RESTART));
-    buttons.push_back(Button(L"Level Select", centerX - buttonWidth / 2, startY + spacing * 2, buttonWidth, buttonHeight, ButtonAction::LEVEL_SELECT));
-    buttons.push_back(Button(L"Main Menu", centerX - buttonWidth / 2, startY + spacing * 3, buttonWidth, buttonHeight, ButtonAction::BACK_TO_MENU));
+    buttons.push_back(Button(L"Settings", centerX - buttonWidth / 2, startY + spacing * 2, buttonWidth, buttonHeight, ButtonAction::OPEN_SETTINGS));
+    buttons.push_back(Button(L"Level Select", centerX - buttonWidth / 2, startY + spacing * 3, buttonWidth, buttonHeight, ButtonAction::LEVEL_SELECT));
+    buttons.push_back(Button(L"Main Menu", centerX - buttonWidth / 2, startY + spacing * 4, buttonWidth, buttonHeight, ButtonAction::BACK_TO_MENU));
 }
 
 void Menu::UpdateHover(int mouseX, int mouseY) {
     for (size_t i = 0; i < buttons.size(); i++) {
         buttons[i].isHovered = buttons[i].Contains(mouseX, mouseY);
         if (buttons[i].isHovered) {
-            selectedButtonIndex = i; // ÑRÑyÑ~ÑáÑÇÑÄÑ~ÑyÑxÑpÑàÑyÑë ÑÉ Ñ{Ñ|ÑpÑrÑyÑpÑÑÑÖÑÇÑ~ÑÄÑz Ñ~ÑpÑrÑyÑsÑpÑàÑyÑuÑz
+            selectedButtonIndex = i; // –°–∏–Ω—Ö—Ä–æ–Ω–∏–∑–∞—Ü–∏—è —Å –∫–ª–∞–≤–∏–∞—Ç—É—Ä–Ω–æ–π –Ω–∞–≤–∏–≥–∞—Ü–∏–µ–π
         }
     }
 }
 
 void Menu::Draw() const {
-    // ÑHÑpÑÑÑuÑ}Ñ~ÑvÑ~Ñ~ÑçÑz ÑÜÑÄÑ~
+    // –ó–∞—Ç–µ–º–Ω—ë–Ω–Ω—ã–π —Ñ–æ–Ω
     if (currentState == GameState::PAUSED) {
         SetDrawBlendMode(DX_BLENDMODE_ALPHA, 128);
         DrawBox(0, 0, 1920, 1080, GetColor(0, 0, 0), TRUE);
         SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
     }
 
-    // ÑHÑpÑsÑÄÑ|ÑÄÑrÑÄÑ{
+    // –ó–∞–≥–æ–ª–æ–≤–æ–∫
     unsigned int titleColor = GetColor(255, 255, 255);
     int titleSize = 48;
 
@@ -128,19 +216,35 @@ void Menu::Draw() const {
         DrawFormatString(1920 / 2 - 150, 200, titleColor, L"MINDTRAPA");
         DrawFormatString(1920 / 2 - 120, 260, GetColor(200, 200, 200), L"3D Trolling Platformer");
         break;
-    case GameState::LEVEL_SELECT:
-        DrawFormatString(1920 / 2 - 100, 150, titleColor, L"SELECT LEVEL");
+    case GameState::LEVEL_SELECT_BLOCKS:
+        DrawFormatString(1920 / 2 - 120, 150, titleColor, L"SELECT BLOCK");
+        break;
+    case GameState::LEVEL_SELECT_LEVELS:
+        {
+            wchar_t blockHeader[64];
+            swprintf_s(blockHeader, L"BLOCK %d: LEVELS 1-10", selectedBlock);
+            DrawFormatString(1920 / 2 - 150, 150, titleColor, blockHeader);
+        }
+        break;
+    case GameState::SETTINGS:
+        DrawFormatString(1920 / 2 - 100, 200, titleColor, L"SETTINGS");
+        // Draw sliders
+        DrawSlider(1920 / 2 - 200, 350, 400, settings.musicVolume, L"Music Volume");
+        DrawSlider(1920 / 2 - 200, 470, 400, settings.soundVolume, L"Sound Volume");
+        break;
+    case GameState::MUSIC_SELECT:
+        DrawFormatString(1920 / 2 - 120, 200, titleColor, L"MUSIC SELECT");
         break;
     case GameState::PAUSED:
         DrawFormatString(1920 / 2 - 80, 250, titleColor, L"PAUSED");
         break;
     }
 
-    // ÑOÑÑÑÇÑyÑÉÑÄÑrÑ{Ñp Ñ{Ñ~ÑÄÑÅÑÄÑ{
+    // –û—Ç—Ä–∏—Å–æ–≤–∫–∞ –∫–Ω–æ–ø–æ–∫
     for (size_t i = 0; i < buttons.size(); i++) {
-        // ÑPÑÄÑtÑÉÑrÑuÑÑÑ{Ñp ÑrÑçÑqÑÇÑpÑ~Ñ~ÑÄÑz Ñ{Ñ~ÑÄÑÅÑ{Ñy (Ñ{Ñ|ÑpÑrÑyÑpÑÑÑÖÑÇÑ~ÑpÑë Ñ~ÑpÑrÑyÑsÑpÑàÑyÑë)
+        // –ü–æ–¥—Å–≤–µ—Ç–∫–∞ –≤—ã–±—Ä–∞–Ω–Ω–æ–π –∫–Ω–æ–ø–∫–∏ (–∫–ª–∞–≤–∏–∞—Ç—É—Ä–Ω–∞—è –Ω–∞–≤–∏–≥–∞—Ü–∏—è)
         if (i == selectedButtonIndex && !buttons[i].isHovered) {
-            // ÑQÑpÑ}Ñ{Ñp ÑrÑÄÑ{ÑÇÑÖÑs ÑrÑçÑqÑÇÑpÑ~Ñ~ÑÄÑz Ñ{Ñ~ÑÄÑÅÑ{Ñy
+            // –†–∞–º–∫–∞ –≤–æ–∫—Ä—É–≥ –≤—ã–±—Ä–∞–Ω–Ω–æ–π –∫–Ω–æ–ø–∫–∏
             DrawBox(buttons[i].x - 5, buttons[i].y - 5,
                 buttons[i].x + buttons[i].width + 5,
                 buttons[i].y + buttons[i].height + 5,
@@ -149,29 +253,82 @@ void Menu::Draw() const {
         buttons[i].Draw();
     }
 
-    // ÑPÑÄÑtÑÉÑ{ÑpÑxÑ{Ñy ÑÖÑÅÑÇÑpÑrÑ|ÑuÑ~ÑyÑë
+    // –ü–æ–¥—Å–∫–∞–∑–∫–∏ —É–ø—Ä–∞–≤–ª–µ–Ω–∏—è
     if (currentState != GameState::PLAYING) {
         DrawFormatString(10, 1040, GetColor(150, 150, 150), L"Mouse: Click | Keyboard: Arrow Keys + Enter | ESC: Back");
     }
 }
 
-ButtonAction Menu::HandleInput(int& levelToLoad) {
-    levelToLoad = -1; // ÑPÑÄ ÑÖÑ}ÑÄÑ|ÑâÑpÑ~ÑyÑê Ñ~Ñu ÑxÑpÑsÑÇÑÖÑwÑpÑuÑ} ÑÖÑÇÑÄÑrÑuÑ~Ñé
+void Menu::DrawSlider(int x, int y, int width, int value, const wchar_t* label) const {
+    unsigned int labelColor = GetColor(220, 220, 220);
+    unsigned int barBgColor = GetColor(60, 60, 80);
+    unsigned int barFillColor = GetColor(100, 150, 255);
+    unsigned int borderColor = GetColor(120, 120, 150);
+
+    // Label
+    DrawFormatString(x, y - 30, labelColor, label);
+
+    // Background bar
+    DrawBox(x, y, x + width, y + 30, barBgColor, TRUE);
+    DrawBox(x, y, x + width, y + 30, borderColor, FALSE);
+
+    // Fill bar (0-100%)
+    int fillWidth = (width * value) / 100;
+    DrawBox(x, y, x + fillWidth, y + 30, barFillColor, TRUE);
+
+    // Value text
+    wchar_t valueText[16];
+    swprintf_s(valueText, L"%d%%", value);
+    DrawFormatString(x + width + 20, y + 5, labelColor, valueText);
+}
+
+int Menu::HandleSliderClick(int x, int y, int width, int mouseX, int mouseY) {
+    if (mouseX >= x && mouseX <= x + width && mouseY >= y && mouseY <= y + 30) {
+        int newValue = ((mouseX - x) * 100) / width;
+        if (newValue < 0) newValue = 0;
+        if (newValue > 100) newValue = 100;
+        return newValue;
+    }
+    return -1;
+}
+
+ButtonAction Menu::HandleInput(int& blockToLoad, int& levelToLoad) {
+    blockToLoad = -1;
+    levelToLoad = -1;
 
     if (buttons.empty()) return ButtonAction::NONE;
 
-    // ÑOÑqÑ~ÑÄÑrÑ|ÑëÑuÑ} Ñ~ÑpÑrÑuÑtÑuÑ~ÑyÑu Ñ}ÑçÑäÑy
+    // –û–±–Ω–æ–≤–ª—è–µ–º –Ω–∞–≤–µ–¥–µ–Ω–∏–µ –º—ã—à–∏
     int mouseX, mouseY;
     GetMousePoint(&mouseX, &mouseY);
     UpdateHover(mouseX, mouseY);
 
-    // ÑKÑ|ÑyÑ{ Ñ}ÑçÑäÑy
-    static bool mousePressed = false;
+    // –û–±–Ω–æ–≤–ª–µ–Ω–∏–µ —Å–ª–∞–π–¥–µ—Ä–æ–≤
+    if (currentState == GameState::SETTINGS) {
+        static bool mouseHeld = false;
+        if ((GetMouseInput() & MOUSE_INPUT_LEFT) != 0) {
+            int newMusicVol = HandleSliderClick(1920 / 2 - 200, 350, 400, mouseX, mouseY);
+            if (newMusicVol >= 0) {
+                settings.musicVolume = newMusicVol;
+            }
+            int newSoundVol = HandleSliderClick(1920 / 2 - 200, 470, 400, mouseX, mouseY);
+            if (newSoundVol >= 0) {
+                settings.soundVolume = newSoundVol;
+            }
+            mouseHeld = true;
+        }
+        else {
+            mouseHeld = false;
+        }
+    }
+
+    // –ö–ª–∏–∫ –º—ã—à–∏
     if ((GetMouseInput() & MOUSE_INPUT_LEFT) != 0) {
         if (!mousePressed) {
             for (const auto& button : buttons) {
                 if (button.isHovered) {
-                    return ActivateSelectedButton(levelToLoad);
+                    mousePressed = true;
+                    return ActivateSelectedButton(blockToLoad, levelToLoad);
                 }
             }
         }
@@ -181,13 +338,11 @@ ButtonAction Menu::HandleInput(int& levelToLoad) {
         mousePressed = false;
     }
 
-    // ÑKÑ|ÑpÑrÑyÑpÑÑÑÖÑÇÑ~ÑpÑë Ñ~ÑpÑrÑyÑsÑpÑàÑyÑë
-    static bool upPressed = false;
-    static bool downPressed = false;
-    static bool enterPressed = false;
-
+    // –ö–ª–∞–≤–∏–∞—Ç—É—Ä–Ω–∞—è –Ω–∞–≤–∏–≥–∞—Ü–∏—è
     if (CheckHitKey(KEY_INPUT_UP) || CheckHitKey(KEY_INPUT_W)) {
-        if (!upPressed) SelectPrevButton();
+        if (!upPressed) {
+            SelectPrevButton();
+        }
         upPressed = true;
     }
     else {
@@ -195,7 +350,9 @@ ButtonAction Menu::HandleInput(int& levelToLoad) {
     }
 
     if (CheckHitKey(KEY_INPUT_DOWN) || CheckHitKey(KEY_INPUT_S)) {
-        if (!downPressed) SelectNextButton();
+        if (!downPressed) {
+            SelectNextButton();
+        }
         downPressed = true;
     }
     else {
@@ -204,24 +361,27 @@ ButtonAction Menu::HandleInput(int& levelToLoad) {
 
     if (CheckHitKey(KEY_INPUT_RETURN)) {
         if (!enterPressed) {
-            return ActivateSelectedButton(levelToLoad);
+            enterPressed = true;
+            return ActivateSelectedButton(blockToLoad, levelToLoad);
         }
-        enterPressed = true;
     }
     else {
         enterPressed = false;
     }
 
-    // ESC ÑtÑ|Ñë ÑrÑÄÑxÑrÑÇÑpÑÑÑp Ñ~ÑpÑxÑpÑt (ÑÑÑÄÑ|ÑéÑ{ÑÄ ÑtÑ|Ñë Level Select, Ñ~Ñu ÑtÑ|Ñë ÑÅÑpÑÖÑxÑç!)
-    static bool escPressed = false;
+    // ESC - —É–Ω–∏–≤–µ—Ä—Å–∞–ª—å–Ω—ã–π –≤–æ–∑–≤—Ä–∞—Ç –Ω–∞–∑–∞–¥
     if (CheckHitKey(KEY_INPUT_ESCAPE)) {
         if (!escPressed) {
-            if (currentState == GameState::LEVEL_SELECT) {
-                SetState(GameState::MAIN_MENU);
+            escPressed = true;
+
+            // –°–ø–µ—Ü–∏–∞–ª—å–Ω—ã–π —Å–ª—É—á–∞–π: –ø–∞—É–∑–∞ –≤–æ–∑–≤—Ä–∞—â–∞–µ—Ç –≤ –∏–≥—Ä—É
+            if (currentState == GameState::PAUSED) {
+                return ButtonAction::CONTINUE;
             }
-            // ÑDÑ|Ñë ÑÅÑpÑÖÑxÑç ESC ÑÄÑqÑÇÑpÑqÑpÑÑÑçÑrÑpÑuÑÑÑÉÑë Ñr main.cpp
+
+            // –í—Å–µ –æ—Å—Ç–∞–ª—å–Ω—ã–µ —Å–æ—Å—Ç–æ—è–Ω–∏—è: –≤–æ–∑–≤—Ä–∞—Ç –ø–æ —Å—Ç–µ–∫—É
+            PopState();
         }
-        escPressed = true;
     }
     else {
         escPressed = false;
@@ -240,17 +400,38 @@ void Menu::SelectPrevButton() {
     selectedButtonIndex = (selectedButtonIndex - 1 + buttons.size()) % buttons.size();
 }
 
-ButtonAction Menu::ActivateSelectedButton(int& levelToLoad) {
+ButtonAction Menu::ActivateSelectedButton(int& blockToLoad, int& levelToLoad) {
     if (selectedButtonIndex < 0 || selectedButtonIndex >= buttons.size()) {
         return ButtonAction::NONE;
     }
 
     ButtonAction action = buttons[selectedButtonIndex].action;
 
-    // ÑEÑÉÑ|Ñy ÑèÑÑÑÄ ÑxÑpÑsÑÇÑÖÑxÑ{Ñp ÑÖÑÇÑÄÑrÑ~Ñë - ÑrÑçÑâÑyÑÉÑ|ÑëÑuÑ} Ñ~ÑÄÑ}ÑuÑÇ
-    if (action >= ButtonAction::LOAD_LEVEL_1 && action <= ButtonAction::LOAD_LEVEL_10) {
-        levelToLoad = static_cast<int>(action) - static_cast<int>(ButtonAction::LOAD_LEVEL_1) + 1;
+    // Block selection - –ø–µ—Ä–µ—Ö–æ–¥ –∫ –≤—ã–±–æ—Ä—É —É—Ä–æ–≤–Ω–µ–π
+    if (action >= ButtonAction::SELECT_BLOCK_1 && action <= ButtonAction::SELECT_BLOCK_10) {
+        int blockIndex = static_cast<int>(action) - static_cast<int>(ButtonAction::SELECT_BLOCK_1);
+        if (blockIndex < unlockedBlocks) {
+            selectedBlock = blockIndex + 1;
+            blockToLoad = selectedBlock;
+            PushState(GameState::LEVEL_SELECT_LEVELS);  // –ü–µ—Ä–µ—Ö–æ–¥ —Å —Å–æ—Ö—Ä–∞–Ω–µ–Ω–∏–µ–º –≤ —Å—Ç–µ–∫
+        }
+        return ButtonAction::NONE;
     }
 
+    // Level selection - –∑–∞–≥—Ä—É–∂–∞–µ–º —É—Ä–æ–≤–µ–Ω—å
+    if (action == ButtonAction::LOAD_LEVEL) {
+        if (selectedBlock == 1 && selectedButtonIndex < totalLevels) {
+            levelToLoad = selectedButtonIndex + 1;
+        }
+        return action;
+    }
+
+    // Back button = PopState (–∫–∞–∫ ESC)
+    if (action == ButtonAction::BACK_TO_MENU || action == ButtonAction::BACK_TO_SETTINGS) {
+        PopState();
+        return ButtonAction::NONE;
+    }
+
+    // –≠—Ç–∏ –∫–Ω–æ–ø–∫–∏ –ø—Ä–æ—Å—Ç–æ –≤–æ–∑–≤—Ä–∞—â–∞—é—Ç action (main.cpp –æ–±—Ä–∞–±–æ—Ç–∞–µ—Ç)
     return action;
 }
