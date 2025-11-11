@@ -102,14 +102,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
     // Инициализация игры
     LevelManager levelManager;
-    Menu menu(10); // 10 уровней - первый блок завершён!
+    Menu menu(20); // 20 уровней - Block 1 (1-10) + Block 2 (11-20)
 
     // Генерируем звёзды для космического фона
     std::vector<Star> stars = GenerateStars(500, 400.0f);
 
     // ОТЛАДКА - проверяем что меню создалось правильно
     char debug[100];
-    sprintf_s(debug, "Menu created with 10 levels, %d stars generated", (int)stars.size());
+    sprintf_s(debug, "Menu created with 20 levels, %d stars generated", (int)stars.size());
     OutputDebugStringA(debug);
 
     // Состояние игры
@@ -179,7 +179,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
             switch (action) {
             case ButtonAction::START_GAME:
                 // Быстрый старт - сразу загружаем Level 1
-                menu.ClearHistory();  // Очищаем стек при старте игры
+                menu.ClearHistory();  // Очищаем стек
+                menu.SetState(GameState::PLAYING);  // Устанавливаем состояние меню в PLAYING
                 levelManager.LoadLevel(1);
                 playerPos = levelManager.GetCurrentLevel()->GetPlayerSpawn();
                 playerVel = VGet(0, 0, 0);
@@ -208,7 +209,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
             default:
                 // Загрузка конкретного уровня
                 if (levelToLoad > 0) {
-                    menu.ClearHistory();  // Очищаем стек при загрузке уровня
+                    menu.ClearHistory();  // Очищаем стек
+                    menu.SetState(GameState::PLAYING);  // Устанавливаем состояние меню в PLAYING
                     levelManager.LoadLevel(levelToLoad);
                     playerPos = levelManager.GetCurrentLevel()->GetPlayerSpawn();
                     playerVel = VGet(0, 0, 0);
@@ -272,13 +274,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
                 gameState = menu.GetState();
                 break;
 
-            case ButtonAction::LEVEL_SELECT:
-                menu.SetSelectedBlock(0); // Сброс выбранного блока
-                menu.PushState(GameState::LEVEL_SELECT_BLOCKS);
-                gameState = menu.GetState();
-                SetMouseDispFlag(TRUE);
-                break;
-
             case ButtonAction::BACK_TO_MENU:
                 menu.SetSelectedBlock(0); // Сброс выбранного блока
                 menu.ClearHistory(); // Очищаем стек при возврате в главное меню
@@ -288,9 +283,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
                 break;
 
             default:
-                // Загрузка уровня из меню паузы (через Level Select)
+                // Резервный обработчик (в паузе levelToLoad всегда 0)
                 if (levelToLoad > 0) {
-                    menu.ClearHistory();  // Очищаем стек при загрузке уровня
+                    menu.ClearHistory();  // Очищаем стек
+                    menu.SetState(GameState::PLAYING);  // Устанавливаем состояние меню в PLAYING
                     levelManager.LoadLevel(levelToLoad);
                     playerPos = levelManager.GetCurrentLevel()->GetPlayerSpawn();
                     playerVel = VGet(0, 0, 0);
@@ -320,6 +316,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
             if (CheckHitKey(KEY_INPUT_ESCAPE)) {
                 if (!escPressed && escDelay <= 0.0f) {
                     menu.PushState(GameState::PAUSED);
+                    menu.ResetInputFlags();  // Сбрасываем флаги ввода чтобы ESC не обработался сразу в меню
                     gameState = menu.GetState();
                     SetMouseDispFlag(TRUE);
                     escDelay = 0.3f; // Задержка 0.3 секунды

@@ -69,6 +69,14 @@ void Menu::ClearHistory() {
     stateHistory.clear();
 }
 
+void Menu::ResetInputFlags() {
+    mousePressed = true;   // Устанавливаем в true чтобы не обработать текущее нажатие
+    upPressed = true;
+    downPressed = true;
+    enterPressed = true;
+    escPressed = true;
+}
+
 void Menu::CreateMainMenuButtons() {
     int centerX = 1920 / 2;
     int startY = 400;
@@ -183,11 +191,11 @@ void Menu::CreatePauseMenuButtons() {
     int buttonHeight = 60;
     int spacing = 80;
 
+    // 4 кнопки: Continue, Restart, Settings, Main Menu
     buttons.push_back(Button(L"Continue", centerX - buttonWidth / 2, startY, buttonWidth, buttonHeight, ButtonAction::CONTINUE));
     buttons.push_back(Button(L"Restart Level", centerX - buttonWidth / 2, startY + spacing, buttonWidth, buttonHeight, ButtonAction::RESTART));
     buttons.push_back(Button(L"Settings", centerX - buttonWidth / 2, startY + spacing * 2, buttonWidth, buttonHeight, ButtonAction::OPEN_SETTINGS));
-    buttons.push_back(Button(L"Level Select", centerX - buttonWidth / 2, startY + spacing * 3, buttonWidth, buttonHeight, ButtonAction::LEVEL_SELECT));
-    buttons.push_back(Button(L"Main Menu", centerX - buttonWidth / 2, startY + spacing * 4, buttonWidth, buttonHeight, ButtonAction::BACK_TO_MENU));
+    buttons.push_back(Button(L"Main Menu", centerX - buttonWidth / 2, startY + spacing * 3, buttonWidth, buttonHeight, ButtonAction::BACK_TO_MENU));
 }
 
 void Menu::UpdateHover(int mouseX, int mouseY) {
@@ -427,7 +435,20 @@ ButtonAction Menu::ActivateSelectedButton(int& blockToLoad, int& levelToLoad) {
     }
 
     // Back button = PopState (как ESC)
-    if (action == ButtonAction::BACK_TO_MENU || action == ButtonAction::BACK_TO_SETTINGS) {
+    // НО: BACK_TO_MENU из паузы означает "вернуться в главное меню" (не PopState)
+    if (action == ButtonAction::BACK_TO_MENU) {
+        if (currentState == GameState::PAUSED) {
+            // Из паузы "Main Menu" - возвращаем action для обработки в main.cpp
+            return action;
+        }
+        else {
+            // Из других меню - обычная навигация назад
+            PopState();
+            return ButtonAction::NONE;
+        }
+    }
+
+    if (action == ButtonAction::BACK_TO_SETTINGS) {
         PopState();
         return ButtonAction::NONE;
     }

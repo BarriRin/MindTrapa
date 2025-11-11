@@ -128,7 +128,8 @@ public:
     void SetState(GameState state);          // Переход без сохранения истории
     void PushState(GameState newState);      // Переход с сохранением в стек
     void PopState();                         // Возврат назад по стеку
-    void ClearHistory();                     // Очистить стек (при старте игры)
+    void ClearHistory();                     // Очистить стек
+    void ResetInputFlags();                  // Сбросить флаги ввода (предотвратить двойное нажатие)
     GameState GetState() const { return currentState; }
 
     void Draw() const;

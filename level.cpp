@@ -42,9 +42,9 @@ void Level::LoadLevelData(int id) {
     case 4: // Уровень 4 - телепорты
         playerSpawn = VGet(0, 1, 0);
         blocks.push_back(Block(VGet(-5, -1, -5), VGet(8, 1, 8), BlockType::PLATFORM));
-        blocks.push_back(Block(VGet(8, 1, 0), VGet(2, 1, 2), BlockType::TELEPORT, 0.0f, true, VGet(0, 0, 0), 1));
+        blocks.push_back(Block(VGet(8, 1, 0), VGet(2, 1, 2), BlockType::TELEPORT, 1));
         blocks.push_back(Block(VGet(20, 3, 0), VGet(4, 1, 4), BlockType::PLATFORM));
-        blocks.push_back(Block(VGet(21, 4, 1), VGet(2, 1, 2), BlockType::TELEPORT, 0.0f, true, VGet(0, 0, 0), 1));
+        blocks.push_back(Block(VGet(21, 4, 1), VGet(2, 1, 2), BlockType::TELEPORT, 1));
         blocks.push_back(Block(VGet(30, 5, 0), VGet(4, 1, 4), BlockType::PLATFORM));
         blocks.push_back(Block(VGet(32, 6, 1), VGet(2, 1, 2), BlockType::TRIGGER));
         break;
@@ -52,9 +52,9 @@ void Level::LoadLevelData(int id) {
     case 5: // Уровень 5 - ложные телепорты
         playerSpawn = VGet(0, 1, 0);
         blocks.push_back(Block(VGet(-5, -1, -5), VGet(8, 1, 8), BlockType::PLATFORM));
-        blocks.push_back(Block(VGet(8, 1, -3), VGet(2, 1, 2), BlockType::TELEPORT, 0.0f, true, VGet(0, 0, 0), 1));
-        blocks.push_back(Block(VGet(8, 1, 0), VGet(2, 1, 2), BlockType::TELEPORT, 0.0f, true, VGet(0, 0, 0), 2));
-        blocks.push_back(Block(VGet(8, 1, 3), VGet(2, 1, 2), BlockType::TELEPORT, 0.0f, true, VGet(0, 0, 0), 3));
+        blocks.push_back(Block(VGet(8, 1, -3), VGet(2, 1, 2), BlockType::TELEPORT, 1));
+        blocks.push_back(Block(VGet(8, 1, 0), VGet(2, 1, 2), BlockType::TELEPORT, 2));
+        blocks.push_back(Block(VGet(8, 1, 3), VGet(2, 1, 2), BlockType::TELEPORT, 3));
         blocks.push_back(Block(VGet(20, 1, -3), VGet(3, 1, 3), BlockType::PLATFORM));
         blocks.push_back(Block(VGet(22, 2, -3), VGet(1, 1, 1), BlockType::SPIKES));
         blocks.push_back(Block(VGet(20, 1, 3), VGet(3, 1, 3), BlockType::PLATFORM));
@@ -64,8 +64,8 @@ void Level::LoadLevelData(int id) {
     case 6: // Уровень 6 - кнопки и двери
         playerSpawn = VGet(0, 1, 0);
         blocks.push_back(Block(VGet(-5, -1, -5), VGet(8, 1, 8), BlockType::PLATFORM));
-        blocks.push_back(Block(VGet(8, 1, 0), VGet(2, 1, 2), BlockType::BUTTON, 0.0f, false, VGet(0, 0, 0), 10));
-        blocks.push_back(Block(VGet(15, 1, 0), VGet(4, 1, 4), BlockType::DISAPPEARING, 0.0f, false, VGet(0, 0, 0), 10));
+        blocks.push_back(Block(VGet(8, 1, 0), VGet(2, 1, 2), BlockType::BUTTON, 10, false));
+        blocks.push_back(Block(VGet(15, 1, 0), VGet(4, 1, 4), BlockType::DISAPPEARING, 10, false));
         blocks.push_back(Block(VGet(22, 1, 0), VGet(2, 1, 2), BlockType::TRIGGER));
         break;
 
@@ -73,7 +73,7 @@ void Level::LoadLevelData(int id) {
         playerSpawn = VGet(0, 1, 0);
         blocks.push_back(Block(VGet(-5, -1, -5), VGet(8, 1, 8), BlockType::PLATFORM));
         blocks.push_back(Block(VGet(5, 1, 0), VGet(3, 1, 3), BlockType::PLATFORM));
-        blocks.push_back(Block(VGet(10, 2, 0), VGet(4, 1, 4), BlockType::MOVING, 0.0f, true, VGet(20, 2, 0), 0));
+        blocks.push_back(Block(VGet(10, 2, 0), VGet(4, 1, 4), BlockType::MOVING, 0, true, VGet(10, 2, 0), VGet(20, 2, 0)));
         blocks.push_back(Block(VGet(25, 3, 0), VGet(3, 1, 3), BlockType::PLATFORM));
         blocks.push_back(Block(VGet(30, 4, 0), VGet(2, 1, 2), BlockType::TRIGGER));
         break;
@@ -81,9 +81,9 @@ void Level::LoadLevelData(int id) {
     case 8: // Уровень 8 - исчезающие платформы
         playerSpawn = VGet(0, 1, 0);
         blocks.push_back(Block(VGet(-5, -1, -5), VGet(8, 1, 8), BlockType::PLATFORM));
-        blocks.push_back(Block(VGet(5, 2, 0), VGet(3, 1, 3), BlockType::DISAPPEARING, 0.0f, true, VGet(0, 0, 0), 0));
-        blocks.push_back(Block(VGet(10, 3, 0), VGet(3, 1, 3), BlockType::DISAPPEARING, 0.0f, true, VGet(0, 0, 0), 0));
-        blocks.push_back(Block(VGet(15, 4, 0), VGet(2, 1, 2), BlockType::DISAPPEARING, 0.0f, true, VGet(0, 0, 0), 0));
+        blocks.push_back(Block(VGet(5, 2, 0), VGet(3, 1, 3), BlockType::DISAPPEARING, 0, true));
+        blocks.push_back(Block(VGet(10, 3, 0), VGet(3, 1, 3), BlockType::DISAPPEARING, 0, true));
+        blocks.push_back(Block(VGet(15, 4, 0), VGet(2, 1, 2), BlockType::DISAPPEARING, 0, true));
         blocks.push_back(Block(VGet(20, 5, 0), VGet(4, 1, 4), BlockType::PLATFORM));
         blocks.push_back(Block(VGet(25, 5, 0), VGet(2, 1, 2), BlockType::TRIGGER));
         break;
@@ -95,27 +95,27 @@ void Level::LoadLevelData(int id) {
         // Первая секция - узкий коридор
         blocks.push_back(Block(VGet(5, 0, -1), VGet(12, 1, 3), BlockType::PLATFORM));
         // Шипы на всю ширину платформы (3 единицы)
-        blocks.push_back(Block(VGet(7, 1, -1), VGet(1, 1, 3), BlockType::SPIKES, 0.0f, true, VGet(0, 0, 0), 1));
-        blocks.push_back(Block(VGet(10, 1, -1), VGet(1, 1, 3), BlockType::SPIKES, 2.0f, false, VGet(0, 0, 0), 1));
-        blocks.push_back(Block(VGet(13, 1, -1), VGet(1, 1, 3), BlockType::SPIKES, 0.0f, true, VGet(0, 0, 0), 1));
-        blocks.push_back(Block(VGet(16, 1, -1), VGet(1, 1, 3), BlockType::SPIKES, 2.0f, false, VGet(0, 0, 0), 1));
+        blocks.push_back(Block(VGet(7, 1, -1), VGet(1, 1, 3), BlockType::SPIKES, 1));
+        blocks.push_back(Block(VGet(10, 1, -1), VGet(1, 1, 3), BlockType::SPIKES, 1, false, VGet(0,0,0), VGet(0,0,0), 1.0f, 2.0f));
+        blocks.push_back(Block(VGet(13, 1, -1), VGet(1, 1, 3), BlockType::SPIKES, 1));
+        blocks.push_back(Block(VGet(16, 1, -1), VGet(1, 1, 3), BlockType::SPIKES, 1, false, VGet(0,0,0), VGet(0,0,0), 1.0f, 2.0f));
 
         // Вторая секция - немного шире
         blocks.push_back(Block(VGet(20, 2, -2), VGet(8, 1, 5), BlockType::PLATFORM));
         // Шипы на всю ширину (5 единиц)
-        blocks.push_back(Block(VGet(21, 3, -2), VGet(1, 1, 5), BlockType::SPIKES, 0.0f, true, VGet(0, 0, 0), 1));
-        blocks.push_back(Block(VGet(23, 3, -2), VGet(1, 1, 5), BlockType::SPIKES, 1.0f, false, VGet(0, 0, 0), 1));
-        blocks.push_back(Block(VGet(25, 3, -2), VGet(1, 1, 5), BlockType::SPIKES, 0.0f, true, VGet(0, 0, 0), 1));
-        blocks.push_back(Block(VGet(27, 3, -2), VGet(1, 1, 5), BlockType::SPIKES, 1.0f, false, VGet(0, 0, 0), 1));
+        blocks.push_back(Block(VGet(21, 3, -2), VGet(1, 1, 5), BlockType::SPIKES, 1));
+        blocks.push_back(Block(VGet(23, 3, -2), VGet(1, 1, 5), BlockType::SPIKES, 1, false, VGet(0,0,0), VGet(0,0,0), 1.0f, 1.0f));
+        blocks.push_back(Block(VGet(25, 3, -2), VGet(1, 1, 5), BlockType::SPIKES, 1));
+        blocks.push_back(Block(VGet(27, 3, -2), VGet(1, 1, 5), BlockType::SPIKES, 1, false, VGet(0,0,0), VGet(0,0,0), 1.0f, 1.0f));
 
         // Третья секция - финальный рывок
         blocks.push_back(Block(VGet(31, 3, -1), VGet(10, 1, 3), BlockType::PLATFORM));
         // Много шипов подряд, нужно выбрать момент
-        blocks.push_back(Block(VGet(32, 4, -1), VGet(1, 1, 3), BlockType::SPIKES, 0.0f, true, VGet(0, 0, 0), 1));
-        blocks.push_back(Block(VGet(34, 4, -1), VGet(1, 1, 3), BlockType::SPIKES, 0.5f, true, VGet(0, 0, 0), 1));
-        blocks.push_back(Block(VGet(36, 4, -1), VGet(1, 1, 3), BlockType::SPIKES, 1.0f, false, VGet(0, 0, 0), 1));
-        blocks.push_back(Block(VGet(38, 4, -1), VGet(1, 1, 3), BlockType::SPIKES, 1.5f, false, VGet(0, 0, 0), 1));
-        blocks.push_back(Block(VGet(40, 4, -1), VGet(1, 1, 3), BlockType::SPIKES, 2.0f, false, VGet(0, 0, 0), 1));
+        blocks.push_back(Block(VGet(32, 4, -1), VGet(1, 1, 3), BlockType::SPIKES, 1));
+        blocks.push_back(Block(VGet(34, 4, -1), VGet(1, 1, 3), BlockType::SPIKES, 1, true, VGet(0,0,0), VGet(0,0,0), 1.0f, 0.5f));
+        blocks.push_back(Block(VGet(36, 4, -1), VGet(1, 1, 3), BlockType::SPIKES, 1, false, VGet(0,0,0), VGet(0,0,0), 1.0f, 1.0f));
+        blocks.push_back(Block(VGet(38, 4, -1), VGet(1, 1, 3), BlockType::SPIKES, 1, false, VGet(0,0,0), VGet(0,0,0), 1.0f, 1.5f));
+        blocks.push_back(Block(VGet(40, 4, -1), VGet(1, 1, 3), BlockType::SPIKES, 1, false, VGet(0,0,0), VGet(0,0,0), 1.0f, 2.0f));
 
         // Финиш
         blocks.push_back(Block(VGet(44, 4, -2), VGet(5, 1, 5), BlockType::PLATFORM));
@@ -128,53 +128,132 @@ void Level::LoadLevelData(int id) {
 
         // === СЕКЦИЯ 1: Выдвигающиеся шипы (обязательно пройти) ===
         blocks.push_back(Block(VGet(5, 0, -1), VGet(10, 1, 3), BlockType::PLATFORM));
-        blocks.push_back(Block(VGet(7, 1, -1), VGet(1, 1, 3), BlockType::SPIKES, 0.0f, true, VGet(0, 0, 0), 1));
-        blocks.push_back(Block(VGet(10, 1, -1), VGet(1, 1, 3), BlockType::SPIKES, 0.0f, true, VGet(0, 0, 0), 0)); // Статичные!
-        blocks.push_back(Block(VGet(13, 1, -1), VGet(1, 1, 3), BlockType::SPIKES, 2.0f, false, VGet(0, 0, 0), 1));
+        blocks.push_back(Block(VGet(7, 1, -1), VGet(1, 1, 3), BlockType::SPIKES, 1));
+        blocks.push_back(Block(VGet(10, 1, -1), VGet(1, 1, 3), BlockType::SPIKES, 0)); // Статичные!
+        blocks.push_back(Block(VGet(13, 1, -1), VGet(1, 1, 3), BlockType::SPIKES, 1, false, VGet(0,0,0), VGet(0,0,0), 1.0f, 2.0f));
 
         // === СЕКЦИЯ 2: Движущаяся платформа - ОБЯЗАТЕЛЬНА (большая пропасть) ===
         // Слишком далеко чтобы прыгнуть напрямую!
         blocks.push_back(Block(VGet(18, 2, -1), VGet(3, 1, 3), BlockType::PLATFORM)); // Маленькая площадка
         // Движущаяся платформа - единственный путь
-        blocks.push_back(Block(VGet(22, 3, -1), VGet(4, 1, 3), BlockType::MOVING, 0.0f, true, VGet(35, 3, -1), 0));
+        blocks.push_back(Block(VGet(22, 3, -1), VGet(4, 1, 3), BlockType::MOVING, 0, true, VGet(22, 3, -1), VGet(35, 3, -1)));
         // Целевая платформа далеко
         blocks.push_back(Block(VGet(38, 4, -2), VGet(5, 1, 5), BlockType::PLATFORM));
 
         // === СЕКЦИЯ 3: Телепорт - ОБЯЗАТЕЛЕН (невидимые стены блокируют обход) ===
         blocks.push_back(Block(VGet(30, 10, -2), VGet(4, 1, 5), BlockType::PLATFORM)); // Высоко!
-        blocks.push_back(Block(VGet(31, 11, 0), VGet(2, 1, 2), BlockType::TELEPORT, 0.0f, true, VGet(0, 0, 0), 10));
+        blocks.push_back(Block(VGet(31, 11, 0), VGet(2, 1, 2), BlockType::TELEPORT, 10));
         // Невидимые стены со всех сторон - нельзя обойти!
         blocks.push_back(Block(VGet(34, 10, -2), VGet(1, 4, 5), BlockType::INVISIBLE_WALL)); // Справа
         blocks.push_back(Block(VGet(29, 10, -2), VGet(1, 4, 5), BlockType::INVISIBLE_WALL)); // Слева
 
         // Куда телепортирует (далеко и высоко)
         blocks.push_back(Block(VGet(50, 6, -3), VGet(6, 1, 7), BlockType::PLATFORM));
-        blocks.push_back(Block(VGet(52, 7, 0), VGet(2, 1, 2), BlockType::TELEPORT, 0.0f, true, VGet(0, 0, 0), 10));
+        blocks.push_back(Block(VGet(52, 7, 0), VGet(2, 1, 2), BlockType::TELEPORT, 10));
 
         // === СЕКЦИЯ 4: Кнопка + исчезающие платформы - ВСЁ ОБЯЗАТЕЛЬНО ===
         blocks.push_back(Block(VGet(60, 7, -2), VGet(4, 1, 5), BlockType::PLATFORM));
         // Кнопка
-        blocks.push_back(Block(VGet(61, 8, 0), VGet(2, 1, 2), BlockType::BUTTON, 0.0f, false, VGet(0, 0, 0), 20));
+        blocks.push_back(Block(VGet(61, 8, 0), VGet(2, 1, 2), BlockType::BUTTON, 20, false));
 
         // Исчезающие платформы к двери (расстояния большие!)
-        blocks.push_back(Block(VGet(67, 8, 0), VGet(2, 1, 2), BlockType::DISAPPEARING, 0.0f, true, VGet(0, 0, 0), 0));
-        blocks.push_back(Block(VGet(72, 9, 0), VGet(2, 1, 2), BlockType::DISAPPEARING, 0.0f, true, VGet(0, 0, 0), 0));
-        blocks.push_back(Block(VGet(77, 10, 0), VGet(2, 1, 2), BlockType::DISAPPEARING, 0.0f, true, VGet(0, 0, 0), 0));
+        blocks.push_back(Block(VGet(67, 8, 0), VGet(2, 1, 2), BlockType::DISAPPEARING, 0, true));
+        blocks.push_back(Block(VGet(72, 9, 0), VGet(2, 1, 2), BlockType::DISAPPEARING, 0, true));
+        blocks.push_back(Block(VGet(77, 10, 0), VGet(2, 1, 2), BlockType::DISAPPEARING, 0, true));
 
         // Дверь (открывается только кнопкой) - блокирует путь!
-        blocks.push_back(Block(VGet(81, 10, -1), VGet(1, 4, 3), BlockType::DISAPPEARING, 0.0f, false, VGet(0, 0, 0), 20));
+        blocks.push_back(Block(VGet(81, 10, -1), VGet(1, 4, 3), BlockType::DISAPPEARING, 20, false));
         // Невидимая стена сверху чтобы не перепрыгнуть дверь
         blocks.push_back(Block(VGet(81, 14, -1), VGet(1, 5, 3), BlockType::INVISIBLE_WALL));
 
         // === ФИНАЛ: Последний рывок через выдвигающиеся шипы ===
         blocks.push_back(Block(VGet(84, 11, -1), VGet(8, 1, 3), BlockType::PLATFORM));
-        blocks.push_back(Block(VGet(85, 12, -1), VGet(1, 1, 3), BlockType::SPIKES, 0.0f, true, VGet(0, 0, 0), 1));
-        blocks.push_back(Block(VGet(87, 12, -1), VGet(1, 1, 3), BlockType::SPIKES, 1.0f, false, VGet(0, 0, 0), 1));
-        blocks.push_back(Block(VGet(89, 12, -1), VGet(1, 1, 3), BlockType::SPIKES, 2.0f, false, VGet(0, 0, 0), 1));
+        blocks.push_back(Block(VGet(85, 12, -1), VGet(1, 1, 3), BlockType::SPIKES, 1));
+        blocks.push_back(Block(VGet(87, 12, -1), VGet(1, 1, 3), BlockType::SPIKES, 1, false, VGet(0,0,0), VGet(0,0,0), 1.0f, 1.0f));
+        blocks.push_back(Block(VGet(89, 12, -1), VGet(1, 1, 3), BlockType::SPIKES, 1, false, VGet(0,0,0), VGet(0,0,0), 1.0f, 2.0f));
 
         // Финальная платформа и триггер
         blocks.push_back(Block(VGet(94, 12, -3), VGet(6, 1, 7), BlockType::PLATFORM));
         blocks.push_back(Block(VGet(97, 13, 0), VGet(2, 1, 2), BlockType::TRIGGER));
+        break;
+
+    // ========== BLOCK 2: TIMING & PRECISION (Levels 11-20) ==========
+
+    case 11: // Level 11 - Вводим RETRACTABLE_SPIKES (выдвижные шипы)
+        playerSpawn = VGet(0, 1, 0);
+
+        // Стартовая платформа
+        blocks.push_back(Block(VGet(-5, -1, -5), VGet(8, 1, 8), BlockType::PLATFORM));
+
+        // Первая секция - один выдвижной шип (простой)
+        blocks.push_back(Block(VGet(5, 0, -2), VGet(8, 1, 4), BlockType::PLATFORM));
+        blocks.push_back(Block(VGet(8, 1, -2), VGet(2, 1, 4), BlockType::RETRACTABLE_SPIKES, 0, true, VGet(0,0,0), VGet(0,0,0), 1.0f, 0.0f));
+
+        // Вторая секция - два выдвижных шипа со сдвигом фаз
+        blocks.push_back(Block(VGet(15, 1, -2), VGet(10, 1, 4), BlockType::PLATFORM));
+        blocks.push_back(Block(VGet(17, 2, -2), VGet(2, 1, 4), BlockType::RETRACTABLE_SPIKES, 0, true, VGet(0,0,0), VGet(0,0,0), 1.0f, 0.0f));
+        blocks.push_back(Block(VGet(21, 2, -2), VGet(2, 1, 4), BlockType::RETRACTABLE_SPIKES, 0, false, VGet(0,0,0), VGet(0,0,0), 1.0f, 2.0f)); // Сдвиг фазы
+
+        // Финал
+        blocks.push_back(Block(VGet(27, 2, -3), VGet(5, 1, 6), BlockType::PLATFORM));
+        blocks.push_back(Block(VGet(29, 3, 0), VGet(2, 1, 2), BlockType::TRIGGER));
+        break;
+
+    case 12: // Level 12 - Вводим CRUMBLING platforms (рассыпающиеся)
+        playerSpawn = VGet(0, 1, 0);
+
+        // Стартовая платформа
+        blocks.push_back(Block(VGet(-5, -1, -5), VGet(8, 1, 8), BlockType::PLATFORM));
+
+        // Прыжки по рассыпающимся платформам - нужно быстро бежать!
+        blocks.push_back(Block(VGet(5, 1, 0), VGet(3, 1, 3), BlockType::CRUMBLING));
+        blocks.push_back(Block(VGet(10, 2, 0), VGet(3, 1, 3), BlockType::CRUMBLING));
+        blocks.push_back(Block(VGet(15, 3, 0), VGet(3, 1, 3), BlockType::CRUMBLING));
+        blocks.push_back(Block(VGet(20, 4, 0), VGet(3, 1, 3), BlockType::CRUMBLING));
+
+        // Безопасная платформа и триггер
+        blocks.push_back(Block(VGet(25, 5, -2), VGet(5, 1, 7), BlockType::PLATFORM));
+        blocks.push_back(Block(VGet(27, 6, 0), VGet(2, 1, 2), BlockType::TRIGGER));
+        break;
+
+    case 13: // Level 13 - Комбо: MOVING платформы + RETRACTABLE_SPIKES
+        playerSpawn = VGet(0, 1, 0);
+
+        // Стартовая платформа
+        blocks.push_back(Block(VGet(-5, -1, -5), VGet(8, 1, 8), BlockType::PLATFORM));
+
+        // Движущаяся платформа над пропастью
+        blocks.push_back(Block(VGet(5, 2, 0), VGet(4, 1, 3), BlockType::MOVING, 0, true, VGet(5, 2, 0), VGet(18, 2, 0)));
+
+        // Целевая платформа с выдвижными шипами - нужно спрыгнуть в правильный момент!
+        blocks.push_back(Block(VGet(20, 2, -2), VGet(10, 1, 6), BlockType::PLATFORM));
+        blocks.push_back(Block(VGet(22, 3, -2), VGet(2, 1, 6), BlockType::RETRACTABLE_SPIKES, 0, true, VGet(0,0,0), VGet(0,0,0), 1.0f, 0.0f));
+        blocks.push_back(Block(VGet(26, 3, -2), VGet(2, 1, 6), BlockType::RETRACTABLE_SPIKES, 0, false, VGet(0,0,0), VGet(0,0,0), 1.0f, 2.0f));
+
+        // Финал
+        blocks.push_back(Block(VGet(32, 3, -1), VGet(5, 1, 5), BlockType::PLATFORM));
+        blocks.push_back(Block(VGet(34, 4, 0), VGet(2, 1, 2), BlockType::TRIGGER));
+        break;
+
+    case 14: // Level 14 - ТРОЛЛИНГ! FAKE_SPIKES (розовые безопасные шипы)
+        playerSpawn = VGet(0, 1, 0);
+
+        // Стартовая платформа
+        blocks.push_back(Block(VGet(-5, -1, -5), VGet(8, 1, 8), BlockType::PLATFORM));
+
+        // Путь выглядит опасным (розовые шипы), но это ФЕЙК!
+        blocks.push_back(Block(VGet(5, 0, -2), VGet(12, 1, 4), BlockType::PLATFORM));
+        blocks.push_back(Block(VGet(7, 1, -2), VGet(2, 1, 4), BlockType::FAKE_SPIKES)); // ФЕЙК - безопасно!
+        blocks.push_back(Block(VGet(10, 1, -2), VGet(2, 1, 4), BlockType::FAKE_SPIKES)); // ФЕЙК
+        blocks.push_back(Block(VGet(13, 1, -2), VGet(2, 1, 4), BlockType::FAKE_SPIKES)); // ФЕЙК
+
+        // А вот "безопасный" обходной путь - на самом деле там НАСТОЯЩИЕ шипы!
+        blocks.push_back(Block(VGet(5, 0, 4), VGet(12, 1, 4), BlockType::PLATFORM));
+        blocks.push_back(Block(VGet(8, 1, 4), VGet(2, 1, 4), BlockType::SPIKES)); // НАСТОЯЩИЕ шипы!
+
+        // Платформа после "опасного" пути (который на самом деле безопасный)
+        blocks.push_back(Block(VGet(19, 1, -3), VGet(5, 1, 6), BlockType::PLATFORM));
+        blocks.push_back(Block(VGet(21, 2, 0), VGet(2, 1, 2), BlockType::TRIGGER));
         break;
 
     default:
@@ -254,6 +333,43 @@ void Level::Draw() const {
             DrawCube3D(block.pos, VAdd(block.pos, block.size),
                 GetColor(255, 100, 255), GetColor(200, 50, 200), TRUE);
             break;
+
+        case BlockType::RETRACTABLE_SPIKES:
+            // Выдвигающиеся шипы - красные когда активны, прозрачные когда спрятаны
+            if (block.isActive) {
+                DrawCube3D(block.pos, VAdd(block.pos, block.size),
+                    GetColor(255, 50, 50), GetColor(200, 0, 0), TRUE);
+            }
+            else {
+                // Полупрозрачные когда спрятаны (показываем что они будут)
+                SetDrawBlendMode(DX_BLENDMODE_ALPHA, 100);
+                DrawCube3D(block.pos, VAdd(block.pos, block.size),
+                    GetColor(150, 150, 150), GetColor(100, 100, 100), TRUE);
+                SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+            }
+            break;
+
+        case BlockType::CRUMBLING:
+            // Рассыпающиеся платформы - жёлто-коричневые
+            if (block.isActive) {
+                // Нормальное состояние
+                DrawCube3D(block.pos, VAdd(block.pos, block.size),
+                    GetColor(200, 150, 50), GetColor(150, 100, 30), TRUE);
+            }
+            else {
+                // Падают/исчезают (полупрозрачные)
+                SetDrawBlendMode(DX_BLENDMODE_ALPHA, 100);
+                DrawCube3D(block.pos, VAdd(block.pos, block.size),
+                    GetColor(200, 150, 50), GetColor(150, 100, 30), TRUE);
+                SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+            }
+            break;
+
+        case BlockType::FAKE_SPIKES:
+            // Фейковые шипы - РОЗОВЫЕ (выглядят опасно, но безопасны)
+            DrawCube3D(block.pos, VAdd(block.pos, block.size),
+                GetColor(255, 100, 150), GetColor(200, 50, 100), TRUE);
+            break;
         }
     }
 }
@@ -267,7 +383,8 @@ bool Level::CheckCollision(VECTOR playerPos, VECTOR playerSize, VECTOR& newPos, 
             block.type == BlockType::INVISIBLE_WALL ||
             block.type == BlockType::MOVING ||
             block.type == BlockType::BUTTON ||
-            (block.type == BlockType::DISAPPEARING && block.isActive)) {
+            (block.type == BlockType::DISAPPEARING && block.isActive) ||
+            (block.type == BlockType::CRUMBLING && block.isActive)) {
 
             if (newPos.x < block.pos.x + block.size.x && newPos.x + playerSize.x > block.pos.x &&
                 newPos.y < block.pos.y + block.size.y && newPos.y + playerSize.y > block.pos.y &&
@@ -315,6 +432,13 @@ bool Level::CheckCollision(VECTOR playerPos, VECTOR playerSize, VECTOR& newPos, 
                                 block.timer = 1.5f;
                             }
                         }
+
+                        // CRUMBLING - платформа начинает рассыпаться при касании
+                        if (block.type == BlockType::CRUMBLING) {
+                            if (block.timer == 0.0f) {
+                                block.timer = 0.5f; // 0.5 сек до падения
+                            }
+                        }
                     }
                     else if (velocity.y > 0) {
                         newPos.y = block.pos.y - playerSize.y;
@@ -360,6 +484,7 @@ bool Level::CheckWinTrigger(VECTOR playerPos, VECTOR playerSize) const {
 
 bool Level::CheckDeadlyTrigger(VECTOR playerPos, VECTOR playerSize) const {
     for (const auto& block : blocks) {
+        // Обычные шипы
         if (block.type == BlockType::SPIKES) {
             if (block.linkId == 1 && !block.isActive) {
                 continue;
@@ -371,6 +496,17 @@ bool Level::CheckDeadlyTrigger(VECTOR playerPos, VECTOR playerSize) const {
                 return true;
             }
         }
+
+        // Выдвижные шипы - убивают только когда активны
+        if (block.type == BlockType::RETRACTABLE_SPIKES && block.isActive) {
+            if (playerPos.x < block.pos.x + block.size.x && playerPos.x + playerSize.x > block.pos.x &&
+                playerPos.y < block.pos.y + block.size.y && playerPos.y + playerSize.y > block.pos.y &&
+                playerPos.z < block.pos.z + block.size.z && playerPos.z + playerSize.z > block.pos.z) {
+                return true;
+            }
+        }
+
+        // FAKE_SPIKES НЕ убивают - это троллинг!
     }
     return false;
 }
@@ -432,6 +568,48 @@ void Level::Update(float deltaTime) {
             }
             else {
                 block.isActive = false;
+            }
+        }
+
+        // RETRACTABLE_SPIKES - выдвигаются/прячутся по таймеру
+        if (block.type == BlockType::RETRACTABLE_SPIKES) {
+            block.timer += deltaTime;
+
+            // Цикл: 2 сек активны (опасны), 2 сек спрятаны (безопасны)
+            float cycleTime = 4.0f;
+            float phase = fmod(block.timer, cycleTime);
+
+            if (phase < 2.0f) {
+                block.isActive = true;  // Шипы выдвинуты - опасно!
+            }
+            else {
+                block.isActive = false; // Шипы спрятаны - можно пройти
+            }
+        }
+
+        // CRUMBLING - платформы рассыпаются после касания игрока
+        // (логика касания будет в CheckCollision)
+        if (block.type == BlockType::CRUMBLING) {
+            // Если платформа начала рассыпаться (timer > 0)
+            if (block.timer > 0.0f) {
+                block.timer -= deltaTime;
+
+                // Через 0.5 сек платформа исчезает
+                if (block.timer <= 0.0f) {
+                    block.isActive = false; // Платформа упала
+                    block.timer = -2.0f;    // Время до возрождения
+                }
+            }
+
+            // Платформа исчезла, ждём возрождения
+            if (block.timer < 0.0f) {
+                block.timer += deltaTime;
+
+                // Через 2 сек платформа возвращается
+                if (block.timer >= 0.0f) {
+                    block.isActive = true;
+                    block.timer = 0.0f;
+                }
             }
         }
     }

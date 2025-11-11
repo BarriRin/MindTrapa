@@ -1,7 +1,7 @@
 ﻿#include "LevelManager.h"
 
 LevelManager::LevelManager()
-    : currentLevelId(1), totalLevels(10), deathCount(0) {
+    : currentLevelId(1), totalLevels(20), deathCount(0) {
     LoadLevel(1);
 }
 

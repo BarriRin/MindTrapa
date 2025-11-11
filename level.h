@@ -2,70 +2,76 @@
 #include "DxLib.h"
 #include <vector>
 
-// �S�y���� �q�|���{���r
+// Типы блоков
 enum class BlockType {
-    PLATFORM = 0,      // �O�q�����~�p�� ���|�p���������}�p
-    TRIGGER = 1,       // �S���y�s�s�u�� ���u���u�����t�p �~�p ���|�u�t�������y�z �������r�u�~��
-    INVISIBLE_WALL = 2,// �N�u�r�y�t�y�}�p�� �����u�~�p (�{���|�|�y�x�y�� �u������, �~�� �~�u �r�y�t�~�p)
-    FAKE_PLATFORM = 3, // �U�p�|�����y�r�p�� ���|�p���������}�p (�r�y�t�~�p, �~�� �{���|�|�y�x�y�y �~�u��)
-    SPIKES = 4,        // �Y�y���� (���q�y�r�p���� �y�s�����{�p)
-    DISAPPEARING = 5,  // �I�����u�x�p�����p�� ���|�p���������}�p (���u���u�x N ���u�{���~�t)
-    MOVING = 6,        // �D�r�y�w�����p������ ���|�p���������}�p
-    BUTTON = 7,        // �K�~�����{�p (�p�{���y�r�y�����u�� ������-����)
-    TELEPORT = 8       // �S�u�|�u��������
+    PLATFORM = 0,      // Обычная платформа
+    TRIGGER = 1,       // Триггер перехода на следующий уровень
+    INVISIBLE_WALL = 2,// Невидимая стена (коллизия есть, но не видна)
+    FAKE_PLATFORM = 3, // Фальшивая платформа (видна, но коллизии нет)
+    SPIKES = 4,        // Шипы (убивают игрока)
+    DISAPPEARING = 5,  // Исчезающая платформа (через N секунд)
+    MOVING = 6,        // Движущаяся платформа
+    BUTTON = 7,        // Кнопка (активирует что-то)
+    TELEPORT = 8,      // Телепорт
+    RETRACTABLE_SPIKES = 9, // Выдвижные шипы (появляются/исчезают по таймеру)
+    CRUMBLING = 10,    // Рассыпающаяся платформа (падает после касания)
+    FAKE_SPIKES = 11   // Фейковые шипы (выглядят опасно, но безопасны)
 };
 
-// �R�������{�������p �q�|���{�p
+// Структура блока
 struct Block {
-    VECTOR pos;         // �S�u�{�����p�� �����x�y���y��
-    VECTOR size;        // �Q�p�x�}�u�� �q�|���{�p
-    BlockType type;     // �S�y�� �q�|���{�p
+    VECTOR pos;         // Текущая позиция
+    VECTOR size;        // Размер блока
+    BlockType type;     // Тип блока
 
-    // �D�������|�~�y���u�|���~���u ���p���p�}�u������ �t�|�� �}�u���p�~�y�{
-    VECTOR originalPos; // �N�p���p�|���~�p�� �����x�y���y�� (�t�|�� �t�r�y�w�����y������ ���|�p���������})
-    VECTOR prevPos;     // �P���u�t���t�����p�� �����x�y���y�� (�t�|�� �r�����y���|�u�~�y�� ���{�����������y)
-    float timer;        // �D�|�� �y�����u�x�p�����y�� �q�|���{���r, ���p�z�}�u�����r
-    bool isActive;      // �D�|�� �{�~�������{, �p�{���y�r�~���� ���|�u�}�u�~�����r
-    VECTOR moveTarget;  // �D�|�� �t�r�y�w�����y������ ���|�p���������} (�{���~�u���~�p�� �������{�p)
-    int linkId;         // �D�|�� ���r���x�p�~�~���� ���|�u�}�u�~�����r (�{�~�����{�p���t�r�u����)
+    // Дополнительные параметры для механик
+    VECTOR originalPos; // Начальная позиция (для движущихся платформ)
+    VECTOR prevPos;     // Предыдущая позиция (для вычисления скорости)
+    float timer;        // Для исчезающих блоков, таймеров
+    bool isActive;      // Для кнопок, активных элементов
+    VECTOR moveTarget;  // Для движущихся платформ (конечная точка)
+    int linkId;         // Для связанных элементов (кнопка↔дверь)
+    float moveSpeed;    // Скорость движения платформы
 
-    Block(VECTOR position, VECTOR blockSize, BlockType blockType,
-        float time = 0.0f, bool active = true, VECTOR target = VGet(0, 0, 0), int link = 0)
-        : pos(position), size(blockSize), type(blockType),
-        originalPos(position), // �H�p�����}�y�~�p�u�} �~�p���p�|���~���� �����x�y���y��!
-        prevPos(position),     // �I�x�~�p���p�|���~�� prevPos = pos
-        timer(time), isActive(active), moveTarget(target), linkId(link) {
-    }
+    // Конструктор с параметрами по умолчанию
+    Block(VECTOR p, VECTOR s, BlockType t, int link = 0, bool active = true,
+          VECTOR moveStart = VGet(0, 0, 0), VECTOR moveEnd = VGet(0, 0, 0),
+          float speed = 1.0f, float tim = 0.0f)
+        : pos(p), size(s), type(t), linkId(link), isActive(active),
+          originalPos(moveStart), moveTarget(moveEnd), moveSpeed(speed), timer(tim),
+          prevPos(p) {}
 };
 
-// �K�|�p���� �������r�~��
+// Класс уровня
 class Level {
 private:
     std::vector<Block> blocks;
     VECTOR playerSpawn;
     int levelId;
 
+    // Загрузка данных уровня из switch-case
+    void LoadLevelData(int id);
+
 public:
     Level(int id);
     ~Level();
 
-    // �O���~���r�~���u �}�u�����t��
-    void LoadLevelData(int id);
-    void Update(float deltaTime); // �O�q�~���r�|�u�~�y�u �}�u���p�~�y�{
     void Draw() const;
+    void Update(float deltaTime);
 
+    // Проверки коллизий и триггеров
     bool CheckCollision(VECTOR playerPos, VECTOR playerSize, VECTOR& newPos, VECTOR& velocity, bool& onGround, VECTOR& platformVelocity);
     bool CheckWinTrigger(VECTOR playerPos, VECTOR playerSize) const;
     bool CheckDeadlyTrigger(VECTOR playerPos, VECTOR playerSize) const;
     bool CheckTeleportTrigger(VECTOR playerPos, VECTOR playerSize, VECTOR& teleportTarget) const;
-    void ActivateButton(VECTOR playerPos, VECTOR playerSize, bool keyPressed);
 
-    // �C�u�����u����
-    VECTOR GetPlayerSpawn() const { return playerSpawn; }
-    int GetId() const { return levelId; }
-    size_t GetBlockCount() const { return blocks.size(); }
     const std::vector<Block>& GetBlocks() const { return blocks; }
+    VECTOR GetPlayerSpawn() const { return playerSpawn; }
+    size_t GetBlockCount() const { return blocks.size(); }
 
-    // �D�|�� �����|�p�t�{�y
-    void PrintDebugInfo() const;
+    // Получить блок по индексу (для активации кнопок)
+    Block* GetBlockByIndex(int index);
+
+    // Активация кнопки
+    void ActivateButton(VECTOR playerPos, VECTOR playerSize, bool keyPressed);
 };
