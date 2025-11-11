@@ -67,12 +67,15 @@ enum class BlockType {
     PLATFORM,           // Normal solid platform
     TRIGGER,            // Level completion trigger
     SPIKES,             // Instant death
-    RETRACTABLE_SPIKES, // Timed spikes
+    RETRACTABLE_SPIKES, // Timed spikes (2s active/2s hidden)
+    CRUMBLING,          // Falls 0.5s after touch, respawns
+    FAKE_SPIKES,        // Trolling - looks deadly but harmless (pink)
     INVISIBLE_WALL,     // Solid but invisible
     FAKE_PLATFORM,      // Looks solid but passthrough
     TELEPORT,           // Portal mechanics
     BUTTON,             // Activates linked objects
-    DISAPPEARING        // Button-controlled or timed
+    DISAPPEARING,       // Button-controlled or timed
+    MOVING              // Oscillates between two points
 };
 ```
 
