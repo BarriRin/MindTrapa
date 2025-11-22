@@ -134,6 +134,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     // Система контроля скорости игры
     float gameSpeed = 1.0f;
 
+    // Debug mode (F3 toggle)
+    bool debugMode = false;
+
     // Измерение реального времени для deltaTime
     int lastFrameTime = GetNowCount();  // Время в миллисекундах
     const float maxDeltaTime = 0.1f;    // Ограничение deltaTime (защита от лагов)
@@ -332,6 +335,18 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
                 teleportCooldown -= effectiveDeltaTime;
             }
 
+            // === F3 - DEBUG MODE TOGGLE ===
+            static bool f3Pressed = false;
+            if (CheckHitKey(KEY_INPUT_F3)) {
+                if (!f3Pressed) {
+                    debugMode = !debugMode;
+                }
+                f3Pressed = true;
+            }
+            else {
+                f3Pressed = false;
+            }
+
             // === УПРАВЛЕНИЕ СКОРОСТЬЮ ИГРЫ ===
             static bool plusPressed = false;
             static bool minusPressed = false;
@@ -393,6 +408,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
             else {
                 zeroPressed = false;
             }
+
+            // === ОБНОВЛЕНИЕ ТАЙМЕРА УРОВНЯ ===
+            levelManager.UpdateTimer(effectiveDeltaTime);
 
             // === УПРАВЛЕНИЕ КАМЕРОЙ МЫШЬЮ ===
             int mouseX, mouseY;
@@ -499,6 +517,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
                 currentLevel->ActivateButton(playerPos, playerSize, activateKeyPressed);
 
                 if (currentLevel->CheckWinTrigger(playerPos, playerSize)) {
+                    levelManager.OnLevelComplete(); // Сохраняем время перед переходом
                     levelManager.NextLevel();
                     playerPos = levelManager.GetCurrentLevel()->GetPlayerSpawn();
                     playerVel = VGet(0, 0, 0);
@@ -586,19 +605,24 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
             DrawCube3D(playerPos, VAdd(playerPos, playerSize),
                 GetColor(100, 255, 100), GetColor(50, 200, 50), TRUE);
 
-            levelManager.DrawLevelInfo();
+            levelManager.DrawLevelInfo(debugMode);
 
-            DrawFormatString(10, 140, GetColor(255, 255, 0), L"Player: X=%.1f Y=%.1f Z=%.1f",
-                playerPos.x, playerPos.y, playerPos.z);
+            // === DEBUG INFO (F3 to toggle) ===
+            if (debugMode) {
+                DrawFormatString(10, 140, GetColor(255, 255, 0), L"Player: X=%.1f Y=%.1f Z=%.1f",
+                    playerPos.x, playerPos.y, playerPos.z);
 
-            unsigned int speedColor = GetColor(100, 255, 100);
-            if (gameSpeed > 1.0f) speedColor = GetColor(255, 200, 100);
-            if (gameSpeed < 1.0f) speedColor = GetColor(100, 200, 255);
-            DrawFormatString(10, 160, speedColor, L"Game Speed: %.2fx ([ ] to change, 0 to reset)", gameSpeed);
+                unsigned int speedColor = GetColor(100, 255, 100);
+                if (gameSpeed > 1.0f) speedColor = GetColor(255, 200, 100);
+                if (gameSpeed < 1.0f) speedColor = GetColor(100, 200, 255);
+                DrawFormatString(10, 160, speedColor, L"Game Speed: %.2fx ([ ] to change, 0 to reset)", gameSpeed);
 
-            // FPS счётчик для отладки
-            int currentFPS = (realDeltaTime > 0.0001f) ? (int)(1.0f / realDeltaTime) : 0;
-            DrawFormatString(10, 180, GetColor(200, 200, 200), L"FPS: %d (deltaTime: %.4fs)", currentFPS, realDeltaTime);
+                // FPS счётчик для отладки
+                int currentFPS = (realDeltaTime > 0.0001f) ? (int)(1.0f / realDeltaTime) : 0;
+                DrawFormatString(10, 180, GetColor(200, 200, 200), L"FPS: %d (deltaTime: %.4fs)", currentFPS, realDeltaTime);
+
+                DrawFormatString(10, 200, GetColor(150, 150, 150), L"[F3] Toggle Debug Info");
+            }
         }
 
         ScreenFlip();

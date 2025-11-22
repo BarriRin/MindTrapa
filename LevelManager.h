@@ -2,6 +2,7 @@
 #pragma once
 #include "Level.h"
 #include <memory>
+#include <map>
 
 class LevelManager {
 private:
@@ -10,25 +11,34 @@ private:
     int totalLevels;
     int deathCount;
 
+    // Ğ¢Ğ°Ğ¹Ğ¼ĞµÑ€ ÑƒÑ€Ğ¾Ğ²Ğ½Ñ
+    float currentLevelTime;
+    std::map<int, float> bestTimes; // Ğ›ÑƒÑ‡ÑˆĞ¸Ğµ Ğ²Ñ€ĞµĞ¼ĞµĞ½Ğ° Ğ´Ğ»Ñ ĞºĞ°Ğ¶Ğ´Ğ¾Ğ³Ğ¾ ÑƒÑ€Ğ¾Ğ²Ğ½Ñ
+
 public:
     LevelManager();
     ~LevelManager();
 
-    // „T„„‚„p„r„|„u„~„y„u „…„‚„€„r„~„‘„}„y
+    // ï¿½Tï¿½ï¿½ï¿½ï¿½ï¿½pï¿½rï¿½|ï¿½uï¿½~ï¿½yï¿½u ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½rï¿½~ï¿½ï¿½ï¿½}ï¿½y
     void LoadLevel(int levelId);
     void NextLevel();
     void RestartLevel();
 
-    // „C„u„„„„„u„‚„
+    // ï¿½Cï¿½uï¿½ï¿½ï¿½ï¿½ï¿½uï¿½ï¿½ï¿½ï¿½
     Level* GetCurrentLevel() const { return currentLevel.get(); }
     int GetCurrentLevelId() const { return currentLevelId; }
     int GetTotalLevels() const { return totalLevels; }
     int GetDeathCount() const { return deathCount; }
+    float GetCurrentLevelTime() const { return currentLevelTime; }
+    float GetBestTime(int levelId) const;
+    bool HasBestTime(int levelId) const;
 
-    // „I„s„‚„€„r„„u „ƒ„€„q„„„„y„‘
+    // ï¿½Iï¿½sï¿½ï¿½ï¿½ï¿½ï¿½rï¿½ï¿½ï¿½u ï¿½ï¿½ï¿½ï¿½ï¿½qï¿½ï¿½ï¿½ï¿½ï¿½yï¿½ï¿½
     void OnPlayerDeath();
     bool IsLastLevel() const;
+    void OnLevelComplete(); // Ğ’Ñ‹Ğ·Ñ‹Ğ²Ğ°ĞµÑ‚ÑÑ Ğ¿Ñ€Ğ¸ Ğ¿Ñ€Ğ¾Ñ…Ğ¾Ğ¶Ğ´ĞµĞ½Ğ¸Ğ¸ ÑƒÑ€Ğ¾Ğ²Ğ½Ñ
+    void UpdateTimer(float deltaTime); // ĞĞ±Ğ½Ğ¾Ğ²Ğ»ĞµĞ½Ğ¸Ğµ Ñ‚Ğ°Ğ¹Ğ¼ĞµÑ€Ğ°
 
-    // „D„|„‘ UI
-    void DrawLevelInfo() const;
+    // ï¿½Dï¿½|ï¿½ï¿½ UI
+    void DrawLevelInfo(bool debugMode = false) const;
 };
