@@ -256,6 +256,151 @@ void Level::LoadLevelData(int id) {
         blocks.push_back(Block(VGet(21, 2, 0), VGet(2, 1, 2), BlockType::TRIGGER));
         break;
 
+    case 15: // Level 15 - CRUMBLING платформы + точный тайминг (паркур)
+        playerSpawn = VGet(0, 1, 0);
+
+        // Стартовая платформа
+        blocks.push_back(Block(VGet(-3, -1, -3), VGet(6, 1, 6), BlockType::PLATFORM));
+
+        // Серия CRUMBLING платформ - нужно быстро пробежать
+        blocks.push_back(Block(VGet(5, 1, -1), VGet(3, 1, 3), BlockType::CRUMBLING));
+        blocks.push_back(Block(VGet(9, 1, -1), VGet(3, 1, 3), BlockType::CRUMBLING));
+        blocks.push_back(Block(VGet(13, 1, -1), VGet(3, 1, 3), BlockType::CRUMBLING));
+        blocks.push_back(Block(VGet(17, 1, -1), VGet(3, 1, 3), BlockType::CRUMBLING));
+
+        // Поворот - CRUMBLING платформы в сторону
+        blocks.push_back(Block(VGet(20, 2, 3), VGet(3, 1, 3), BlockType::CRUMBLING));
+        blocks.push_back(Block(VGet(20, 3, 7), VGet(3, 1, 3), BlockType::CRUMBLING));
+
+        // Финал
+        blocks.push_back(Block(VGet(17, 4, 10), VGet(5, 1, 5), BlockType::PLATFORM));
+        blocks.push_back(Block(VGet(19, 5, 12), VGet(2, 1, 2), BlockType::TRIGGER));
+        break;
+
+    case 16: // Level 16 - INVISIBLE_WALL лабиринт + RETRACTABLE_SPIKES
+        playerSpawn = VGet(0, 1, 0);
+
+        // Стартовая платформа
+        blocks.push_back(Block(VGet(-5, -1, -5), VGet(10, 1, 20), BlockType::PLATFORM));
+
+        // Кажется, что можно идти прямо, но невидимые стены блокируют
+        blocks.push_back(Block(VGet(0, 0, 0), VGet(1, 5, 5), BlockType::INVISIBLE_WALL)); // Блокирует прямой путь
+
+        // Нужно обойти слева
+        blocks.push_back(Block(VGet(-4, 0, 7), VGet(8, 1, 4), BlockType::PLATFORM));
+        blocks.push_back(Block(VGet(-2, 1, 8), VGet(2, 1, 2), BlockType::RETRACTABLE_SPIKES, 0, true));
+
+        // Ещё одна невидимая стена справа
+        blocks.push_back(Block(VGet(2, 0, 10), VGet(1, 5, 4), BlockType::INVISIBLE_WALL));
+
+        // Правильный путь через середину
+        blocks.push_back(Block(VGet(-2, 0, 13), VGet(6, 1, 6), BlockType::PLATFORM));
+        blocks.push_back(Block(VGet(0, 1, 15), VGet(2, 1, 2), BlockType::TRIGGER));
+        break;
+
+    case 17: // Level 17 - MOVING платформы над пропастью + CRUMBLING финал
+        playerSpawn = VGet(0, 1, 0);
+
+        // Старт
+        blocks.push_back(Block(VGet(-3, -1, -3), VGet(6, 1, 6), BlockType::PLATFORM));
+
+        // Первая движущаяся платформа (горизонтально)
+        blocks.push_back(Block(VGet(5, 2, -1), VGet(4, 1, 4), BlockType::MOVING, 0, true,
+            VGet(5, 2, -1), VGet(12, 2, -1), 2.0f));
+
+        // Вторая движущаяся платформа (вертикально)
+        blocks.push_back(Block(VGet(16, 3, -1), VGet(4, 1, 4), BlockType::MOVING, 0, true,
+            VGet(16, 3, -1), VGet(16, 7, -1), 1.5f));
+
+        // Платформа с CRUMBLING финалом
+        blocks.push_back(Block(VGet(22, 7, -2), VGet(6, 1, 6), BlockType::PLATFORM));
+        blocks.push_back(Block(VGet(29, 7, -1), VGet(3, 1, 3), BlockType::CRUMBLING));
+        blocks.push_back(Block(VGet(33, 7, -1), VGet(3, 1, 3), BlockType::CRUMBLING));
+
+        // Финал
+        blocks.push_back(Block(VGet(37, 7, -2), VGet(5, 1, 5), BlockType::PLATFORM));
+        blocks.push_back(Block(VGet(39, 8, 0), VGet(2, 1, 2), BlockType::TRIGGER));
+        break;
+
+    case 18: // Level 18 - BUTTON + DISAPPEARING комбо с RETRACTABLE_SPIKES
+        playerSpawn = VGet(0, 1, 0);
+
+        // Старт
+        blocks.push_back(Block(VGet(-3, -1, -3), VGet(6, 1, 6), BlockType::PLATFORM));
+
+        // Кнопка на платформе
+        blocks.push_back(Block(VGet(5, 0, -2), VGet(5, 1, 5), BlockType::PLATFORM));
+        blocks.push_back(Block(VGet(7, 1, 0), VGet(1, 1, 1), BlockType::BUTTON, 1));
+
+        // DISAPPEARING платформа активируется кнопкой
+        blocks.push_back(Block(VGet(12, 2, -1), VGet(5, 1, 4), BlockType::DISAPPEARING, 1, false));
+
+        // Путь через исчезающую платформу с RETRACTABLE_SPIKES
+        blocks.push_back(Block(VGet(13, 3, 0), VGet(2, 1, 2), BlockType::RETRACTABLE_SPIKES, 0, true));
+
+        // Финал
+        blocks.push_back(Block(VGet(19, 2, -2), VGet(5, 1, 5), BlockType::PLATFORM));
+        blocks.push_back(Block(VGet(21, 3, 0), VGet(2, 1, 2), BlockType::TRIGGER));
+        break;
+
+    case 19: // Level 19 - Комплексный троллинг: FAKE_PLATFORM + FAKE_SPIKES
+        playerSpawn = VGet(0, 1, 0);
+
+        // Старт
+        blocks.push_back(Block(VGet(-4, -1, -4), VGet(7, 1, 7), BlockType::PLATFORM));
+
+        // Выглядит как безопасная платформа, но это FAKE_PLATFORM!
+        blocks.push_back(Block(VGet(5, 0, -2), VGet(8, 1, 5), BlockType::FAKE_PLATFORM));
+        blocks.push_back(Block(VGet(7, 1, 0), VGet(2, 1, 2), BlockType::SPIKES)); // Шипы под фейк-платформой
+
+        // Настоящий путь - через "опасные" розовые шипы (FAKE_SPIKES)
+        blocks.push_back(Block(VGet(5, -1, 5), VGet(8, 1, 5), BlockType::PLATFORM));
+        blocks.push_back(Block(VGet(7, 0, 6), VGet(3, 1, 3), BlockType::FAKE_SPIKES)); // Безопасно!
+
+        // Вторая ловушка
+        blocks.push_back(Block(VGet(15, 0, 5), VGet(6, 1, 5), BlockType::FAKE_PLATFORM));
+        blocks.push_back(Block(VGet(15, 0, -2), VGet(6, 1, 5), BlockType::PLATFORM)); // Настоящая платформа
+
+        // Финал с CRUMBLING
+        blocks.push_back(Block(VGet(23, 1, -1), VGet(3, 1, 3), BlockType::CRUMBLING));
+        blocks.push_back(Block(VGet(27, 1, -2), VGet(5, 1, 5), BlockType::PLATFORM));
+        blocks.push_back(Block(VGet(29, 2, 0), VGet(2, 1, 2), BlockType::TRIGGER));
+        break;
+
+    case 20: // Level 20 - ФИНАЛ Block 2: Все механики вместе!
+        playerSpawn = VGet(0, 1, 0);
+
+        // Старт
+        blocks.push_back(Block(VGet(-4, -1, -4), VGet(7, 1, 7), BlockType::PLATFORM));
+
+        // Секция 1: CRUMBLING быстрый старт
+        blocks.push_back(Block(VGet(5, 1, -2), VGet(3, 1, 4), BlockType::CRUMBLING));
+        blocks.push_back(Block(VGet(9, 1, -2), VGet(3, 1, 4), BlockType::CRUMBLING));
+
+        // Секция 2: RETRACTABLE_SPIKES разнофазные
+        blocks.push_back(Block(VGet(14, 1, -3), VGet(8, 1, 6), BlockType::PLATFORM));
+        blocks.push_back(Block(VGet(16, 2, -2), VGet(2, 1, 4), BlockType::RETRACTABLE_SPIKES, 0, true));
+        blocks.push_back(Block(VGet(19, 2, -2), VGet(2, 1, 4), BlockType::RETRACTABLE_SPIKES, 0, false));
+
+        // Секция 3: MOVING платформа над пропастью
+        blocks.push_back(Block(VGet(24, 3, -1), VGet(4, 1, 4), BlockType::MOVING, 0, true,
+            VGet(24, 3, -1), VGet(32, 3, -1), 2.5f));
+
+        // Секция 4: FAKE_SPIKES троллинг
+        blocks.push_back(Block(VGet(34, 3, -3), VGet(6, 1, 6), BlockType::PLATFORM));
+        blocks.push_back(Block(VGet(36, 4, -2), VGet(2, 1, 4), BlockType::FAKE_SPIKES)); // Безопасно!
+
+        // Секция 5: BUTTON + DISAPPEARING
+        blocks.push_back(Block(VGet(42, 3, -2), VGet(5, 1, 5), BlockType::PLATFORM));
+        blocks.push_back(Block(VGet(44, 4, 0), VGet(1, 1, 1), BlockType::BUTTON, 1));
+        blocks.push_back(Block(VGet(49, 5, -1), VGet(5, 1, 4), BlockType::DISAPPEARING, 1, false));
+
+        // Финал: CRUMBLING + прыжок к триггеру
+        blocks.push_back(Block(VGet(56, 5, -1), VGet(3, 1, 3), BlockType::CRUMBLING));
+        blocks.push_back(Block(VGet(60, 5, -2), VGet(5, 1, 5), BlockType::PLATFORM));
+        blocks.push_back(Block(VGet(62, 6, 0), VGet(2, 1, 2), BlockType::TRIGGER));
+        break;
+
     default:
         playerSpawn = VGet(0, 1, 0);
         blocks.push_back(Block(VGet(-3, -1, -3), VGet(6, 1, 6), BlockType::PLATFORM));
