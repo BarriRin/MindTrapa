@@ -1,6 +1,7 @@
 ﻿#include "DxLib.h"
 #include "LevelManager.h"
 #include "Menu.h"
+#include "ModelManager.h"
 #include <cmath>
 #include <random>
 
@@ -100,9 +101,23 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     SetupCamera_Perspective(60.0f * DX_PI_F / 180.0f);
     SetCameraNearFar(0.1f, 1000.0f);
 
+    // Инициализация ModelManager
+    ModelManager& modelMgr = ModelManager::GetInstance();
+    modelMgr.Initialize();
+
+    // TODO: Загрузка моделей (когда будут готовы)
+    // modelMgr.LoadModel(ModelID::PLATFORM, "platform.mqo", 1.0f);
+    // modelMgr.LoadModel(ModelID::TRIGGER, "trigger.mqo", 1.0f);
+    // ...
+
+    // TODO: Загрузка скайбоксов (когда будут готовы)
+    // modelMgr.LoadSkybox(0, "block0_mars.mqo", 1000.0f);   // Block 1 (Mars)
+    // modelMgr.LoadSkybox(1, "block1_moon.mqo", 1000.0f);   // Block 2 (Moon)
+    // ...
+
     // Инициализация игры
     LevelManager levelManager;
-    Menu menu(20); // 20 уровней - Block 1 (1-10) + Block 2 (11-20)
+    Menu menu(30); // 30 уровней - Block 1 (1-10) + Block 2 (11-20) + Block 3 (21-30)
 
     // Генерируем звёзды для космического фона
     std::vector<Star> stars = GenerateStars(500, 400.0f);
@@ -483,15 +498,21 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
             }
 
             // === ФИЗИКА ===
-            // Применяем гравитацию (нормализуем к 60 FPS)
-            playerVel.y += gravity * (effectiveDeltaTime * 60.0f);
+            // Проверяем гравитационные зоны (Block 3)
+            Level* currentLevel = levelManager.GetCurrentLevel();
+            float gravityMultiplier = 1.0f;
+            if (currentLevel) {
+                gravityMultiplier = currentLevel->CheckGravityZone(playerPos, playerSize);
+            }
+
+            // Применяем гравитацию с множителем (нормализуем к 60 FPS)
+            playerVel.y += gravity * gravityMultiplier * (effectiveDeltaTime * 60.0f);
 
             // Применяем вертикальную скорость (с учётом deltaTime)
             VECTOR verticalMove = VGet(0, playerVel.y * (effectiveDeltaTime * 60.0f), 0);
             VECTOR newPos = VAdd(playerPos, VAdd(move, verticalMove));
 
             // === КОЛЛИЗИИ ===
-            Level* currentLevel = levelManager.GetCurrentLevel();
             if (currentLevel) {
                 currentLevel->Update(effectiveDeltaTime);
 
@@ -629,6 +650,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     }
 
 END_GAME:
+    // Очистка ModelManager
+    modelMgr.Cleanup();
+
     DxLib_End();
     return 0;
 }

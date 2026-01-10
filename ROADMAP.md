@@ -1,163 +1,137 @@
 # Development Roadmap
 
-## Current Version: Alpha 0.1
-**Completed**: 6/100 levels, 9/50+ mechanics
+## Current Version: Alpha 0.3
+**Completed**: 20/50 levels (40%), 12 mechanics
+**Current Focus**: Block 3 - Gravity & Blades (Levels 21-30)
 
 ---
 
-## Phase 1: Core Gameplay (Levels 1-10)
-**Goal**: Complete first block with all basic mechanics
+## ✅ Phase 1: Block 1 - Basics (Levels 1-10) - COMPLETE
+**Status**: ✅ 100% Complete
 
-### Sprint 1: Levels 7-10 ⏳ IN PROGRESS
-- [ ] Level 7: Moving platforms introduction
-- [ ] Level 8: Timed disappearing platforms
-- [ ] Level 9: Combination - buttons + teleports
-- [ ] Level 10: Mini-boss level (combines all block 1 mechanics)
+### Implemented Mechanics:
+- ✅ Basic movement and jumps
+- ✅ Teleports
+- ✅ Buttons and doors
+- ✅ Moving platforms
+- ✅ Invisible walls
+- ✅ Static spikes
 
-**Estimated Time**: 2-3 sessions
-**Priority**: HIGH
+**Result**: 10 levels introducing core platforming concepts
+
+---
+
+## ✅ Phase 2: Block 2 - Timing & Precision (Levels 11-20) - COMPLETE
+**Status**: ✅ 100% Complete
+
+### Implemented Mechanics:
+- ✅ Retractable spikes (timed danger)
+- ✅ Crumbling platforms (fall after touch)
+- ✅ Fake spikes (pink, harmless trolling)
+- ✅ Combination challenges
+
+**Result**: 10 levels focused on timing and precision gameplay
+
+---
+
+## ⏳ Phase 3: Block 3 - Gravity & Blades (Levels 21-30) - IN PROGRESS
+**Theme**: Jupiter (high gravity, turbulent atmosphere)
+**Goal**: Introduce gravity manipulation and moving hazards
+
+### New Mechanics to Implement:
+- [ ] **Gravity Zones**:
+  - Low gravity (floaty jumps, slow fall)
+  - High gravity (heavy jumps, fast fall)
+  - Reverse gravity (walk on ceiling)
+  - Transition zones (gradual gravity change)
+
+- [ ] **Pendulum Blades**:
+  - Swinging axe/blade obstacles
+  - Predictable timing (sine wave motion)
+  - Various speeds and ranges
+  - Deadly on contact
+
+### Level Progression (21-30):
+- [ ] Level 21: Introduce low gravity (tutorial)
+- [ ] Level 22: Introduce high gravity
+- [ ] Level 23: Introduce pendulum blades (simple)
+- [ ] Level 24: Combine gravity + blades
+- [ ] Level 25: Reverse gravity introduction
+- [ ] Level 26: Complex pendulum patterns
+- [ ] Level 27: Multi-gravity zones + blades
+- [ ] Level 28: Trolling with gravity (unexpected switches)
+- [ ] Level 29: Blade gauntlet + gravity puzzle
+- [ ] Level 30: Block 3 finale (all mechanics combined)
 
 ### Technical Tasks:
-- [ ] Implement moving platform logic in `Level::Update()`
-- [ ] Add timer system for disappearing platforms
-- [ ] Create platform animation system
-- [ ] Polish level designs based on playtesting
+- [ ] Add `GRAVITY_ZONE` and `PENDULUM_BLADE` to BlockType enum
+- [ ] Implement gravity modifier system in main.cpp physics
+- [ ] Add pendulum animation using timer and sin/cos
+- [ ] Implement blade collision detection
+- [ ] Visual indicators for gravity zones (particles?)
+- [ ] Sound effects (whoosh for blades, gravity shift sound)
+
+**Estimated Time**: 4-5 sessions
+**Priority**: HIGH 🔥
 
 ---
 
-## Phase 2: Menu and Polish
-**Goal**: Add basic UI and improve UX
+## Phase 4: Block 4 (Levels 31-40) - TO BE DESIGNED
+**Theme**: TBD
+**Goal**: New unique mechanic set
 
-### Sprint 2: Main Menu
-- [ ] Create GameState enum (MENU, PLAYING, PAUSED)
-- [ ] Main menu screen with options:
-  - Start Game
-  - Level Select
-  - Exit
-- [ ] Pause menu (ESC)
-- [ ] Level selection screen (unlocks as you progress)
+### Ideas Under Consideration:
+- Portal mechanics 2.0 (momentum-based)
+- Phase shifting (two dimensions)
+- Laser/beam puzzles
+- Conveyor belts and wind
+- Time manipulation
 
-### Sprint 3: Visual Polish
-- [ ] Add particle effects (death, teleport, button press)
-- [ ] Improve camera smoothing
-- [ ] Add screen shake on death
-- [ ] Better lighting/shading
+**Status**: Design phase
+**Priority**: MEDIUM
 
+---
+
+## Phase 5: Block 5 - Final Challenge (Levels 41-50)
+**Theme**: The Gauntlet - Ultimate Test
+**Goal**: Combine ALL mechanics from blocks 1-4
+
+### Concept:
+- Progressive difficulty curve
+- Each level uses mechanics from multiple blocks
+- Level 50: Epic finale combining everything
+- Secret/bonus challenges
+
+**Status**: Future planning
+**Priority**: LOW
+
+---
+
+## Phase 6: Polish and Audio
+**Goal**: Make game feel professional
+
+### UI/UX Improvements:
+- [x] Main menu system
+- [x] Pause menu
+- [x] Level select
+- [ ] Settings menu (volume, controls)
+- [ ] Tutorial tooltips
+- [ ] Death counter display
+
+### Audio:
+- [ ] Sound effects (jump, death, teleport, etc.)
+- [ ] Background music per block
+- [ ] Volume controls
+- [ ] Audio manager class
+
+### Visual Polish:
+- [ ] Particle effects (death, teleport)
+- [ ] Screen shake
+- [ ] Better camera smoothing
+- [ ] Lighting improvements
+
+**Priority**: MEDIUM
 **Estimated Time**: 3-4 sessions
-**Priority**: MEDIUM
-
----
-
-## Phase 3: Content Expansion (Levels 11-30)
-**Goal**: Add second and third blocks
-
-### Block 2: Deadly Obstacles (Levels 11-20)
-**Theme**: Timing and precision
-
-- [ ] Spike traps with warning indicators
-- [ ] Swinging axes
-- [ ] Crushing walls
-- [ ] Spike sequences (memorization)
-- [ ] Fake spike sounds (trolling)
-
-### Block 3: Puzzle Elements (Levels 21-30)
-**Theme**: Logic and problem-solving
-
-- [ ] Button sequence puzzles
-- [ ] Multi-button gates
-- [ ] Timed doors
-- [ ] Weight-based pressure plates
-- [ ] Mirror puzzles (buttons on both sides)
-
-**Estimated Time**: 6-8 sessions
-**Priority**: MEDIUM
-
----
-
-## Phase 4: Advanced Mechanics (Levels 31-50)
-
-### Block 4: Teleport Chaos (31-40)
-- [ ] Random teleports
-- [ ] Teleport chains (A→B→C→D)
-- [ ] One-way teleports
-- [ ] Fake teleports (look real but do nothing)
-- [ ] Teleport mazes
-
-### Block 5: Control Inversion (41-50)
-- [ ] WASD inversion toggle
-- [ ] Mouse inversion
-- [ ] Gravity inversion (ceiling walking)
-- [ ] Random inversion every N seconds
-- [ ] Progressive inversion (gradually increases)
-
-**Estimated Time**: 8-10 sessions
-**Priority**: LOW
-
----
-
-## Phase 5: Audio and Juice
-**Goal**: Make game feel alive
-
-### Sound Effects:
-- [ ] Jump sound
-- [ ] Landing sound
-- [ ] Death sound (funny/trolling)
-- [ ] Teleport whoosh
-- [ ] Button click
-- [ ] Spike trigger
-- [ ] Level complete jingle
-
-### Music:
-- [ ] Menu music (calm, mysterious)
-- [ ] Gameplay music (upbeat, slightly tense)
-- [ ] Boss level music (intense)
-- [ ] Victory fanfare
-
-### Implementation:
-- [ ] Add audio manager class
-- [ ] Use DxLib audio functions
-- [ ] Volume controls in settings
-
-**Estimated Time**: 2-3 sessions
-**Priority**: MEDIUM
-
----
-
-## Phase 6: Content Completion (Levels 51-100)
-
-### Block 6: Visual Deception (51-60)
-- [ ] Extensive use of fake platforms
-- [ ] Fake walls
-- [ ] Optical illusions
-- [ ] Flickering visibility
-
-### Block 7: Time Mechanics (61-70)
-- [ ] Slow-motion zones
-- [ ] Fast-forward zones
-- [ ] Time-limited platforms
-- [ ] Rewind mechanic (advanced)
-
-### Block 8: Physics Chaos (71-80)
-- [ ] Variable gravity zones
-- [ ] Wind/conveyor belts
-- [ ] Bouncy platforms
-- [ ] Ice physics
-
-### Block 9: Psychological Trolling (81-90)
-- [ ] Fake win conditions
-- [ ] Maze levels
-- [ ] Multiple fake exits
-- [ ] Backwards progression
-
-### Block 10: Final Challenge (91-100)
-- [ ] Combines all mechanics
-- [ ] Speed challenges
-- [ ] Memory challenges
-- [ ] Hidden true ending
-- [ ] Secret levels
-
-**Estimated Time**: 15-20 sessions
-**Priority**: LOW
 
 ---
 

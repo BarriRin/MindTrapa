@@ -4,13 +4,12 @@ A 3D puzzle platformer inspired by levelDEVIL, designed to troll and challenge p
 
 ## 🎮 Game Concept
 
-100 levels divided into 10 blocks (10 levels each), where each block introduces new trolling mechanics:
-- Block 1 (Levels 1-10): Basic jumps and movement
-- Block 2 (Levels 11-20): Deadly spikes and traps
-- Block 3 (Levels 21-30): Buttons and mechanisms
-- Block 4 (Levels 31-40): Teleportation chaos
-- Block 5 (Levels 41-50): Inverted controls
-- ...and more!
+50 levels divided into 5 blocks (10 levels each), where each block introduces new trolling mechanics:
+- **Block 1** (Levels 1-10): **Basics** - Movement, jumps, teleports ✅ COMPLETE
+- **Block 2** (Levels 11-20): **Timing & Precision** - Retractable spikes, crumbling platforms ✅ COMPLETE
+- **Block 3** (Levels 21-30): **Gravity & Blades** - Gravity zones, pendulum blades ⏳ IN PROGRESS
+- **Block 4** (Levels 31-40): **TBD** - To be designed
+- **Block 5** (Levels 41-50): **Final Challenge** - Combines all mechanics
 
 ## 🛠️ Tech Stack
 
@@ -21,20 +20,25 @@ A 3D puzzle platformer inspired by levelDEVIL, designed to troll and challenge p
 
 ## 🎯 Current Status
 
-**Version**: Alpha 0.1  
-**Levels**: 6/100 implemented  
-**Mechanics**: 9 block types implemented
+**Version**: Alpha 0.3
+**Levels**: 20/50 implemented (40% complete! 🎉)
+**Mechanics**: 12 block types implemented
 
 ### Working Features:
 - ✅ 3D platformer movement (WASD + mouse camera)
 - ✅ Jump mechanics (Space)
 - ✅ Collision system (all axes)
 - ✅ Death counter and level restart (R)
-- ✅ Spikes (instant death)
+- ✅ Multiple spike types (static, retractable, fake)
 - ✅ Invisible walls
 - ✅ Teleports (portal mechanics)
 - ✅ Buttons and doors (E to activate)
-- ✅ Level progression system
+- ✅ Moving platforms with player physics
+- ✅ Crumbling platforms (fall after touch)
+- ✅ Disappearing platforms (timed)
+- ✅ Level progression system with timer
+- ✅ Main menu and pause system
+- ✅ ModelManager for 3D models/skyboxes (ready for assets)
 
 ## 🚀 How to Build
 
@@ -68,15 +72,20 @@ MindTrapa/
 
 ```cpp
 enum class BlockType {
-    PLATFORM,         // Normal solid platform
-    TRIGGER,          // Level completion trigger
-    INVISIBLE_WALL,   // Invisible but solid wall
-    FAKE_PLATFORM,    // Looks solid but you fall through
-    SPIKES,           // Instant death
-    DISAPPEARING,     // Platform that appears/disappears
-    MOVING,           // Moving platform (future)
-    BUTTON,           // Activatable button (E key)
-    TELEPORT          // Portal to another location
+    PLATFORM,            // Normal solid platform
+    TRIGGER,             // Level completion trigger
+    INVISIBLE_WALL,      // Invisible but solid wall
+    FAKE_PLATFORM,       // Looks solid but you fall through
+    SPIKES,              // Instant death (static or timed)
+    DISAPPEARING,        // Platform that appears/disappears
+    MOVING,              // Moving platform
+    BUTTON,              // Activatable button (E key)
+    TELEPORT,            // Portal to another location
+    RETRACTABLE_SPIKES,  // Spikes that retract on timer (Block 2)
+    CRUMBLING,           // Falls after player touches (Block 2)
+    FAKE_SPIKES,         // Looks deadly but harmless (trolling!)
+    GRAVITY_ZONE,        // Changes gravity (Block 3) - COMING SOON
+    PENDULUM_BLADE       // Swinging blade trap (Block 3) - COMING SOON
 };
 ```
 
@@ -84,11 +93,17 @@ enum class BlockType {
 
 See [ROADMAP.md](ROADMAP.md) for detailed development plan.
 
-Short-term:
-- [ ] Add levels 7-10 (complete first block)
-- [ ] Implement disappearing platforms with timer
-- [ ] Add moving platforms
-- [ ] Create simple menu
+**Current Focus** (Block 3):
+- [ ] Implement gravity zones (low/high/reverse gravity)
+- [ ] Implement pendulum blade mechanics
+- [ ] Create levels 21-30
+- [ ] Find/create Jupiter-themed skybox
+
+**Next Steps**:
+- [ ] Block 4 design (levels 31-40)
+- [ ] Block 5 final challenge (levels 41-50)
+- [ ] Add 3D models and skyboxes
+- [ ] Sound effects and music
 
 ## 🤝 Contributing
 

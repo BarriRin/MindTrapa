@@ -143,6 +143,7 @@
     <ClCompile Include="LevelManager.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Menu.cpp" />
+    <ClCompile Include="ModelManager.cpp" />
     <ClCompile Include="platform.cpp" />
     <ClCompile Include="player.cpp" />
   </ItemGroup>
@@ -153,6 +154,7 @@
     <ClInclude Include="Level.h" />
     <ClInclude Include="LevelManager.h" />
     <ClInclude Include="Menu.h" />
+    <ClInclude Include="ModelManager.h" />
     <ClInclude Include="platform.h" />
     <ClInclude Include="player.h" />
   </ItemGroup>

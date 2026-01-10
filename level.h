@@ -1,6 +1,7 @@
 #pragma once
 #include "DxLib.h"
 #include <vector>
+#include "ModelManager.h"
 
 // Типы блоков
 enum class BlockType {
@@ -13,9 +14,11 @@ enum class BlockType {
     MOVING = 6,        // Движущаяся платформа
     BUTTON = 7,        // Кнопка (активирует что-то)
     TELEPORT = 8,      // Телепорт
-    RETRACTABLE_SPIKES = 9, // Выдвижные шипы (появляются/исчезают по таймеру)
-    CRUMBLING = 10,    // Рассыпающаяся платформа (падает после касания)
-    FAKE_SPIKES = 11   // Фейковые шипы (выглядят опасно, но безопасны)
+    RETRACTABLE_SPIKES = 9, // Выдвижные шипы (появляются/исчезают по таймеру) [Block 2]
+    CRUMBLING = 10,    // Рассыпающаяся платформа (падает после касания) [Block 2]
+    FAKE_SPIKES = 11,  // Фейковые шипы (выглядят опасно, но безопасны) [Block 2]
+    GRAVITY_ZONE = 12, // Зона с изменённой гравитацией [Block 3]
+    PENDULUM_BLADE = 13 // Качающийся топор-маятник (смертелен) [Block 3]
 };
 
 // Структура блока
@@ -33,13 +36,30 @@ struct Block {
     int linkId;         // Для связанных элементов (кнопка↔дверь)
     float moveSpeed;    // Скорость движения платформы
 
+    // Параметры для 3D моделей
+    int modelHandle;    // Handle дублированной модели (-1 если используются примитивы)
+    VECTOR rotation;    // Вращение модели
+    VECTOR modelScale;  // Масштаб модели (отдельно от size для коллизий)
+    bool useModel;      // Использовать модель или примитивы
+
+    // Параметры для Block 3 механик
+    float gravityMultiplier; // Множитель гравитации (для GRAVITY_ZONE): 0.5=low, 2.0=high, -1.0=reverse
+    float swingAngle;        // Текущий угол качания маятника (для PENDULUM_BLADE)
+    float swingSpeed;        // Скорость качания маятника
+    float swingRange;        // Диапазон качания в радианах (например, PI/4 = ±45°)
+    VECTOR pivotPoint;       // Точка подвеса маятника (для PENDULUM_BLADE)
+
     // Конструктор с параметрами по умолчанию
     Block(VECTOR p, VECTOR s, BlockType t, int link = 0, bool active = true,
           VECTOR moveStart = VGet(0, 0, 0), VECTOR moveEnd = VGet(0, 0, 0),
           float speed = 1.0f, float tim = 0.0f)
         : pos(p), size(s), type(t), linkId(link), isActive(active),
-          originalPos(moveStart), moveTarget(moveEnd), moveSpeed(speed), timer(tim),
-          prevPos(p) {}
+          originalPos((t == BlockType::PENDULUM_BLADE) ? p : moveStart),
+          moveTarget(moveEnd), moveSpeed(speed), timer(tim),
+          prevPos(p), modelHandle(-1), rotation(VGet(0, 0, 0)),
+          modelScale(VGet(1, 1, 1)), useModel(false),
+          gravityMultiplier(1.0f), swingAngle(0.0f), swingSpeed(1.0f),
+          swingRange(DX_PI_F / 3.0f), pivotPoint(VGet(0, 0, 0)) {}
 };
 
 // Класс уровня
@@ -48,15 +68,20 @@ private:
     std::vector<Block> blocks;
     VECTOR playerSpawn;
     int levelId;
+    int blockId;        // ID блока уровней (для скайбокса)
 
     // Загрузка данных уровня из switch-case
     void LoadLevelData(int id);
+
+    // Инициализация моделей для блоков
+    void InitializeModels();
 
 public:
     Level(int id);
     ~Level();
 
     void Draw() const;
+    void DrawSkybox(VECTOR cameraPos) const;
     void Update(float deltaTime);
 
     // Проверки коллизий и триггеров
@@ -64,6 +89,9 @@ public:
     bool CheckWinTrigger(VECTOR playerPos, VECTOR playerSize) const;
     bool CheckDeadlyTrigger(VECTOR playerPos, VECTOR playerSize) const;
     bool CheckTeleportTrigger(VECTOR playerPos, VECTOR playerSize, VECTOR& teleportTarget) const;
+
+    // Block 3 механики
+    float CheckGravityZone(VECTOR playerPos, VECTOR playerSize) const; // Возвращает множитель гравитации
 
     const std::vector<Block>& GetBlocks() const { return blocks; }
     VECTOR GetPlayerSpawn() const { return playerSpawn; }

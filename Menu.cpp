@@ -2,7 +2,7 @@
 
 Menu::Menu(int levels)
     : currentState(GameState::MAIN_MENU), selectedButtonIndex(0), totalLevels(levels),
-      selectedBlock(0), unlockedBlocks(2),
+      selectedBlock(0), unlockedBlocks(3),
       mousePressed(false), upPressed(false), downPressed(false),
       enterPressed(false), escPressed(false) {
     stateHistory.clear(); // Начинаем с пустого стека
@@ -137,8 +137,9 @@ void Menu::CreateLevelSelectButtons() {
 
         std::wstring levelText = L"Level " + std::to_wstring(i + 1);
 
-        // Blocks 1-2 have implemented levels (20 total)
-        if (selectedBlock > 2 || i >= totalLevels) {
+        // Check if block is unlocked and level exists
+        int calculatedLevel = (selectedBlock - 1) * 10 + i + 1;
+        if (selectedBlock > unlockedBlocks || calculatedLevel > totalLevels) {
             levelText += L"\n(LOCKED)";
         }
 

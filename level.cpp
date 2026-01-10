@@ -1,10 +1,20 @@
 ﻿#include "Level.h"
 
 Level::Level(int id) : levelId(id) {
+    // Определить ID блока по уровню (10 уровней = 1 блок)
+    blockId = (id - 1) / 10;
+
     LoadLevelData(id);
+    InitializeModels();
 }
 
 Level::~Level() {
+    // Удалить все дублированные модели блоков
+    for (auto& block : blocks) {
+        if (block.modelHandle != -1) {
+            MV1DeleteModel(block.modelHandle);
+        }
+    }
     blocks.clear();
 }
 
@@ -401,6 +411,346 @@ void Level::LoadLevelData(int id) {
         blocks.push_back(Block(VGet(62, 6, 0), VGet(2, 1, 2), BlockType::TRIGGER));
         break;
 
+    // ========== BLOCK 3: GRAVITY & BLADES (Levels 21-30) ==========
+
+    case 21: // Level 21 - Вводим LOW GRAVITY (низкая гравитация)
+        playerSpawn = VGet(0, 1, 0);
+
+        // Стартовая платформа
+        blocks.push_back(Block(VGet(-5, -1, -5), VGet(8, 1, 8), BlockType::PLATFORM));
+
+        // Обычная платформа перед зоной
+        blocks.push_back(Block(VGet(5, 0, -2), VGet(4, 1, 4), BlockType::PLATFORM));
+
+        // Зона с низкой гравитацией (floaty jumps)
+        blocks.push_back(Block(VGet(11, 0, -3), VGet(15, 15, 6), BlockType::GRAVITY_ZONE));
+        blocks.back().gravityMultiplier = 0.3f; // Очень низкая гравитация
+
+        // Платформы в зоне низкой гравитации - нужно контролировать прыжки
+        blocks.push_back(Block(VGet(12, 1, -2), VGet(3, 1, 4), BlockType::PLATFORM));
+        blocks.push_back(Block(VGet(17, 4, -2), VGet(3, 1, 4), BlockType::PLATFORM));
+        blocks.push_back(Block(VGet(22, 7, -2), VGet(3, 1, 4), BlockType::PLATFORM));
+
+        // Выход из зоны и финиш
+        blocks.push_back(Block(VGet(28, 8, -2), VGet(5, 1, 6), BlockType::PLATFORM));
+        blocks.push_back(Block(VGet(30, 9, 0), VGet(2, 1, 2), BlockType::TRIGGER));
+        break;
+
+    case 22: // Level 22 - Вводим HIGH GRAVITY (высокая гравитация)
+        playerSpawn = VGet(0, 1, 0);
+
+        // Стартовая платформа
+        blocks.push_back(Block(VGet(-5, -1, -5), VGet(8, 1, 8), BlockType::PLATFORM));
+
+        // Зона с высокой гравитацией (heavy, fast fall)
+        blocks.push_back(Block(VGet(5, -1, -4), VGet(20, 12, 8), BlockType::GRAVITY_ZONE));
+        blocks.back().gravityMultiplier = 2.5f; // Высокая гравитация
+
+        // Платформы в зоне - прыжки низкие, нужно точно рассчитывать
+        blocks.push_back(Block(VGet(6, 0, -2), VGet(3, 1, 4), BlockType::PLATFORM));
+        blocks.push_back(Block(VGet(10, 0, -2), VGet(3, 1, 4), BlockType::PLATFORM));
+        blocks.push_back(Block(VGet(14, 0, -2), VGet(3, 1, 4), BlockType::PLATFORM));
+        blocks.push_back(Block(VGet(18, 0, -2), VGet(3, 1, 4), BlockType::PLATFORM));
+        blocks.push_back(Block(VGet(22, 1, -2), VGet(3, 1, 4), BlockType::PLATFORM));
+
+        // Финиш
+        blocks.push_back(Block(VGet(27, 2, -3), VGet(5, 1, 6), BlockType::PLATFORM));
+        blocks.push_back(Block(VGet(29, 3, 0), VGet(2, 1, 2), BlockType::TRIGGER));
+        break;
+
+    case 23: // Level 23 - Вводим PENDULUM BLADE (простой маятник)
+        playerSpawn = VGet(0, 1, 0);
+
+        // Стартовая платформа
+        blocks.push_back(Block(VGet(-5, -1, -5), VGet(8, 1, 8), BlockType::PLATFORM));
+
+        // Коридор с одним простым маятником
+        blocks.push_back(Block(VGet(5, 0, -2), VGet(15, 1, 4), BlockType::PLATFORM));
+
+        // Простой маятник посередине - медленный, предсказуемый
+        blocks.push_back(Block(VGet(12, 1, 0), VGet(1.5f, 1.5f, 1.5f), BlockType::PENDULUM_BLADE));
+        blocks.back().pivotPoint = VGet(12, 8, 0);
+        blocks.back().swingSpeed = 1.2f;  // Медленная скорость
+        blocks.back().swingRange = DX_PI_F / 4.0f; // ±45 градусов
+
+        // Финиш
+        blocks.push_back(Block(VGet(22, 1, -3), VGet(5, 1, 6), BlockType::PLATFORM));
+        blocks.push_back(Block(VGet(24, 2, 0), VGet(2, 1, 2), BlockType::TRIGGER));
+        break;
+
+    case 24: // Level 24 - КОМБО: Low Gravity + Pendulum
+        playerSpawn = VGet(0, 1, 0);
+
+        // Старт
+        blocks.push_back(Block(VGet(-4, -1, -4), VGet(7, 1, 7), BlockType::PLATFORM));
+
+        // Зона низкой гравитации
+        blocks.push_back(Block(VGet(5, 0, -3), VGet(25, 18, 6), BlockType::GRAVITY_ZONE));
+        blocks.back().gravityMultiplier = 0.4f;
+
+        // Платформы в зоне
+        blocks.push_back(Block(VGet(6, 1, -2), VGet(3, 1, 4), BlockType::PLATFORM));
+        blocks.push_back(Block(VGet(12, 5, -2), VGet(3, 1, 4), BlockType::PLATFORM));
+
+        // Маятник в зоне низкой гравитации - сложнее контролировать движение
+        blocks.push_back(Block(VGet(15, 3, 0), VGet(1.5f, 1.5f, 1.5f), BlockType::PENDULUM_BLADE));
+        blocks.back().pivotPoint = VGet(15, 12, 0);
+        blocks.back().swingSpeed = 1.5f;
+        blocks.back().swingRange = DX_PI_F / 3.0f;
+
+        blocks.push_back(Block(VGet(18, 8, -2), VGet(3, 1, 4), BlockType::PLATFORM));
+        blocks.push_back(Block(VGet(24, 10, -2), VGet(3, 1, 4), BlockType::PLATFORM));
+
+        // Финиш
+        blocks.push_back(Block(VGet(29, 11, -3), VGet(5, 1, 6), BlockType::PLATFORM));
+        blocks.push_back(Block(VGet(31, 12, 0), VGet(2, 1, 2), BlockType::TRIGGER));
+        break;
+
+    case 25: // Level 25 - REVERSE GRAVITY (обратная гравитация!)
+        playerSpawn = VGet(0, 1, 0);
+
+        // Старт
+        blocks.push_back(Block(VGet(-5, -1, -5), VGet(8, 1, 8), BlockType::PLATFORM));
+
+        // Платформа перед зоной
+        blocks.push_back(Block(VGet(5, 0, -2), VGet(4, 1, 4), BlockType::PLATFORM));
+
+        // Зона с ОБРАТНОЙ гравитацией (walk on ceiling!)
+        blocks.push_back(Block(VGet(11, 0, -3), VGet(18, 18, 6), BlockType::GRAVITY_ZONE));
+        blocks.back().gravityMultiplier = -1.2f; // Обратная гравитация
+
+        // "Потолок" теперь пол - платформы вверху
+        blocks.push_back(Block(VGet(12, 12, -2), VGet(4, 1, 4), BlockType::PLATFORM));
+        blocks.push_back(Block(VGet(17, 12, -2), VGet(4, 1, 4), BlockType::PLATFORM));
+        blocks.push_back(Block(VGet(23, 12, -2), VGet(4, 1, 4), BlockType::PLATFORM));
+
+        // Выход из зоны - вернуться к нормальной гравитации
+        blocks.push_back(Block(VGet(30, 0, -3), VGet(5, 1, 6), BlockType::PLATFORM));
+        blocks.push_back(Block(VGet(32, 1, 0), VGet(2, 1, 2), BlockType::TRIGGER));
+        break;
+
+    case 26: // Level 26 - СЛОЖНЫЕ ПАТТЕРНЫ МАЯТНИКОВ (3 маятника разной скорости)
+        playerSpawn = VGet(0, 1, 0);
+
+        // Старт
+        blocks.push_back(Block(VGet(-5, -1, -5), VGet(8, 1, 8), BlockType::PLATFORM));
+
+        // Длинный коридор с тремя маятниками
+        blocks.push_back(Block(VGet(5, 0, -2), VGet(30, 1, 4), BlockType::PLATFORM));
+
+        // Первый маятник - медленный
+        blocks.push_back(Block(VGet(10, 1, 0), VGet(1.5f, 1.5f, 1.5f), BlockType::PENDULUM_BLADE));
+        blocks.back().pivotPoint = VGet(10, 9, 0);
+        blocks.back().swingSpeed = 1.0f;
+        blocks.back().swingRange = DX_PI_F / 3.0f;
+
+        // Второй маятник - быстрый, другая фаза
+        blocks.push_back(Block(VGet(18, 1, 0), VGet(1.5f, 1.5f, 1.5f), BlockType::PENDULUM_BLADE));
+        blocks.back().pivotPoint = VGet(18, 10, 0);
+        blocks.back().swingSpeed = 2.2f;
+        blocks.back().swingRange = DX_PI_F / 2.5f;
+        blocks.back().timer = 1.5f; // Сдвиг фазы
+
+        // Третий маятник - средняя скорость, широкий размах
+        blocks.push_back(Block(VGet(27, 1, 0), VGet(2.0f, 2.0f, 2.0f), BlockType::PENDULUM_BLADE));
+        blocks.back().pivotPoint = VGet(27, 11, 0);
+        blocks.back().swingSpeed = 1.6f;
+        blocks.back().swingRange = DX_PI_F / 2.2f;
+        blocks.back().timer = 3.0f; // Другая фаза
+
+        // Финиш
+        blocks.push_back(Block(VGet(37, 1, -3), VGet(5, 1, 6), BlockType::PLATFORM));
+        blocks.push_back(Block(VGet(39, 2, 0), VGet(2, 1, 2), BlockType::TRIGGER));
+        break;
+
+    case 27: // Level 27 - МУЛЬТИ-ЗОНЫ ГРАВИТАЦИИ + МАЯТНИКИ
+        playerSpawn = VGet(0, 1, 0);
+
+        // Старт
+        blocks.push_back(Block(VGet(-4, -1, -4), VGet(7, 1, 7), BlockType::PLATFORM));
+
+        // Секция 1: Низкая гравитация + маятник
+        blocks.push_back(Block(VGet(5, 0, -2), VGet(12, 12, 4), BlockType::GRAVITY_ZONE));
+        blocks.back().gravityMultiplier = 0.35f;
+
+        blocks.push_back(Block(VGet(6, 1, -1), VGet(3, 1, 2), BlockType::PLATFORM));
+        blocks.push_back(Block(VGet(10, 1, 0), VGet(1.5f, 1.5f, 1.5f), BlockType::PENDULUM_BLADE));
+        blocks.back().pivotPoint = VGet(10, 10, 0);
+        blocks.back().swingSpeed = 1.4f;
+        blocks.back().swingRange = DX_PI_F / 3.5f;
+
+        blocks.push_back(Block(VGet(13, 6, -1), VGet(3, 1, 2), BlockType::PLATFORM));
+
+        // Секция 2: Высокая гравитация + быстрый маятник
+        blocks.push_back(Block(VGet(18, -1, -2), VGet(12, 8, 4), BlockType::GRAVITY_ZONE));
+        blocks.back().gravityMultiplier = 2.8f;
+
+        blocks.push_back(Block(VGet(19, 0, -1), VGet(3, 1, 2), BlockType::PLATFORM));
+        blocks.push_back(Block(VGet(23, 1, 0), VGet(1.5f, 1.5f, 1.5f), BlockType::PENDULUM_BLADE));
+        blocks.back().pivotPoint = VGet(23, 6, 0);
+        blocks.back().swingSpeed = 2.5f;
+        blocks.back().swingRange = DX_PI_F / 4.0f;
+        blocks.back().timer = 1.0f;
+
+        blocks.push_back(Block(VGet(27, 1, -1), VGet(3, 1, 2), BlockType::PLATFORM));
+
+        // Финиш
+        blocks.push_back(Block(VGet(32, 2, -3), VGet(5, 1, 6), BlockType::PLATFORM));
+        blocks.push_back(Block(VGet(34, 3, 0), VGet(2, 1, 2), BlockType::TRIGGER));
+        break;
+
+    case 28: // Level 28 - ТРОЛЛИНГ С ГРАВИТАЦИЕЙ (неожиданные переключения)
+        playerSpawn = VGet(0, 1, 0);
+
+        // Старт
+        blocks.push_back(Block(VGet(-4, -1, -4), VGet(7, 1, 7), BlockType::PLATFORM));
+
+        // Платформа 1 - кажется нормальной
+        blocks.push_back(Block(VGet(5, 0, -1), VGet(4, 1, 2), BlockType::PLATFORM));
+
+        // ТРОЛЛИНГ: Неожиданная высокая гравитация (прыжок не достанет!)
+        blocks.push_back(Block(VGet(11, 0, -2), VGet(8, 6, 4), BlockType::GRAVITY_ZONE));
+        blocks.back().gravityMultiplier = 3.5f; // Очень высокая!
+
+        // Настоящий путь - сбоку с низкой платформой
+        blocks.push_back(Block(VGet(12, -1, -1), VGet(3, 1, 2), BlockType::PLATFORM));
+        blocks.push_back(Block(VGet(16, -1, -1), VGet(3, 1, 2), BlockType::PLATFORM));
+
+        // Платформа 2
+        blocks.push_back(Block(VGet(21, 0, -2), VGet(4, 1, 4), BlockType::PLATFORM));
+
+        // ТРОЛЛИНГ 2: Кажется, что низкая гравитация, но это ОБРАТНАЯ!
+        blocks.push_back(Block(VGet(27, 0, -2), VGet(10, 12, 4), BlockType::GRAVITY_ZONE));
+        blocks.back().gravityMultiplier = -1.5f; // Обратная!
+
+        // Платформы вверху
+        blocks.push_back(Block(VGet(29, 10, -1), VGet(3, 1, 2), BlockType::PLATFORM));
+        blocks.push_back(Block(VGet(33, 10, -1), VGet(3, 1, 2), BlockType::PLATFORM));
+
+        // Финиш (нормальная зона)
+        blocks.push_back(Block(VGet(39, 0, -3), VGet(5, 1, 6), BlockType::PLATFORM));
+        blocks.push_back(Block(VGet(41, 1, 0), VGet(2, 1, 2), BlockType::TRIGGER));
+        break;
+
+    case 29: // Level 29 - ИСПЫТАНИЕ ЛЕЗВИЙ + ГРАВИТАЦИЯ (сложно!)
+        playerSpawn = VGet(0, 1, 0);
+
+        // Старт
+        blocks.push_back(Block(VGet(-4, -1, -4), VGet(7, 1, 7), BlockType::PLATFORM));
+
+        // Зона низкой гравитации на весь уровень
+        blocks.push_back(Block(VGet(5, 0, -3), VGet(45, 20, 6), BlockType::GRAVITY_ZONE));
+        blocks.back().gravityMultiplier = 0.4f;
+
+        // Серия платформ с маятниками между ними
+        blocks.push_back(Block(VGet(6, 1, -2), VGet(3, 1, 4), BlockType::PLATFORM));
+
+        // Маятник 1
+        blocks.push_back(Block(VGet(11, 2, 0), VGet(1.5f, 1.5f, 1.5f), BlockType::PENDULUM_BLADE));
+        blocks.back().pivotPoint = VGet(11, 12, 0);
+        blocks.back().swingSpeed = 1.8f;
+        blocks.back().swingRange = DX_PI_F / 3.0f;
+
+        blocks.push_back(Block(VGet(14, 4, -2), VGet(3, 1, 4), BlockType::PLATFORM));
+
+        // Маятник 2
+        blocks.push_back(Block(VGet(19, 5, 0), VGet(1.5f, 1.5f, 1.5f), BlockType::PENDULUM_BLADE));
+        blocks.back().pivotPoint = VGet(19, 14, 0);
+        blocks.back().swingSpeed = 2.0f;
+        blocks.back().swingRange = DX_PI_F / 2.5f;
+        blocks.back().timer = 1.2f;
+
+        blocks.push_back(Block(VGet(22, 7, -2), VGet(3, 1, 4), BlockType::PLATFORM));
+
+        // Маятник 3 - крупный и медленный
+        blocks.push_back(Block(VGet(27, 8, 0), VGet(2.0f, 2.0f, 2.0f), BlockType::PENDULUM_BLADE));
+        blocks.back().pivotPoint = VGet(27, 16, 0);
+        blocks.back().swingSpeed = 1.3f;
+        blocks.back().swingRange = DX_PI_F / 2.0f;
+        blocks.back().timer = 2.5f;
+
+        blocks.push_back(Block(VGet(30, 10, -2), VGet(3, 1, 4), BlockType::PLATFORM));
+
+        // Маятник 4 - быстрый финальный
+        blocks.push_back(Block(VGet(35, 11, 0), VGet(1.5f, 1.5f, 1.5f), BlockType::PENDULUM_BLADE));
+        blocks.back().pivotPoint = VGet(35, 18, 0);
+        blocks.back().swingSpeed = 2.4f;
+        blocks.back().swingRange = DX_PI_F / 3.5f;
+
+        // Финиш
+        blocks.push_back(Block(VGet(38, 12, -2), VGet(5, 1, 6), BlockType::PLATFORM));
+        blocks.push_back(Block(VGet(40, 13, 0), VGet(2, 1, 2), BlockType::TRIGGER));
+        break;
+
+    case 30: // Level 30 - ФИНАЛ BLOCK 3: ВСЁ ВМЕСТЕ!
+        playerSpawn = VGet(0, 1, 0);
+
+        // Старт
+        blocks.push_back(Block(VGet(-5, -1, -5), VGet(8, 1, 8), BlockType::PLATFORM));
+
+        // === СЕКЦИЯ 1: Низкая гравитация + маятник ===
+        blocks.push_back(Block(VGet(5, 0, -2), VGet(15, 15, 4), BlockType::GRAVITY_ZONE));
+        blocks.back().gravityMultiplier = 0.35f;
+
+        blocks.push_back(Block(VGet(6, 1, -1), VGet(3, 1, 2), BlockType::PLATFORM));
+        blocks.push_back(Block(VGet(11, 3, 0), VGet(1.5f, 1.5f, 1.5f), BlockType::PENDULUM_BLADE));
+        blocks.back().pivotPoint = VGet(11, 12, 0);
+        blocks.back().swingSpeed = 1.6f;
+        blocks.back().swingRange = DX_PI_F / 3.0f;
+
+        blocks.push_back(Block(VGet(15, 7, -1), VGet(3, 1, 2), BlockType::PLATFORM));
+
+        // === СЕКЦИЯ 2: Высокая гравитация + CRUMBLING ===
+        blocks.push_back(Block(VGet(20, 0, -2), VGet(18, 10, 4), BlockType::GRAVITY_ZONE));
+        blocks.back().gravityMultiplier = 2.6f;
+
+        blocks.push_back(Block(VGet(21, 1, -1), VGet(3, 1, 2), BlockType::CRUMBLING));
+        blocks.push_back(Block(VGet(25, 1, -1), VGet(3, 1, 2), BlockType::CRUMBLING));
+        blocks.push_back(Block(VGet(29, 1, -1), VGet(3, 1, 2), BlockType::CRUMBLING));
+        blocks.push_back(Block(VGet(33, 2, -1), VGet(4, 1, 2), BlockType::PLATFORM));
+
+        // === СЕКЦИЯ 3: Обратная гравитация + маятники + RETRACTABLE_SPIKES ===
+        blocks.push_back(Block(VGet(39, 0, -2), VGet(22, 16, 4), BlockType::GRAVITY_ZONE));
+        blocks.back().gravityMultiplier = -1.3f;
+
+        // Потолочные платформы
+        blocks.push_back(Block(VGet(40, 14, -1), VGet(4, 1, 2), BlockType::PLATFORM));
+        blocks.push_back(Block(VGet(46, 14, -1), VGet(4, 1, 2), BlockType::PLATFORM));
+        blocks.push_back(Block(VGet(52, 14, -1), VGet(4, 1, 2), BlockType::PLATFORM));
+
+        // Маятники на "полу" (который теперь потолок)
+        blocks.push_back(Block(VGet(43, 8, 0), VGet(1.5f, 1.5f, 1.5f), BlockType::PENDULUM_BLADE));
+        blocks.back().pivotPoint = VGet(43, 2, 0);
+        blocks.back().swingSpeed = 1.7f;
+        blocks.back().swingRange = DX_PI_F / 3.5f;
+
+        blocks.push_back(Block(VGet(49, 7, 0), VGet(1.5f, 1.5f, 1.5f), BlockType::PENDULUM_BLADE));
+        blocks.back().pivotPoint = VGet(49, 1, 0);
+        blocks.back().swingSpeed = 2.1f;
+        blocks.back().swingRange = DX_PI_F / 2.8f;
+        blocks.back().timer = 1.5f;
+
+        // Выдвижные шипы на потолочных платформах
+        blocks.push_back(Block(VGet(47, 15, -1), VGet(2, 1, 2), BlockType::RETRACTABLE_SPIKES));
+
+        // === СЕКЦИЯ 4: Финальный рывок - нормальная гравитация + всё подряд ===
+        blocks.push_back(Block(VGet(63, 0, -3), VGet(6, 1, 6), BlockType::PLATFORM));
+
+        // Движущаяся платформа
+        blocks.push_back(Block(VGet(71, 2, -1), VGet(4, 1, 3), BlockType::MOVING, 0, true,
+            VGet(71, 2, -1), VGet(71, 8, -1), 1.8f));
+
+        // Последний маятник
+        blocks.push_back(Block(VGet(77, 5, 0), VGet(1.5f, 1.5f, 1.5f), BlockType::PENDULUM_BLADE));
+        blocks.back().pivotPoint = VGet(77, 14, 0);
+        blocks.back().swingSpeed = 2.0f;
+        blocks.back().swingRange = DX_PI_F / 2.5f;
+
+        // ФИНИШ - ты дошёл!
+        blocks.push_back(Block(VGet(80, 9, -3), VGet(7, 1, 7), BlockType::PLATFORM));
+        blocks.push_back(Block(VGet(83, 10, 0), VGet(2, 1, 2), BlockType::TRIGGER));
+        break;
+
     default:
         playerSpawn = VGet(0, 1, 0);
         blocks.push_back(Block(VGet(-3, -1, -3), VGet(6, 1, 6), BlockType::PLATFORM));
@@ -411,6 +761,23 @@ void Level::LoadLevelData(int id) {
 
 void Level::Draw() const {
     for (const auto& block : blocks) {
+        // Если у блока есть модель - отрисовать модель
+        if (block.useModel && block.modelHandle != -1) {
+            // Установить позицию модели
+            MV1SetPosition(block.modelHandle, VAdd(block.pos, VScale(block.size, 0.5f)));
+
+            // Установить масштаб
+            MV1SetScale(block.modelHandle, block.modelScale);
+
+            // Установить вращение
+            MV1SetRotationXYZ(block.modelHandle, block.rotation);
+
+            // Отрисовать модель
+            MV1DrawModel(block.modelHandle);
+            continue;
+        }
+
+        // Иначе использовать примитивы (текущая реализация)
         switch (block.type) {
         case BlockType::PLATFORM:
             DrawCube3D(block.pos, VAdd(block.pos, block.size),
@@ -514,6 +881,49 @@ void Level::Draw() const {
             // Фейковые шипы - РОЗОВЫЕ (выглядят опасно, но безопасны)
             DrawCube3D(block.pos, VAdd(block.pos, block.size),
                 GetColor(255, 100, 150), GetColor(200, 50, 100), TRUE);
+            break;
+
+        case BlockType::GRAVITY_ZONE:
+            // Гравитационные зоны - очень прозрачные с цветом зависящим от типа гравитации
+            unsigned int gravityColor;
+            if (block.gravityMultiplier < 0.0f) {
+                // Обратная гравитация - фиолетовый
+                gravityColor = GetColor(200, 100, 255);
+            } else if (block.gravityMultiplier < 1.0f) {
+                // Низкая гравитация - голубой
+                gravityColor = GetColor(100, 200, 255);
+            } else if (block.gravityMultiplier > 1.0f) {
+                // Высокая гравитация - оранжевый
+                gravityColor = GetColor(255, 150, 50);
+            } else {
+                // Нормальная (не должно быть, но на всякий случай)
+                gravityColor = GetColor(150, 150, 150);
+            }
+            // Отключаем запись в Z-буфер чтобы зона не перекрывала объекты внутри
+            SetWriteZBuffer3D(FALSE);
+            // Очень прозрачные - альфа 50 из 255 (~20% непрозрачности)
+            SetDrawBlendMode(DX_BLENDMODE_ALPHA, 50);
+            DrawCube3D(block.pos, VAdd(block.pos, block.size),
+                gravityColor, gravityColor, TRUE);
+            SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+            // Включаем запись в Z-буфер обратно
+            SetWriteZBuffer3D(TRUE);
+            break;
+
+        case BlockType::PENDULUM_BLADE:
+            // Маятник-топор - рисуем цепь (или трос) и лезвие
+            // Цепь от точки подвеса до лезвия
+            DrawLine3D(block.pivotPoint, block.pos, GetColor(100, 100, 100));
+
+            // Лезвие - красный куб (временно, потом будет модель)
+            DrawCube3D(block.pos, VAdd(block.pos, block.size),
+                GetColor(200, 50, 50), GetColor(150, 30, 30), TRUE);
+
+            // Точка подвеса - маленькая сфера (упрощённо - куб)
+            VECTOR pivotSize = VGet(0.3f, 0.3f, 0.3f);
+            DrawCube3D(VGet(block.pivotPoint.x - 0.15f, block.pivotPoint.y - 0.15f, block.pivotPoint.z - 0.15f),
+                VGet(block.pivotPoint.x + 0.15f, block.pivotPoint.y + 0.15f, block.pivotPoint.z + 0.15f),
+                GetColor(80, 80, 80), GetColor(60, 60, 60), TRUE);
             break;
         }
     }
@@ -651,6 +1061,15 @@ bool Level::CheckDeadlyTrigger(VECTOR playerPos, VECTOR playerSize) const {
             }
         }
 
+        // Маятники-топоры (Block 3) - всегда смертельны
+        if (block.type == BlockType::PENDULUM_BLADE) {
+            if (playerPos.x < block.pos.x + block.size.x && playerPos.x + playerSize.x > block.pos.x &&
+                playerPos.y < block.pos.y + block.size.y && playerPos.y + playerSize.y > block.pos.y &&
+                playerPos.z < block.pos.z + block.size.z && playerPos.z + playerSize.z > block.pos.z) {
+                return true;
+            }
+        }
+
         // FAKE_SPIKES НЕ убивают - это троллинг!
     }
     return false;
@@ -757,6 +1176,23 @@ void Level::Update(float deltaTime) {
                 }
             }
         }
+
+        // PENDULUM_BLADE - качающиеся маятники (Block 3)
+        if (block.type == BlockType::PENDULUM_BLADE) {
+            // Обновляем угол качания используя синусоиду
+            block.swingAngle = sin(block.timer * block.swingSpeed) * block.swingRange;
+
+            // Обновляем таймер
+            block.timer += deltaTime;
+
+            // Вычисляем длину маятника как расстояние от точки подвеса до начальной позиции
+            float length = VSize(VSub(block.pivotPoint, block.originalPos));
+
+            // Вычисляем позицию лезвия на основе угла качания
+            block.pos.x = block.pivotPoint.x + sin(block.swingAngle) * length;
+            block.pos.y = block.pivotPoint.y - cos(block.swingAngle) * length;
+            block.pos.z = block.pivotPoint.z;
+        }
     }
 }
 
@@ -816,4 +1252,56 @@ void Level::ActivateButton(VECTOR playerPos, VECTOR playerSize, bool keyPressed)
             }
         }
     }
+}
+
+void Level::InitializeModels() {
+    ModelManager& modelMgr = ModelManager::GetInstance();
+
+    for (auto& block : blocks) {
+        // Определить ModelID по BlockType
+        ModelID modelId = static_cast<ModelID>(static_cast<int>(block.type));
+
+        // Если модель загружена для данного типа блока
+        if (modelMgr.IsModelLoaded(modelId)) {
+            // Создать дубликат модели для этого блока
+            block.modelHandle = modelMgr.DuplicateModel(modelId);
+            block.useModel = true;
+
+            // Можно задать индивидуальный масштаб модели
+            block.modelScale = VGet(
+                block.size.x,
+                block.size.y,
+                block.size.z
+            );
+        }
+        else {
+            // Модель не загружена - будут использоваться примитивы
+            block.modelHandle = -1;
+            block.useModel = false;
+        }
+    }
+}
+
+void Level::DrawSkybox(VECTOR cameraPos) const {
+    ModelManager& modelMgr = ModelManager::GetInstance();
+
+    // Отрисовать скайбокс для текущего блока уровней
+    if (modelMgr.IsSkyboxLoaded(blockId)) {
+        modelMgr.DrawSkybox(blockId, cameraPos);
+    }
+}
+
+// Block 3: Проверка гравитационных зон
+float Level::CheckGravityZone(VECTOR playerPos, VECTOR playerSize) const {
+    for (const auto& block : blocks) {
+        if (block.type == BlockType::GRAVITY_ZONE) {
+            // Проверка нахождения игрока в зоне
+            if (playerPos.x < block.pos.x + block.size.x && playerPos.x + playerSize.x > block.pos.x &&
+                playerPos.y < block.pos.y + block.size.y && playerPos.y + playerSize.y > block.pos.y &&
+                playerPos.z < block.pos.z + block.size.z && playerPos.z + playerSize.z > block.pos.z) {
+                return block.gravityMultiplier; // Возвращаем множитель гравитации
+            }
+        }
+    }
+    return 1.0f; // Нормальная гравитация по умолчанию
 }
