@@ -362,6 +362,5 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 
-# Claude Code - Private Memory (local only, not for open source)
-.claude/*.local.md
-.claude/architecture.md
+# Claude Code - Private (local only)
+.claude/
