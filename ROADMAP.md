@@ -1,8 +1,8 @@
 # Development Roadmap
 
-## Current Version: Alpha 0.3
-**Completed**: 20/50 levels (40%), 12 mechanics
-**Current Focus**: Block 3 - Gravity & Blades (Levels 21-30)
+## Current Version: Alpha 0.4
+**Completed**: 30/50 levels (60%), 14 mechanics
+**Current Focus**: 3D Models & Block 4 Design
 
 ---
 
@@ -34,45 +34,36 @@
 
 ---
 
-## ⏳ Phase 3: Block 3 - Gravity & Blades (Levels 21-30) - IN PROGRESS
+## ✅ Phase 3: Block 3 - Gravity & Blades (Levels 21-30) - COMPLETE
 **Theme**: Jupiter (high gravity, turbulent atmosphere)
-**Goal**: Introduce gravity manipulation and moving hazards
+**Status**: ✅ 100% Complete
 
-### New Mechanics to Implement:
-- [ ] **Gravity Zones**:
+### Implemented Mechanics:
+- ✅ **Gravity Zones**:
   - Low gravity (floaty jumps, slow fall)
   - High gravity (heavy jumps, fast fall)
   - Reverse gravity (walk on ceiling)
   - Transition zones (gradual gravity change)
 
-- [ ] **Pendulum Blades**:
+- ✅ **Pendulum Blades**:
   - Swinging axe/blade obstacles
   - Predictable timing (sine wave motion)
   - Various speeds and ranges
   - Deadly on contact
 
-### Level Progression (21-30):
-- [ ] Level 21: Introduce low gravity (tutorial)
-- [ ] Level 22: Introduce high gravity
-- [ ] Level 23: Introduce pendulum blades (simple)
-- [ ] Level 24: Combine gravity + blades
-- [ ] Level 25: Reverse gravity introduction
-- [ ] Level 26: Complex pendulum patterns
-- [ ] Level 27: Multi-gravity zones + blades
-- [ ] Level 28: Trolling with gravity (unexpected switches)
-- [ ] Level 29: Blade gauntlet + gravity puzzle
-- [ ] Level 30: Block 3 finale (all mechanics combined)
+### Completed Levels (21-30):
+- ✅ Level 21: Introduce low gravity (tutorial)
+- ✅ Level 22: Introduce high gravity
+- ✅ Level 23: Introduce pendulum blades (simple)
+- ✅ Level 24: Combine gravity + blades
+- ✅ Level 25: Reverse gravity introduction
+- ✅ Level 26: Complex pendulum patterns
+- ✅ Level 27: Multi-gravity zones + blades
+- ✅ Level 28: Trolling with gravity (unexpected switches)
+- ✅ Level 29: Blade gauntlet + gravity puzzle
+- ✅ Level 30: Block 3 finale (all mechanics combined)
 
-### Technical Tasks:
-- [ ] Add `GRAVITY_ZONE` and `PENDULUM_BLADE` to BlockType enum
-- [ ] Implement gravity modifier system in main.cpp physics
-- [ ] Add pendulum animation using timer and sin/cos
-- [ ] Implement blade collision detection
-- [ ] Visual indicators for gravity zones (particles?)
-- [ ] Sound effects (whoosh for blades, gravity shift sound)
-
-**Estimated Time**: 4-5 sessions
-**Priority**: HIGH 🔥
+**Result**: 10 levels with gravity manipulation and pendulum blade mechanics
 
 ---
 
@@ -246,16 +237,16 @@
 **Optimistic Estimate**: 30-40 sessions with focused work
 **Total Development Time**: 6-12 months part-time
 
-**Current Progress**: ~10 sessions completed (~15-20% of MVP)
+**Current Progress**: MVP core complete (30 levels), entering polish phase
 
 ---
 
 ## Success Metrics
 
 **MVP (Minimum Viable Product)**:
-- [ ] 30 levels (blocks 1-3)
-- [ ] All core mechanics working
-- [ ] Basic menu
+- [x] 30 levels (blocks 1-3)
+- [x] All core mechanics working
+- [x] Basic menu
 - [ ] Sound effects
 
 **Full Release v1.0**:

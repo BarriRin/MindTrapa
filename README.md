@@ -7,7 +7,7 @@ A 3D puzzle platformer inspired by levelDEVIL, designed to troll and challenge p
 50 levels divided into 5 blocks (10 levels each), where each block introduces new trolling mechanics:
 - **Block 1** (Levels 1-10): **Basics** - Movement, jumps, teleports ✅ COMPLETE
 - **Block 2** (Levels 11-20): **Timing & Precision** - Retractable spikes, crumbling platforms ✅ COMPLETE
-- **Block 3** (Levels 21-30): **Gravity & Blades** - Gravity zones, pendulum blades ⏳ IN PROGRESS
+- **Block 3** (Levels 21-30): **Gravity & Blades** - Gravity zones, pendulum blades ✅ COMPLETE
 - **Block 4** (Levels 31-40): **TBD** - To be designed
 - **Block 5** (Levels 41-50): **Final Challenge** - Combines all mechanics
 
@@ -20,9 +20,9 @@ A 3D puzzle platformer inspired by levelDEVIL, designed to troll and challenge p
 
 ## 🎯 Current Status
 
-**Version**: Alpha 0.3
-**Levels**: 20/50 implemented (40% complete! 🎉)
-**Mechanics**: 12 block types implemented
+**Version**: Alpha 0.4
+**Levels**: 30/50 implemented (60% complete!)
+**Mechanics**: 14 block types implemented (including gravity zones & pendulum blades)
 
 ### Working Features:
 - ✅ 3D platformer movement (WASD + mouse camera)
@@ -84,26 +84,21 @@ enum class BlockType {
     RETRACTABLE_SPIKES,  // Spikes that retract on timer (Block 2)
     CRUMBLING,           // Falls after player touches (Block 2)
     FAKE_SPIKES,         // Looks deadly but harmless (trolling!)
-    GRAVITY_ZONE,        // Changes gravity (Block 3) - COMING SOON
-    PENDULUM_BLADE       // Swinging blade trap (Block 3) - COMING SOON
+    GRAVITY_ZONE,        // Changes gravity direction/strength (Block 3)
+    PENDULUM_BLADE       // Swinging blade trap (Block 3)
 };
 ```
 
-## 📋 TODO
+## 🚧 Coming Soon
+
+**In Active Development:**
+- 🎨 **3D Models** — replacing placeholder cubes with proper models
+- 🎮 **Block 4-5** — 20 remaining levels (design complete, implementation pending)
+- ✨ **Polish Phase** — visual effects, sound, UI improvements
+
+**Next Milestone**: Alpha 0.5 (40 levels)
 
 See [ROADMAP.md](ROADMAP.md) for detailed development plan.
-
-**Current Focus** (Block 3):
-- [ ] Implement gravity zones (low/high/reverse gravity)
-- [ ] Implement pendulum blade mechanics
-- [ ] Create levels 21-30
-- [ ] Find/create Jupiter-themed skybox
-
-**Next Steps**:
-- [ ] Block 4 design (levels 31-40)
-- [ ] Block 5 final challenge (levels 41-50)
-- [ ] Add 3D models and skyboxes
-- [ ] Sound effects and music
 
 ## 🤝 Contributing
 
