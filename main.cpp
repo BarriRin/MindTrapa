@@ -117,14 +117,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
     // Инициализация игры
     LevelManager levelManager;
-    Menu menu(30); // 30 уровней - Block 1 (1-10) + Block 2 (11-20) + Block 3 (21-30)
+    Menu menu(40); // 40 уровней - Block 1-3 (1-30) + Block 4 (31-40)
 
     // Генерируем звёзды для космического фона
     std::vector<Star> stars = GenerateStars(500, 400.0f);
 
     // ОТЛАДКА - проверяем что меню создалось правильно
     char debug[100];
-    sprintf_s(debug, "Menu created with 20 levels, %d stars generated", (int)stars.size());
+    sprintf_s(debug, "Menu created with 40 levels, %d stars generated", (int)stars.size());
     OutputDebugStringA(debug);
 
     // Состояние игры
@@ -158,6 +158,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
     // Антиспам для телепортов
     float teleportCooldown = 0.0f;
+
+    // Block 4: уровень темноты (0.0 = полная видимость, 1.0 = полная тьма)
+    float darknessLevel = 0.0f;
 
     // Скрываем курсор мыши только в игре
     SetMouseDispFlag(TRUE);
@@ -202,6 +205,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
                 levelManager.LoadLevel(1);
                 playerPos = levelManager.GetCurrentLevel()->GetPlayerSpawn();
                 playerVel = VGet(0, 0, 0);
+                darknessLevel = 0.0f;
                 gameState = GameState::PLAYING;
                 SetMouseDispFlag(FALSE);
                 break;
@@ -232,6 +236,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
                     levelManager.LoadLevel(levelToLoad);
                     playerPos = levelManager.GetCurrentLevel()->GetPlayerSpawn();
                     playerVel = VGet(0, 0, 0);
+                    darknessLevel = 0.0f;
                     gameState = GameState::PLAYING;
                     SetMouseDispFlag(FALSE);
                 }
@@ -283,6 +288,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
                 levelManager.RestartLevel();
                 playerPos = levelManager.GetCurrentLevel()->GetPlayerSpawn();
                 playerVel = VGet(0, 0, 0);
+                darknessLevel = 0.0f;
                 gameState = GameState::PLAYING;
                 SetMouseDispFlag(FALSE);
                 break;
@@ -308,6 +314,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
                     levelManager.LoadLevel(levelToLoad);
                     playerPos = levelManager.GetCurrentLevel()->GetPlayerSpawn();
                     playerVel = VGet(0, 0, 0);
+                    darknessLevel = 0.0f;
                     gameState = GameState::PLAYING;
                     SetMouseDispFlag(FALSE);
                 }
@@ -427,6 +434,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
             // === ОБНОВЛЕНИЕ ТАЙМЕРА УРОВНЯ ===
             levelManager.UpdateTimer(effectiveDeltaTime);
 
+            // Block 4: определяем активен ли тёмный режим
+            int currentLevelId = levelManager.GetCurrentLevelId();
+            bool inBlock4 = (currentLevelId >= 31 && currentLevelId <= 40);
+
             // === УПРАВЛЕНИЕ КАМЕРОЙ МЫШЬЮ ===
             int mouseX, mouseY;
             GetMousePoint(&mouseX, &mouseY);
@@ -455,6 +466,22 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
             if (CheckHitKey(KEY_INPUT_S)) move = VAdd(move, VScale(forward, moveSpeed));
             if (CheckHitKey(KEY_INPUT_A)) move = VAdd(move, VScale(right, moveSpeed));
             if (CheckHitKey(KEY_INPUT_D)) move = VAdd(move, VScale(right, -moveSpeed));
+
+            // Block 4: накопительная темнота — растёт при движении, спадает в покое
+            if (inBlock4) {
+                bool isMoving = CheckHitKey(KEY_INPUT_W) || CheckHitKey(KEY_INPUT_S) ||
+                                CheckHitKey(KEY_INPUT_A) || CheckHitKey(KEY_INPUT_D) ||
+                                CheckHitKey(KEY_INPUT_SPACE) || !onGround;
+                const float DARKEN_SPEED  = 0.8f; // сек до полной тьмы при движении
+                const float LIGHTEN_SPEED = 0.2f; // сек до полной видимости в покое
+                if (isMoving) {
+                    darknessLevel += effectiveDeltaTime * DARKEN_SPEED;
+                    if (darknessLevel > 1.0f) darknessLevel = 1.0f;
+                } else {
+                    darknessLevel -= effectiveDeltaTime * LIGHTEN_SPEED;
+                    if (darknessLevel < 0.0f) darknessLevel = 0.0f;
+                }
+            }
 
             // Прыжок
             static bool jumpPressed = false;
@@ -490,6 +517,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
                     levelManager.RestartLevel();
                     playerPos = levelManager.GetCurrentLevel()->GetPlayerSpawn();
                     playerVel = VGet(0, 0, 0);
+                    darknessLevel = 0.0f;
                 }
                 restartPressed = true;
             }
@@ -526,6 +554,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
                     levelManager.RestartLevel();
                     playerPos = levelManager.GetCurrentLevel()->GetPlayerSpawn();
                     playerVel = VGet(0, 0, 0);
+                    darknessLevel = 0.0f;
                 }
 
                 VECTOR teleportTarget;
@@ -542,6 +571,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
                     levelManager.NextLevel();
                     playerPos = levelManager.GetCurrentLevel()->GetPlayerSpawn();
                     playerVel = VGet(0, 0, 0);
+                    darknessLevel = 0.0f;
                 }
             }
 
@@ -549,6 +579,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
                 levelManager.RestartLevel();
                 playerPos = levelManager.GetCurrentLevel()->GetPlayerSpawn();
                 playerVel = VGet(0, 0, 0);
+                darknessLevel = 0.0f;
             }
 
             // === УСТАНОВКА КАМЕРЫ ===
@@ -560,14 +591,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
             SetCameraPositionAndTarget_UpVecY(cameraPos, VAdd(playerPos, VGet(0, 1, 0)));
 
+            // === BLOCK 4: DARKNESS SETUP ===
+            // Темнота зависит только от движения игрока, без зональных фаз
+
             // === ОТРИСОВКА ===
             SetUseLighting(FALSE);
             SetUseBackCulling(FALSE);
 
-            // Рисуем космический фон и звёзды (сначала, чтобы были позади всего)
+            // Рисуем сцену всегда одинаково
             DrawSpaceSkybox(playerPos);
             DrawStars(stars, cameraPos);
-
             if (levelManager.GetCurrentLevel()) {
                 levelManager.GetCurrentLevel()->Draw();
             }
@@ -626,6 +659,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
             DrawCube3D(playerPos, VAdd(playerPos, playerSize),
                 GetColor(100, 255, 100), GetColor(50, 200, 50), TRUE);
 
+            // === BLOCK 4: DARKNESS ===
+            if (inBlock4 && darknessLevel > 0.01f) {
+                int alpha = (int)(darknessLevel * 240.0f);
+                SetDrawBlendMode(DX_BLENDMODE_ALPHA, alpha);
+                DrawBox(0, 0, 1920, 1080, GetColor(0, 0, 0), TRUE);
+                SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+            }
+
             levelManager.DrawLevelInfo(debugMode);
 
             // === DEBUG INFO (F3 to toggle) ===
@@ -643,6 +684,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
                 DrawFormatString(10, 180, GetColor(200, 200, 200), L"FPS: %d (deltaTime: %.4fs)", currentFPS, realDeltaTime);
 
                 DrawFormatString(10, 200, GetColor(150, 150, 150), L"[F3] Toggle Debug Info");
+
+                if (inBlock4) {
+                    DrawFormatString(10, 220, GetColor(150, 100, 255), L"BLOCK4 | darkness: %.2f",
+                        darknessLevel);
+                }
             }
         }
 

@@ -17,8 +17,9 @@ enum class BlockType {
     RETRACTABLE_SPIKES = 9, // Выдвижные шипы (появляются/исчезают по таймеру) [Block 2]
     CRUMBLING = 10,    // Рассыпающаяся платформа (падает после касания) [Block 2]
     FAKE_SPIKES = 11,  // Фейковые шипы (выглядят опасно, но безопасны) [Block 2]
-    GRAVITY_ZONE = 12, // Зона с изменённой гравитацией [Block 3]
-    PENDULUM_BLADE = 13 // Качающийся топор-маятник (смертелен) [Block 3]
+    GRAVITY_ZONE = 12,     // Зона с изменённой гравитацией [Block 3]
+    PENDULUM_BLADE = 13,   // Качающийся топор-маятник (смертелен) [Block 3]
+    LIGHT_PULSE_ZONE = 14  // Зона мигающего света (темнота/свет по таймеру) [Block 4]
 };
 
 // Структура блока
@@ -55,7 +56,8 @@ struct Block {
           float speed = 1.0f, float tim = 0.0f)
         : pos(p), size(s), type(t), linkId(link), isActive(active),
           originalPos((t == BlockType::PENDULUM_BLADE) ? p : moveStart),
-          moveTarget(moveEnd), moveSpeed(speed), timer(tim),
+          moveTarget(moveEnd), moveSpeed(speed),
+          timer(t == BlockType::LIGHT_PULSE_ZONE && !active ? speed * 0.5f : tim),
           prevPos(p), modelHandle(-1), rotation(VGet(0, 0, 0)),
           modelScale(VGet(1, 1, 1)), useModel(false),
           gravityMultiplier(1.0f), swingAngle(0.0f), swingSpeed(1.0f),
@@ -92,6 +94,9 @@ public:
 
     // Block 3 механики
     float CheckGravityZone(VECTOR playerPos, VECTOR playerSize) const; // Возвращает множитель гравитации
+
+    // Block 4 механики
+    bool IsAnyLightPulseZoneActive() const; // true = светлая фаза (хотя бы одна зона активна)
 
     const std::vector<Block>& GetBlocks() const { return blocks; }
     VECTOR GetPlayerSpawn() const { return playerSpawn; }
