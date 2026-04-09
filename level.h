@@ -72,8 +72,12 @@ private:
     int levelId;
     int blockId;        // ID блока уровней (для скайбокса)
 
-    // Загрузка данных уровня из switch-case
+    // Загрузка данных уровня
     void LoadLevelData(int id);
+    void LoadBlock1(int id);
+    void LoadBlock2(int id);
+    void LoadBlock3(int id);
+    void LoadBlock4(int id);
 
     // Инициализация моделей для блоков
     void InitializeModels();
@@ -82,7 +86,7 @@ public:
     Level(int id);
     ~Level();
 
-    void Draw() const;
+    void Draw(bool debugMode) const;
     void DrawSkybox(VECTOR cameraPos) const;
     void Update(float deltaTime);
 

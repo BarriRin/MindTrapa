@@ -2,87 +2,8 @@
 #include "LevelManager.h"
 #include "Menu.h"
 #include "ModelManager.h"
+#include "Renderer.h"
 #include <cmath>
-#include <random>
-
-// Функция для рисования простого космического скайбокса
-void DrawSpaceSkybox(VECTOR playerPos) {
-    // Рисуем большой куб вокруг игрока с градиентом
-    float skySize = 500.0f;
-    VECTOR skyMin = VGet(playerPos.x - skySize, playerPos.y - skySize, playerPos.z - skySize);
-    VECTOR skyMax = VGet(playerPos.x + skySize, playerPos.y + skySize, playerPos.z + skySize);
-
-    // Отключаем Z-buffer для неба (всегда сзади)
-    SetUseZBuffer3D(FALSE);
-    SetWriteZBuffer3D(FALSE);
-
-    // Рисуем градиент неба (тёмно-синий → почти чёрный)
-    // Верхняя половина - темнее
-    DrawCube3D(
-        VGet(skyMin.x, playerPos.y, skyMin.z),
-        VGet(skyMax.x, skyMax.y, skyMax.z),
-        GetColor(5, 5, 20), GetColor(10, 10, 30), TRUE
-    );
-
-    // Нижняя половина - чуть светлее
-    DrawCube3D(
-        VGet(skyMin.x, skyMin.y, skyMin.z),
-        VGet(skyMax.x, playerPos.y, skyMax.z),
-        GetColor(10, 10, 30), GetColor(15, 10, 25), TRUE
-    );
-
-    // Включаем Z-buffer обратно для остальных объектов
-    SetUseZBuffer3D(TRUE);
-    SetWriteZBuffer3D(TRUE);
-}
-
-// Функция для рисования звёзд (вызывается один раз при старте)
-struct Star {
-    VECTOR pos;
-    float size;
-    unsigned int color;
-};
-
-std::vector<Star> GenerateStars(int count, float radius) {
-    std::vector<Star> stars;
-    std::random_device rd;
-    std::mt19937 gen(42); // Фиксированный seed для одинаковых звёзд каждый раз
-    std::uniform_real_distribution<float> dist(-radius, radius);
-    std::uniform_real_distribution<float> sizeDist(0.3f, 1.5f);
-
-    for (int i = 0; i < count; i++) {
-        Star star;
-        star.pos = VGet(dist(gen), dist(gen), dist(gen));
-        star.size = sizeDist(gen);
-
-        // Разные цвета звёзд (белые, голубоватые, желтоватые)
-        int colorType = i % 3;
-        if (colorType == 0) star.color = GetColor(255, 255, 255); // Белые
-        else if (colorType == 1) star.color = GetColor(200, 220, 255); // Голубые
-        else star.color = GetColor(255, 240, 200); // Желтоватые
-
-        stars.push_back(star);
-    }
-
-    return stars;
-}
-
-void DrawStars(const std::vector<Star>& stars, VECTOR cameraPos) {
-    SetUseZBuffer3D(FALSE);
-    SetWriteZBuffer3D(FALSE);
-
-    for (const auto& star : stars) {
-        // Звёзды не двигаются (фиксированы в мировых координатах)
-        DrawCube3D(
-            VGet(star.pos.x - star.size/2, star.pos.y - star.size/2, star.pos.z - star.size/2),
-            VGet(star.pos.x + star.size/2, star.pos.y + star.size/2, star.pos.z + star.size/2),
-            star.color, star.color, TRUE
-        );
-    }
-
-    SetUseZBuffer3D(TRUE);
-    SetWriteZBuffer3D(TRUE);
-}
 
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     // Инициализация DxLib
@@ -105,10 +26,17 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     ModelManager& modelMgr = ModelManager::GetInstance();
     modelMgr.Initialize();
 
-    // TODO: Загрузка моделей (когда будут готовы)
-    // modelMgr.LoadModel(ModelID::PLATFORM, "platform.mqo", 1.0f);
-    // modelMgr.LoadModel(ModelID::TRIGGER, "trigger.mqo", 1.0f);
-    // ...
+    // Загрузка моделей (converted_x/ - конвертированные из Quaternius pack)
+    modelMgr.LoadModel(ModelID::PLATFORM,           "converted_x/Cube_Grass_Single.x", 1.0f);
+    modelMgr.LoadModel(ModelID::SPIKES,             "converted_x/Cube_Spikes.x",       1.0f);
+    modelMgr.LoadModel(ModelID::FAKE_SPIKES,        "converted_x/Cube_Default.x",      1.0f);
+    modelMgr.LoadModel(ModelID::CRUMBLING,          "converted_x/Cube_Crate.x",        1.0f);
+    modelMgr.LoadModel(ModelID::MOVING,             "converted_x/Cube_Dirt_Single.x",  1.0f);
+    modelMgr.LoadModel(ModelID::DISAPPEARING,       "converted_x/Cube_Bricks.x",       1.0f);
+    modelMgr.LoadModel(ModelID::FAKE_PLATFORM,      "converted_x/Cube_Default.x",      1.0f);
+    modelMgr.LoadModel(ModelID::TRIGGER,            "converted_x/Goal_Flag.x",         1.0f);
+    modelMgr.LoadModel(ModelID::BUTTON,             "converted_x/Lever.x",             1.0f);
+    modelMgr.LoadModel(ModelID::PENDULUM_BLADE,     "converted_x/Hazard_Saw.x",        1.0f);
 
     // TODO: Загрузка скайбоксов (когда будут готовы)
     // modelMgr.LoadSkybox(0, "block0_mars.mqo", 1000.0f);   // Block 1 (Mars)
@@ -265,7 +193,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
                 SetUseLighting(FALSE);
                 SetUseBackCulling(FALSE);
-                currentLevel->Draw();
+                currentLevel->Draw(debugMode);
                 DrawCube3D(playerPos, VAdd(playerPos, playerSize),
                     GetColor(100, 255, 100), GetColor(50, 200, 50), TRUE);
             }
@@ -602,7 +530,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
             DrawSpaceSkybox(playerPos);
             DrawStars(stars, cameraPos);
             if (levelManager.GetCurrentLevel()) {
-                levelManager.GetCurrentLevel()->Draw();
+                levelManager.GetCurrentLevel()->Draw(debugMode);
             }
 
             // === ТЕНЬ ПОД ИГРОКОМ (для depth perception) ===
@@ -685,8 +613,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
                 DrawFormatString(10, 200, GetColor(150, 150, 150), L"[F3] Toggle Debug Info");
 
+                // Статус загрузки моделей
+                int loadedModels = 0;
+                for (int i = 0; i < (int)ModelID::COUNT; i++) {
+                    if (modelMgr.IsModelLoaded(static_cast<ModelID>(i))) loadedModels++;
+                }
+                DrawFormatString(10, 220, GetColor(100, 200, 255), L"Models: %d/%d loaded",
+                    loadedModels, (int)ModelID::COUNT);
+
                 if (inBlock4) {
-                    DrawFormatString(10, 220, GetColor(150, 100, 255), L"BLOCK4 | darkness: %.2f",
+                    DrawFormatString(10, 240, GetColor(150, 100, 255), L"BLOCK4 | darkness: %.2f",
                         darknessLevel);
                 }
             }

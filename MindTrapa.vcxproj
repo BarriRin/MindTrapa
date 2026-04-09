@@ -146,7 +146,12 @@
     <ClCompile Include="camera.cpp" />
     <ClCompile Include="game.cpp" />
     <ClCompile Include="Level.cpp" />
+    <ClCompile Include="level_block1.cpp" />
+    <ClCompile Include="level_block2.cpp" />
+    <ClCompile Include="level_block3.cpp" />
+    <ClCompile Include="level_block4.cpp" />
     <ClCompile Include="LevelManager.cpp" />
+    <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Menu.cpp" />
     <ClCompile Include="ModelManager.cpp" />
