@@ -43,6 +43,38 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     // modelMgr.LoadSkybox(1, "block1_moon.mqo", 1000.0f);   // Block 2 (Moon)
     // ...
 
+    // === МОДЕЛЬ ИГРОКА ===
+    int playerModelHandle = MV1LoadModel(L"models/converted_x/Character.mv1");
+    int playerAnimAttach  = -1;
+    float playerAnimTime  = 0.0f;
+    float playerFacingAngle = 0.0f;
+    int playerCurrentAnim = -1;
+
+    // Debug: вывести имена всех анимаций (видно в DebugView / VS Output)
+    if (playerModelHandle != -1) {
+        int animCount = MV1GetAnimNum(playerModelHandle);
+        wchar_t dbg[256];
+        swprintf_s(dbg, 256, L"[Player] Character.mv1 loaded, %d animations:\n", animCount);
+        OutputDebugStringW(dbg);
+        for (int i = 0; i < animCount; i++) {
+            swprintf_s(dbg, 256, L"  [%d] %s\n", i, MV1GetAnimName(playerModelHandle, i));
+            OutputDebugStringW(dbg);
+        }
+    }
+
+    // Поиск анимации по подстроке имени
+    auto findAnim = [&](const wchar_t* substr) -> int {
+        if (playerModelHandle == -1) return 0;
+        int n = MV1GetAnimNum(playerModelHandle);
+        for (int i = 0; i < n; i++)
+            if (wcsstr(MV1GetAnimName(playerModelHandle, i), substr)) return i;
+        return 0;
+    };
+    int animIdle = findAnim(L"Idle");
+    int animRun  = findAnim(L"Run");
+    int animJump = findAnim(L"Jump");
+    int animFall = findAnim(L"Jump_Idle");  // [7] зависание/падение (Fall отсутствует в паке)
+
     // Инициализация игры
     LevelManager levelManager;
     Menu menu(40); // 40 уровней - Block 1-3 (1-30) + Block 4 (31-40)
@@ -194,8 +226,19 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
                 SetUseLighting(FALSE);
                 SetUseBackCulling(FALSE);
                 currentLevel->Draw(debugMode);
-                DrawCube3D(playerPos, VAdd(playerPos, playerSize),
-                    GetColor(100, 255, 100), GetColor(50, 200, 50), TRUE);
+                if (playerModelHandle != -1) {
+                    VECTOR modelPos = VGet(playerPos.x + playerSize.x * 0.5f,
+                                           playerPos.y,
+                                           playerPos.z + playerSize.z * 0.5f);
+                    float pScale = 0.006f;
+                    MV1SetPosition(playerModelHandle, modelPos);
+                    MV1SetScale(playerModelHandle, VGet(pScale, pScale, pScale));
+                    MV1SetRotationXYZ(playerModelHandle, VGet(0.0f, playerFacingAngle + DX_PI_F, 0.0f));
+                    MV1DrawModel(playerModelHandle);
+                } else {
+                    DrawCube3D(playerPos, VAdd(playerPos, playerSize),
+                        GetColor(100, 255, 100), GetColor(50, 200, 50), TRUE);
+                }
             }
 
             // Рисуем меню паузы поверх
@@ -510,6 +553,45 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
                 darknessLevel = 0.0f;
             }
 
+            // === АНИМАЦИЯ ИГРОКА ===
+            if (playerModelHandle != -1) {
+                bool isMovingH = (fabsf(move.x) > 0.001f || fabsf(move.z) > 0.001f);
+
+                // Поворачиваем персонажа по направлению движения
+                if (isMovingH)
+                    playerFacingAngle = atan2f(move.x, move.z);
+
+                // Стейт-машин: idle / run / jump / fall
+                int targetAnim;
+                if (!onGround) {
+                    targetAnim = (playerVel.y > 0.0f) ? animJump : animFall;
+                } else if (isMovingH) {
+                    targetAnim = animRun;
+                } else {
+                    targetAnim = animIdle;
+                }
+
+                // Переключаем анимацию при смене состояния
+                if (targetAnim != playerCurrentAnim) {
+                    if (playerAnimAttach != -1)
+                        MV1DetachAnim(playerModelHandle, playerAnimAttach);
+                    playerAnimAttach = MV1AttachAnim(playerModelHandle, targetAnim, -1, FALSE);
+                    playerAnimTime = 0.0f;
+                    playerCurrentAnim = targetAnim;
+                }
+
+                // Продвигаем время (24 fps — из вьюера)
+                if (playerAnimAttach != -1) {
+                    float totalTime = MV1GetAttachAnimTotalTime(playerModelHandle, playerAnimAttach);
+                    if (totalTime > 0.0f) {
+                        playerAnimTime += effectiveDeltaTime * 24.0f;
+                        if (playerAnimTime >= totalTime)
+                            playerAnimTime = fmodf(playerAnimTime, totalTime);
+                        MV1SetAttachAnimTime(playerModelHandle, playerAnimAttach, playerAnimTime);
+                    }
+                }
+            }
+
             // === УСТАНОВКА КАМЕРЫ ===
             VECTOR cameraPos = VGet(
                 playerPos.x + cameraDistance * sin(cameraAngleY) * cos(cameraAngleX),
@@ -584,8 +666,21 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
             }
 
             // Рисуем игрока
-            DrawCube3D(playerPos, VAdd(playerPos, playerSize),
-                GetColor(100, 255, 100), GetColor(50, 200, 50), TRUE);
+            if (playerModelHandle != -1) {
+                // Центр AABB игрока по XZ, ноги на playerPos.y
+                VECTOR modelPos = VGet(playerPos.x + playerSize.x * 0.5f,
+                                       playerPos.y,
+                                       playerPos.z + playerSize.z * 0.5f);
+                float pScale = 0.006f;
+                MV1SetPosition(playerModelHandle, modelPos);
+                MV1SetScale(playerModelHandle, VGet(pScale, pScale, pScale));
+                // +PI чтобы персонаж смотрел вперёд (Quaternius модели смотрят -Z)
+                MV1SetRotationXYZ(playerModelHandle, VGet(0.0f, playerFacingAngle + DX_PI_F, 0.0f));
+                MV1DrawModel(playerModelHandle);
+            } else {
+                DrawCube3D(playerPos, VAdd(playerPos, playerSize),
+                    GetColor(100, 255, 100), GetColor(50, 200, 50), TRUE);
+            }
 
             // === BLOCK 4: DARKNESS ===
             if (inBlock4 && darknessLevel > 0.01f) {
@@ -632,6 +727,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     }
 
 END_GAME:
+    // Очистка игрока
+    if (playerModelHandle != -1)
+        MV1DeleteModel(playerModelHandle);
+
     // Очистка ModelManager
     modelMgr.Cleanup();
 

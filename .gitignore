@@ -364,3 +364,11 @@ FodyWeavers.xsd
 
 # Claude Code - Private (local only)
 .claude/
+# DxLib runtime log
+Log.txt
+
+# Windows null device artifact
+nul
+
+# Source asset packs (large, binary)
+models/Ultimate Platformer Pack by Quaternius/
