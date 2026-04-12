@@ -1,0 +1,71 @@
+MindTrapa - Project Description
+================================
+
+Project: 3D Puzzle Platformer Game
+Author: Ivan Danisheuski
+Version: Alpha 0.4
+Status: In Active Development (60% complete)
+
+
+CONCEPT
+-------
+MindTrapa is a 3D puzzle platformer inspired by "levelDEVIL" - a game that
+challenges players with creative mechanics and unexpected twists. The core
+idea is to create levels that look simple but require careful observation
+and timing to complete.
+
+The game combines classic platforming with "trolling" elements - fake platforms
+that look solid but aren't, harmless spikes that look deadly, invisible walls,
+and gravity manipulation zones.
+
+
+CURRENT STATE
+-------------
+- 30 out of 50 planned levels completed
+- 14 unique game mechanics implemented
+- 3 thematic blocks finished:
+  * Block 1 (Levels 1-10): Basics - movement, teleports, buttons
+  * Block 2 (Levels 11-20): Timing - retractable spikes, crumbling platforms
+  * Block 3 (Levels 21-30): Gravity - gravity zones, pendulum blades
+
+- Full menu system with level selection
+- Debug mode for testing (F3)
+- Level timer system
+
+
+TECHNOLOGY
+----------
+- Language: C++
+- Graphics: DxLib (DirectX wrapper library)
+- Platform: Windows
+- IDE: Visual Studio 2022
+
+
+WHAT'S NEXT
+-----------
+Currently working on:
+- 3D models to replace placeholder cubes
+- Remaining 20 levels (Blocks 4-5)
+- Visual polish and sound effects
+
+The game design for all 50 levels is complete. Implementation of the
+remaining content is in progress.
+
+
+CONTROLS
+--------
+- WASD: Movement
+- Mouse: Camera
+- Space: Jump
+- E: Activate buttons
+- R: Restart level
+- ESC: Menu
+
+
+REPOSITORY
+----------
+Full source code available at: [GitHub link]
+
+
+================================
+Alpha 0.4 | January 2026

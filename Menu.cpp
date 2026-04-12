@@ -2,7 +2,7 @@
 
 Menu::Menu(int levels)
     : currentState(GameState::MAIN_MENU), selectedButtonIndex(0), totalLevels(levels),
-      selectedBlock(0), unlockedBlocks(3),
+      selectedBlock(0), unlockedBlocks(4),
       mousePressed(false), upPressed(false), downPressed(false),
       enterPressed(false), escPressed(false) {
     stateHistory.clear(); // Начинаем с пустого стека
