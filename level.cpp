@@ -25,6 +25,7 @@ void Level::LoadLevelData(int id) {
     if (id >= 11 && id <= 20) { LoadBlock2(id); return; }
     if (id >= 21 && id <= 30) { LoadBlock3(id); return; }
     if (id >= 31 && id <= 40) { LoadBlock4(id); return; }
+    if (id >= 41 && id <= 50) { LoadBlock5(id); return; }
 
     // Fallback for unknown levels
     playerSpawn = VGet(0, 1, 0);
@@ -51,10 +52,24 @@ void Level::Draw(bool debugMode) const {
                 visible = false;  // SPIKES(linkId=1) — выдвигающиеся, скрыты когда неактивны
 
             if (visible) {
-                MV1SetPosition(block.modelHandle, VAdd(block.pos, VScale(block.size, 0.5f)));
+                // Для моделей с origin в основании — ставим по нижней грани блока (X/Z центр, Y = низ)
+                VECTOR modelPos;
+                if (block.type == BlockType::TRIGGER)
+                    modelPos = VGet(block.pos.x + block.size.x * 0.5f, block.pos.y, block.pos.z + block.size.z * 0.5f);
+                else
+                    modelPos = VAdd(block.pos, VScale(block.size, 0.5f));
+
+                MV1SetPosition(block.modelHandle, modelPos);
                 MV1SetScale(block.modelHandle, block.modelScale);
                 MV1SetRotationXYZ(block.modelHandle, block.rotation);
                 MV1DrawModel(block.modelHandle);
+
+                // Hazard_Cylinder — полуцилиндр, рисуем зеркальную половину (180° по Y)
+                if (block.type == BlockType::PENDULUM_BLADE) {
+                    MV1SetRotationXYZ(block.modelHandle,
+                        VGet(block.rotation.x, block.rotation.y + DX_PI_F, block.rotation.z));
+                    MV1DrawModel(block.modelHandle);
+                }
             }
             continue;
         }
@@ -213,6 +228,18 @@ void Level::Draw(bool debugMode) const {
             SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
             SetWriteZBuffer3D(TRUE);
             break;
+
+        case BlockType::ICE_PLATFORM:
+            // Ледяная платформа — светло-голубая
+            DrawCube3D(block.pos, VAdd(block.pos, block.size),
+                GetColor(180, 220, 255), GetColor(130, 180, 230), TRUE);
+            break;
+
+        case BlockType::BOUNCE_PAD:
+            // Батут — жёлто-оранжевый
+            DrawCube3D(block.pos, VAdd(block.pos, block.size),
+                GetColor(255, 200, 50), GetColor(220, 150, 20), TRUE);
+            break;
         }
     }
 }
@@ -220,6 +247,8 @@ void Level::Draw(bool debugMode) const {
 bool Level::CheckCollision(VECTOR playerPos, VECTOR playerSize, VECTOR& newPos, VECTOR& velocity, bool& onGround, VECTOR& platformVelocity) {
     onGround = false;
     platformVelocity = VGet(0, 0, 0);
+    bool collisionOccurred = false;
+    bool bounced = false; // флаг: батут уже сработал — пол не должен обнулять velocity.y
 
     for (auto& block : blocks) {
         if (block.type == BlockType::PLATFORM ||
@@ -227,7 +256,9 @@ bool Level::CheckCollision(VECTOR playerPos, VECTOR playerSize, VECTOR& newPos, 
             block.type == BlockType::MOVING ||
             block.type == BlockType::BUTTON ||
             (block.type == BlockType::DISAPPEARING && block.isActive) ||
-            (block.type == BlockType::CRUMBLING && block.isActive)) {
+            (block.type == BlockType::CRUMBLING && block.isActive) ||
+            block.type == BlockType::ICE_PLATFORM ||
+            block.type == BlockType::BOUNCE_PAD) {
 
             if (newPos.x < block.pos.x + block.size.x && newPos.x + playerSize.x > block.pos.x &&
                 newPos.y < block.pos.y + block.size.y && newPos.y + playerSize.y > block.pos.y &&
@@ -259,8 +290,12 @@ bool Level::CheckCollision(VECTOR playerPos, VECTOR playerSize, VECTOR& newPos, 
                 if (overlapY <= overlapX && overlapY <= overlapZ) {
                     if (velocity.y <= 0 && playerPos.y > block.pos.y + block.size.y - 1.5f) {
                         newPos.y = block.pos.y + block.size.y;
-                        velocity.y = 0;
-                        onGround = true;
+
+                        if (block.type == BlockType::BOUNCE_PAD) {
+                            if (!bounced) { velocity.y = 0.6f; bounced = true; }
+                        } else {
+                            if (!bounced) { velocity.y = 0; onGround = true; }
+                        }
 
                         if (block.type == BlockType::MOVING) {
                             platformVelocity = VGet(
@@ -276,16 +311,15 @@ bool Level::CheckCollision(VECTOR playerPos, VECTOR playerSize, VECTOR& newPos, 
                             }
                         }
 
-                        // CRUMBLING - платформа начинает рассыпаться при касании
                         if (block.type == BlockType::CRUMBLING) {
                             if (block.timer == 0.0f) {
-                                block.timer = 0.5f * block.moveSpeed; // speed=1.0→0.5s; 0.6→0.3s (быстрее)
+                                block.timer = 0.5f * block.moveSpeed;
                             }
                         }
                     }
                     else if (velocity.y > 0) {
                         newPos.y = block.pos.y - playerSize.y;
-                        velocity.y = 0;
+                        if (!bounced) velocity.y = 0;
                     }
                 }
                 else if (overlapX <= overlapZ) {
@@ -305,11 +339,13 @@ bool Level::CheckCollision(VECTOR playerPos, VECTOR playerSize, VECTOR& newPos, 
                     }
                 }
 
-                return true;
+                collisionOccurred = true;
+                // Продолжаем цикл — батуты на платформах должны тоже проверяться
             }
         }
     }
-    return false;
+
+    return collisionOccurred;
 }
 
 bool Level::CheckWinTrigger(VECTOR playerPos, VECTOR playerSize) const {
@@ -588,6 +624,13 @@ void Level::InitializeModels() {
                 block.size.y / NATIVE,
                 block.size.z / NATIVE
             );
+
+            // Флаг (TRIGGER): повернуть лицом к игроку
+            if (block.type == BlockType::TRIGGER)
+                block.rotation = VGet(0, DX_PI_F * 0.5f, 0);
+            // Цилиндр маятника: модель стоит вертикально, укладываем вдоль Z (90° по X)
+            if (block.type == BlockType::PENDULUM_BLADE)
+                block.rotation = VGet(DX_PI_F * 0.5f, 0, 0);
         }
         else {
             // Модель не загружена - будут использоваться примитивы
@@ -619,4 +662,19 @@ float Level::CheckGravityZone(VECTOR playerPos, VECTOR playerSize) const {
         }
     }
     return 1.0f; // Нормальная гравитация по умолчанию
+}
+
+float Level::CheckIcePlatform(VECTOR playerPos, VECTOR playerSize) const {
+    for (const auto& block : blocks) {
+        if (block.type == BlockType::ICE_PLATFORM) {
+            float blockTop = block.pos.y + block.size.y;
+            // Игрок стоит на льду: ноги (playerPos.y) у верхней грани блока + X/Z перекрытие
+            if (playerPos.y >= blockTop - 0.15f && playerPos.y <= blockTop + 0.15f &&
+                playerPos.x < block.pos.x + block.size.x && playerPos.x + playerSize.x > block.pos.x &&
+                playerPos.z < block.pos.z + block.size.z && playerPos.z + playerSize.z > block.pos.z) {
+                return block.frictionMultiplier;
+            }
+        }
+    }
+    return 1.0f; // Не на льду — нормальное управление
 }

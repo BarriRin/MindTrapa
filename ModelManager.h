@@ -20,6 +20,8 @@ enum class ModelID {
     GRAVITY_ZONE = 12,     // Block 3
     PENDULUM_BLADE = 13,   // Block 3
     PLAYER = 14,
+    ICE_PLATFORM = 15,   // Block 5
+    BOUNCE_PAD = 16,     // Block 5
     COUNT // Количество типов моделей
 };
 

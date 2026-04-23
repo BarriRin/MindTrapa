@@ -2,7 +2,7 @@
 
 Menu::Menu(int levels)
     : currentState(GameState::MAIN_MENU), selectedButtonIndex(0), totalLevels(levels),
-      selectedBlock(0), unlockedBlocks(4),
+      selectedBlock(0), unlockedBlocks(5),
       mousePressed(false), upPressed(false), downPressed(false),
       enterPressed(false), escPressed(false) {
     stateHistory.clear(); // Начинаем с пустого стека
@@ -99,8 +99,8 @@ void Menu::CreateBlockSelectButtons() {
     int spacingY = 150;
     int buttonsPerRow = 3;
 
-    // Создаём 10 кнопок блоков (планеты)
-    for (int i = 0; i < 10; i++) {
+    // Создаём 5 кнопок блоков (блоки 6-10 удалены, игра 50 уровней)
+    for (int i = 0; i < 5; i++) {
         int row = i / buttonsPerRow;
         int col = i % buttonsPerRow;
         int x = startX + col * spacingX;

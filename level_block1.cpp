@@ -6,6 +6,7 @@ void Level::LoadBlock1(int id) {
         playerSpawn = VGet(0, 1, 0);
         blocks.push_back(Block(VGet(-5, -1, -5), VGet(10, 1, 10), BlockType::PLATFORM));
         blocks.push_back(Block(VGet(8, 1, 0), VGet(3, 1, 3), BlockType::PLATFORM));
+        blocks.push_back(Block(VGet(15, 2, 0), VGet(2, 1, 2), BlockType::PLATFORM));
         blocks.push_back(Block(VGet(15, 3, 0), VGet(2, 1, 2), BlockType::TRIGGER));
         break;
 
@@ -16,6 +17,7 @@ void Level::LoadBlock1(int id) {
         blocks.push_back(Block(VGet(12, 3, 0), VGet(4, 1, 4), BlockType::PLATFORM));
         blocks.push_back(Block(VGet(8, 2, 0), VGet(1, 1, 1), BlockType::SPIKES));
         blocks.push_back(Block(VGet(15, 4, 2), VGet(1, 1, 1), BlockType::SPIKES));
+        blocks.push_back(Block(VGet(20, 2, 0), VGet(2, 1, 2), BlockType::PLATFORM));
         blocks.push_back(Block(VGet(20, 3, 0), VGet(2, 1, 2), BlockType::TRIGGER));
         break;
 
@@ -26,6 +28,7 @@ void Level::LoadBlock1(int id) {
         blocks.push_back(Block(VGet(10, 1, 0), VGet(4, 1, 4), BlockType::PLATFORM));  // P1: за стеной, gap=7
         blocks.push_back(Block(VGet(2, 1, 8), VGet(4, 1, 4), BlockType::PLATFORM));   // P2: обход (Z>7 — мимо стены), gap=5
         blocks.push_back(Block(VGet(10, 1, 8), VGet(4, 1, 4), BlockType::PLATFORM));  // P3: gap=4 от P2
+        blocks.push_back(Block(VGet(15, 0, 0), VGet(2, 1, 2), BlockType::PLATFORM));
         blocks.push_back(Block(VGet(15, 1, 0), VGet(2, 1, 2), BlockType::TRIGGER));
         break;
 
@@ -48,14 +51,17 @@ void Level::LoadBlock1(int id) {
         blocks.push_back(Block(VGet(20, 1, -3), VGet(3, 1, 3), BlockType::PLATFORM));
         blocks.push_back(Block(VGet(22, 2, -3), VGet(1, 1, 1), BlockType::SPIKES));
         blocks.push_back(Block(VGet(20, 1, 3), VGet(3, 1, 3), BlockType::PLATFORM));
+        blocks.push_back(Block(VGet(25, 0, 3), VGet(2, 1, 2), BlockType::PLATFORM));
         blocks.push_back(Block(VGet(25, 1, 3), VGet(2, 1, 2), BlockType::TRIGGER));
         break;
 
     case 6: // Уровень 6 - кнопки и двери
         playerSpawn = VGet(0, 1, 0);
         blocks.push_back(Block(VGet(-5, -1, -5), VGet(8, 1, 8), BlockType::PLATFORM));
+        blocks.push_back(Block(VGet(8, 0, 0), VGet(2, 1, 2), BlockType::PLATFORM));
         blocks.push_back(Block(VGet(8, 1, 0), VGet(2, 1, 2), BlockType::BUTTON, 10, false));
         blocks.push_back(Block(VGet(15, 1, 0), VGet(4, 1, 4), BlockType::DISAPPEARING, 10, false));
+        blocks.push_back(Block(VGet(22, 0, 0), VGet(2, 1, 2), BlockType::PLATFORM));
         blocks.push_back(Block(VGet(22, 1, 0), VGet(2, 1, 2), BlockType::TRIGGER));
         break;
 
@@ -65,6 +71,7 @@ void Level::LoadBlock1(int id) {
         blocks.push_back(Block(VGet(5, 1, 0), VGet(3, 1, 3), BlockType::PLATFORM));
         blocks.push_back(Block(VGet(10, 2, 0), VGet(4, 1, 4), BlockType::MOVING, 0, true, VGet(10, 2, 0), VGet(20, 2, 0)));
         blocks.push_back(Block(VGet(25, 3, 0), VGet(3, 1, 3), BlockType::PLATFORM));
+        blocks.push_back(Block(VGet(30, 3, 0), VGet(2, 1, 2), BlockType::PLATFORM));
         blocks.push_back(Block(VGet(30, 4, 0), VGet(2, 1, 2), BlockType::TRIGGER));
         break;
 
@@ -75,6 +82,7 @@ void Level::LoadBlock1(int id) {
         blocks.push_back(Block(VGet(10, 3, 0), VGet(3, 1, 3), BlockType::DISAPPEARING, 0, true));
         blocks.push_back(Block(VGet(15, 4, 0), VGet(2, 1, 2), BlockType::DISAPPEARING, 0, true));
         blocks.push_back(Block(VGet(20, 5, 0), VGet(4, 1, 4), BlockType::PLATFORM));
+        blocks.push_back(Block(VGet(25, 4, 0), VGet(2, 1, 2), BlockType::PLATFORM));
         blocks.push_back(Block(VGet(25, 5, 0), VGet(2, 1, 2), BlockType::TRIGGER));
         break;
 

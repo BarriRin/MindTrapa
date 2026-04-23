@@ -95,37 +95,50 @@ void Level::LoadBlock2(int id) {
         blocks.push_back(Block(VGet(-5, -1, -5), VGet(8, 1, 8), BlockType::PLATFORM));
 
         // === СЕКЦИЯ 1: Вилка ===
-        // Развилка — игрок видит оба пути сразу
-        blocks.push_back(Block(VGet(5, 0, -7), VGet(5, 1, 16), BlockType::PLATFORM)); // X:5..10, Z:-7..9
+        blocks.push_back(Block(VGet(5, 0, -7), VGet(5, 1, 16), BlockType::PLATFORM));
 
-        // ПУТЬ A — чистый → реальные шипы у конца (gap=4 от пути B по Z)
-        blocks.push_back(Block(VGet(10, 0,  5), VGet(12, 1, 5), BlockType::PLATFORM));  // Z:5..10
-        blocks.push_back(Block(VGet(18, 1,  5), VGet(4, 1, 5), BlockType::SPIKES));     // реальные у конца
+        // ПУТЬ A — чистый → реальные шипы у конца (тайлы 1x1x1)
+        blocks.push_back(Block(VGet(10, 0, 5), VGet(12, 1, 5), BlockType::PLATFORM));
+        for (int tx = 18; tx < 22; tx++)
+            for (int tz = 5; tz < 10; tz++)
+                blocks.push_back(Block(VGet((float)tx, 1.f, (float)tz), VGet(1, 1, 1), BlockType::SPIKES));
 
-        // ПУТЬ B — весь в розовых шипах → безопасен, ведёт к посадочной (gap=4 до пути A по Z)
-        blocks.push_back(Block(VGet(10, 0, -8), VGet(12, 1, 5), BlockType::PLATFORM));  // Z:-8..-3
-        blocks.push_back(Block(VGet(10, 1, -8), VGet(12, 1, 5), BlockType::FAKE_SPIKES));
+        // ПУТЬ B — весь в розовых шипах → безопасен (тайлы 1x1x1)
+        blocks.push_back(Block(VGet(10, 0, -8), VGet(12, 1, 5), BlockType::PLATFORM));
+        for (int tx = 10; tx < 22; tx++)
+            for (int tz = -8; tz < -3; tz++)
+                blocks.push_back(Block(VGet((float)tx, 1.f, (float)tz), VGet(1, 1, 1), BlockType::FAKE_SPIKES));
 
-        // Посадочная — gap=4 по X от обоих путей; Z:-9..-3 → не допрыгнуть с пути A (Z min=5)
-        blocks.push_back(Block(VGet(26, 0, -9), VGet(6, 1, 6), BlockType::PLATFORM));  // X:26..32, Z:-9..-3
+        // Посадочная
+        blocks.push_back(Block(VGet(26, 0, -9), VGet(6, 1, 6), BlockType::PLATFORM));
 
-        // === СЕКЦИЯ 2: Открытое "безопасное" поле (gap=4 по X от посадочной) ===
-        blocks.push_back(Block(VGet(36, 0, -4), VGet(20, 1, 11), BlockType::PLATFORM)); // X:36..56, Z:-4..7
-        // Реальные шипы блокируют "очевидный" правый выход
-        blocks.push_back(Block(VGet(48, 1, -4), VGet(8, 1,  6), BlockType::SPIKES));
-        // Розовая "задняя стена" — единственный выход
-        blocks.push_back(Block(VGet(36, 1,  4), VGet(20, 1, 3), BlockType::FAKE_SPIKES));
+        // === СЕКЦИЯ 2: Открытое поле ===
+        blocks.push_back(Block(VGet(36, 0, -4), VGet(20, 1, 11), BlockType::PLATFORM));
+        // Реальные шипы блокируют правый выход (тайлы 1x1x1)
+        for (int tx = 48; tx < 56; tx++)
+            for (int tz = -4; tz < 2; tz++)
+                blocks.push_back(Block(VGet((float)tx, 1.f, (float)tz), VGet(1, 1, 1), BlockType::SPIKES));
+        // Розовая задняя стена — единственный выход (тайлы 1x1x1)
+        for (int tx = 36; tx < 56; tx++)
+            for (int tz = 4; tz < 7; tz++)
+                blocks.push_back(Block(VGet((float)tx, 1.f, (float)tz), VGet(1, 1, 1), BlockType::FAKE_SPIKES));
 
-        // Выход из секции 2 (за розовой зоной, X:56 = конец платформы)
-        blocks.push_back(Block(VGet(56, 0, 3), VGet(6, 1, 5), BlockType::PLATFORM));   // X:56..62, Z:3..8
+        // Выход из секции 2
+        blocks.push_back(Block(VGet(56, 0, 3), VGet(6, 1, 5), BlockType::PLATFORM));
 
-        // === СЕКЦИЯ 3: Финал — две дорожки (gap=4 по X) ===
-        blocks.push_back(Block(VGet(66, 0, -2), VGet(16, 1, 12), BlockType::PLATFORM)); // X:66..82, Z:-2..10
-        // Чистая дорожка (Z:-2..4) → реальные шипы посередине
-        blocks.push_back(Block(VGet(71, 1, -2), VGet(7, 1, 6), BlockType::SPIKES));
-        // Розовая дорожка (Z:5..10) → безопасна, здесь триггер
-        blocks.push_back(Block(VGet(66, 1,  5), VGet(16, 1, 5), BlockType::FAKE_SPIKES));
-        blocks.push_back(Block(VGet(78, 1,  7), VGet(2, 1, 2), BlockType::TRIGGER));
+        // === СЕКЦИЯ 3: Финал — две дорожки ===
+        blocks.push_back(Block(VGet(66, 0, -2), VGet(16, 1, 12), BlockType::PLATFORM));
+        // Чистая дорожка → реальные шипы (тайлы 1x1x1)
+        for (int tx = 71; tx < 78; tx++)
+            for (int tz = -2; tz < 4; tz++)
+                blocks.push_back(Block(VGet((float)tx, 1.f, (float)tz), VGet(1, 1, 1), BlockType::SPIKES));
+        // Розовая дорожка → безопасна (тайлы 1x1x1)
+        for (int tx = 66; tx < 82; tx++)
+            for (int tz = 5; tz < 10; tz++)
+                blocks.push_back(Block(VGet((float)tx, 1.f, (float)tz), VGet(1, 1, 1), BlockType::FAKE_SPIKES));
+        // Посадочная за шипами + финальный флаг
+        blocks.push_back(Block(VGet(82, 0, 5), VGet(4, 1, 4), BlockType::PLATFORM));
+        blocks.push_back(Block(VGet(83, 1, 6), VGet(2, 1, 2), BlockType::TRIGGER));
         break;
 
     case 15: // Level 15 - CRUMBLING + тайминг: зазоры 3 в X, поворот в +Z с зазором 4
@@ -218,26 +231,24 @@ void Level::LoadBlock2(int id) {
         // === Секция 3: Вертикальная платформа ===
         // E (Y: 0→11): X=58, Z=4 — поднимает на верхний ярус
         // Gap от площадки 2 (right X=56) до E start (X=58) = 2 ✓
+        // E — лифт сбоку от верхней площадки: поднимается до Y=12, игрок прыгает вправо
         blocks.push_back(Block(VGet(58, 0, 4), VGet(4, 1, 4), BlockType::MOVING,
             0, true, VGet(58, 0, 4), VGet(58, 12, 4), 1.0f, 0.7f));
 
-        // Верхняя площадка Y=12: перекрывается с E по X (X:54..62), игрок сходит с E наверх
-        blocks.push_back(Block(VGet(54, 12, 2), VGet(8, 1, 8), BlockType::PLATFORM));
+        // Верхняя площадка Y=12: X=63 (gap=1 от правого края лифта X=62) — игрок прыгает с лифта
+        blocks.push_back(Block(VGet(63, 12, 2), VGet(8, 1, 8), BlockType::PLATFORM));
 
         // === Секция 4: Две встречные платформы ===
-        // F (→, Z=2): X:64→80
-        // Gap от верхней площадки (right X=62) до F start (X=64) = 2 ✓
-        blocks.push_back(Block(VGet(64, 12, 2), VGet(3, 1, 3), BlockType::MOVING,
-            0, true, VGet(64, 12, 2), VGet(80, 12, 2), 1.0f, 0.0f));
-        // G (←, Z=6): старт X=80, движется к X=64 — встречная к F
-        // При обратном ходе (backward) G идёт → X=64→80, можно сесть и доехать до финала
-        blocks.push_back(Block(VGet(80, 12, 6), VGet(3, 1, 3), BlockType::MOVING,
-            0, true, VGet(80, 12, 6), VGet(64, 12, 6), 1.0f, 0.0f));
+        // F (→, Z=2): X:73→89
+        blocks.push_back(Block(VGet(73, 12, 2), VGet(3, 1, 3), BlockType::MOVING,
+            0, true, VGet(73, 12, 2), VGet(89, 12, 2), 1.0f, 0.0f));
+        // G (←, Z=6): X:89→73 — встречная к F
+        blocks.push_back(Block(VGet(89, 12, 6), VGet(3, 1, 3), BlockType::MOVING,
+            0, true, VGet(89, 12, 6), VGet(73, 12, 6), 1.0f, 0.0f));
 
-        // Финальная платформа (достижима с F или G при max X)
-        // F/G max X=80, right edge=83 → финал X:83..90
-        blocks.push_back(Block(VGet(83, 12, 3), VGet(7, 1, 7), BlockType::PLATFORM));
-        blocks.push_back(Block(VGet(85, 13, 5), VGet(2, 1, 2), BlockType::TRIGGER));
+        // Финальная платформа (F/G max X=89, right edge=92 → финал X:92..99)
+        blocks.push_back(Block(VGet(92, 12, 3), VGet(7, 1, 7), BlockType::PLATFORM));
+        blocks.push_back(Block(VGet(94, 13, 5), VGet(2, 1, 2), BlockType::TRIGGER));
         break;
 
     case 18: // Level 18 - "Кнопки-обманки": настоящие кнопки открывают мосты, обманки блокируют невидимыми стенами

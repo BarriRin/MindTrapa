@@ -29,14 +29,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     // Загрузка моделей (converted_x/ - конвертированные из Quaternius pack)
     modelMgr.LoadModel(ModelID::PLATFORM,           "converted_x/Cube_Grass_Single.x", 1.0f);
     modelMgr.LoadModel(ModelID::SPIKES,             "converted_x/Cube_Spikes.x",       1.0f);
-    modelMgr.LoadModel(ModelID::FAKE_SPIKES,        "converted_x/Cube_Default.x",      1.0f);
+    modelMgr.LoadModel(ModelID::FAKE_SPIKES,        "converted_x/Cube_Spikes.x",       1.0f);
     modelMgr.LoadModel(ModelID::CRUMBLING,          "converted_x/Cube_Crate.x",        1.0f);
     modelMgr.LoadModel(ModelID::MOVING,             "converted_x/Cube_Dirt_Single.x",  1.0f);
     modelMgr.LoadModel(ModelID::DISAPPEARING,       "converted_x/Cube_Bricks.x",       1.0f);
-    modelMgr.LoadModel(ModelID::FAKE_PLATFORM,      "converted_x/Cube_Default.x",      1.0f);
+    modelMgr.LoadModel(ModelID::FAKE_PLATFORM,      "converted_x/Cube_Grass_Single.x", 1.0f);
     modelMgr.LoadModel(ModelID::TRIGGER,            "converted_x/Goal_Flag.x",         1.0f);
-    modelMgr.LoadModel(ModelID::BUTTON,             "converted_x/Lever.x",             1.0f);
-    modelMgr.LoadModel(ModelID::PENDULUM_BLADE,     "converted_x/Hazard_Saw.x",        1.0f);
+    modelMgr.LoadModel(ModelID::BUTTON,             "converted_x/Cube_Exclamation.x",  1.0f);
+    modelMgr.LoadModel(ModelID::TELEPORT,           "converted_x/Gem_Pink.x",          1.0f);
+    modelMgr.LoadModel(ModelID::RETRACTABLE_SPIKES, "converted_x/Cube_Spikes.x",       1.0f);
+    modelMgr.LoadModel(ModelID::PENDULUM_BLADE,     "converted_x/Hazard_Cylinder.x",   1.0f);
 
     // TODO: Загрузка скайбоксов (когда будут готовы)
     // modelMgr.LoadSkybox(0, "block0_mars.mqo", 1000.0f);   // Block 1 (Mars)
@@ -77,7 +79,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
     // Инициализация игры
     LevelManager levelManager;
-    Menu menu(40); // 40 уровней - Block 1-3 (1-30) + Block 4 (31-40)
+    Menu menu(50); // 50 уровней - Block 1-5
 
     // Генерируем звёзды для космического фона
     std::vector<Star> stars = GenerateStars(500, 400.0f);
@@ -94,6 +96,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     VECTOR playerPos = VGet(0, 0, 0);
     VECTOR playerVel = VGet(0, 0, 0);
     VECTOR playerSize = VGet(1, 1, 1);
+    VECTOR playerHorizVel = VGet(0, 0, 0); // Block 5: персистентная горизонтальная скорость (для льда)
+    float iceFriction = 1.0f;              // Block 5: текущий коэффициент трения льда (1.0 = не на льду)
 
     // Камера
     float cameraAngleX = 0.0f;
@@ -454,10 +458,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
                 }
             }
 
-            // Прыжок
+            // Block 5: заранее проверяем лёд (нужно до прыжка)
+            {
+                Level* lvl = levelManager.GetCurrentLevel();
+                iceFriction = lvl ? lvl->CheckIcePlatform(playerPos, playerSize) : 1.0f;
+            }
+
+            // Прыжок — на льду нельзя прыгать (только батут может выбросить)
             static bool jumpPressed = false;
             if (CheckHitKey(KEY_INPUT_SPACE)) {
-                if (!jumpPressed && onGround) {
+                if (!jumpPressed && onGround && iceFriction >= 1.0f) {
                     // jumpPower нормализован к 60 FPS, не нужно умножать на deltaTime (это начальная скорость)
                     playerVel.y = jumpPower;
                     onGround = false;
@@ -488,6 +498,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
                     levelManager.RestartLevel();
                     playerPos = levelManager.GetCurrentLevel()->GetPlayerSpawn();
                     playerVel = VGet(0, 0, 0);
+                    playerHorizVel = VGet(0, 0, 0);
                     darknessLevel = 0.0f;
                 }
                 restartPressed = true;
@@ -504,12 +515,33 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
                 gravityMultiplier = currentLevel->CheckGravityZone(playerPos, playerSize);
             }
 
+            // Block 5: проверяем лёд и применяем инерцию
+            // iceFriction уже вычислен выше (до прыжка)
+            if (iceFriction < 1.0f) {
+                // На льду: инерция при смене направления + скольжение без инпута
+                bool hasInput = (move.x != 0.0f || move.z != 0.0f);
+                if (hasInput) {
+                    // Медленно меняем скорость — blend 0.04: разворот занимает ~35 кадров (~0.6 сек)
+                    const float blend = 0.04f;
+                    playerHorizVel.x = playerHorizVel.x * (1.f - blend) + move.x * blend;
+                    playerHorizVel.z = playerHorizVel.z * (1.f - blend) + move.z * blend;
+                } else {
+                    // Без инпута: скользим, медленно тормозим
+                    float decay = powf(iceFriction, effectiveDeltaTime * 60.0f);
+                    playerHorizVel.x *= decay;
+                    playerHorizVel.z *= decay;
+                }
+            } else {
+                // Не на льду (обычная платформа или воздух) — мгновенное управление как раньше
+                playerHorizVel = move;
+            }
+
             // Применяем гравитацию с множителем (нормализуем к 60 FPS)
             playerVel.y += gravity * gravityMultiplier * (effectiveDeltaTime * 60.0f);
 
             // Применяем вертикальную скорость (с учётом deltaTime)
             VECTOR verticalMove = VGet(0, playerVel.y * (effectiveDeltaTime * 60.0f), 0);
-            VECTOR newPos = VAdd(playerPos, VAdd(move, verticalMove));
+            VECTOR newPos = VAdd(playerPos, VAdd(playerHorizVel, verticalMove));
 
             // === КОЛЛИЗИИ ===
             if (currentLevel) {
@@ -525,6 +557,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
                     levelManager.RestartLevel();
                     playerPos = levelManager.GetCurrentLevel()->GetPlayerSpawn();
                     playerVel = VGet(0, 0, 0);
+                    playerHorizVel = VGet(0, 0, 0);
                     darknessLevel = 0.0f;
                 }
 
@@ -542,6 +575,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
                     levelManager.NextLevel();
                     playerPos = levelManager.GetCurrentLevel()->GetPlayerSpawn();
                     playerVel = VGet(0, 0, 0);
+                    playerHorizVel = VGet(0, 0, 0);
                     darknessLevel = 0.0f;
                 }
             }
@@ -550,6 +584,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
                 levelManager.RestartLevel();
                 playerPos = levelManager.GetCurrentLevel()->GetPlayerSpawn();
                 playerVel = VGet(0, 0, 0);
+                playerHorizVel = VGet(0, 0, 0);
                 darknessLevel = 0.0f;
             }
 

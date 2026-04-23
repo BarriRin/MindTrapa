@@ -150,6 +150,7 @@
     <ClCompile Include="level_block2.cpp" />
     <ClCompile Include="level_block3.cpp" />
     <ClCompile Include="level_block4.cpp" />
+    <ClCompile Include="level_block5.cpp" />
     <ClCompile Include="LevelManager.cpp" />
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="main.cpp" />

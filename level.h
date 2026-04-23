@@ -19,7 +19,9 @@ enum class BlockType {
     FAKE_SPIKES = 11,  // Фейковые шипы (выглядят опасно, но безопасны) [Block 2]
     GRAVITY_ZONE = 12,     // Зона с изменённой гравитацией [Block 3]
     PENDULUM_BLADE = 13,   // Качающийся топор-маятник (смертелен) [Block 3]
-    LIGHT_PULSE_ZONE = 14  // Зона мигающего света (темнота/свет по таймеру) [Block 4]
+    LIGHT_PULSE_ZONE = 14, // Зона мигающего света (темнота/свет по таймеру) [Block 4]
+    ICE_PLATFORM = 15,    // Скользкая платформа (инерция при движении) [Block 5]
+    BOUNCE_PAD = 16       // Батут (подбрасывает игрока вверх) [Block 5]
 };
 
 // Структура блока
@@ -50,6 +52,9 @@ struct Block {
     float swingRange;        // Диапазон качания в радианах (например, PI/4 = ±45°)
     VECTOR pivotPoint;       // Точка подвеса маятника (для PENDULUM_BLADE)
 
+    // Параметры для Block 5 механик
+    float frictionMultiplier; // Коэффициент трения (для ICE_PLATFORM): 0.985 = плавное скольжение (per frame при отсутствии инпута)
+
     // Конструктор с параметрами по умолчанию
     Block(VECTOR p, VECTOR s, BlockType t, int link = 0, bool active = true,
           VECTOR moveStart = VGet(0, 0, 0), VECTOR moveEnd = VGet(0, 0, 0),
@@ -61,7 +66,8 @@ struct Block {
           prevPos(p), modelHandle(-1), rotation(VGet(0, 0, 0)),
           modelScale(VGet(1, 1, 1)), useModel(false),
           gravityMultiplier(1.0f), swingAngle(0.0f), swingSpeed(1.0f),
-          swingRange(DX_PI_F / 3.0f), pivotPoint(VGet(0, 0, 0)) {}
+          swingRange(DX_PI_F / 3.0f), pivotPoint(VGet(0, 0, 0)),
+          frictionMultiplier(0.985f) {}
 };
 
 // Класс уровня
@@ -78,6 +84,7 @@ private:
     void LoadBlock2(int id);
     void LoadBlock3(int id);
     void LoadBlock4(int id);
+    void LoadBlock5(int id);
 
     // Инициализация моделей для блоков
     void InitializeModels();
@@ -98,6 +105,9 @@ public:
 
     // Block 3 механики
     float CheckGravityZone(VECTOR playerPos, VECTOR playerSize) const; // Возвращает множитель гравитации
+
+    // Block 5 механики
+    float CheckIcePlatform(VECTOR playerPos, VECTOR playerSize) const; // Возвращает frictionMultiplier (1.0 = не на льду)
 
     // Block 4 механики
     bool IsAnyLightPulseZoneActive() const; // true = светлая фаза (хотя бы одна зона активна)
