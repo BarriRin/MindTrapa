@@ -5,6 +5,16 @@
 #include "ProfileManager.h"
 #include "Renderer.h"
 #include <cmath>
+#include <vector>
+#include <algorithm>
+#include <cstdlib>
+#include <string>
+
+struct Particle {
+    VECTOR pos, vel;
+    float  life, maxLife;
+    unsigned int color;
+};
 
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     // Инициализация DxLib
@@ -46,6 +56,52 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     // modelMgr.LoadSkybox(1, "block1_moon.mqo", 1000.0f);   // Block 2 (Moon)
     // ...
 
+    // === BGM (фоновая музыка по блокам) ===
+    // Пробует .ogg → .mp3 → .wav для каждого блока
+    auto loadBgm = [](const wchar_t* name) -> int {
+        const wchar_t* exts[] = { L".ogg", L".mp3", L".wav" };
+        for (auto ext : exts) {
+            std::wstring path = std::wstring(L"media/music/") + name + ext;
+            int h = LoadSoundMem(path.c_str());
+            if (h != -1) return h;
+        }
+        return -1;
+    };
+
+    int bgmHandles[5] = {
+        loadBgm(L"block1"),
+        loadBgm(L"block2"),
+        loadBgm(L"block3"),
+        loadBgm(L"block4"),
+        loadBgm(L"block5"),
+    };
+
+    int currentBgmIdx = -1;  // индекс текущего играющего трека (0-4)
+
+    // Лямбда переключения трека
+    auto playBgm = [&](int blockIdx, int volumePct) {
+        if (blockIdx < 0 || blockIdx >= 5) return;
+        if (bgmHandles[blockIdx] == -1) return;
+        if (currentBgmIdx == blockIdx) {
+            // Уже играет нужный трек — только обновить громкость
+            ChangeVolumeSoundMem(volumePct * 255 / 100, bgmHandles[blockIdx]);
+            return;
+        }
+        // Остановить предыдущий
+        if (currentBgmIdx >= 0 && bgmHandles[currentBgmIdx] != -1)
+            StopSoundMem(bgmHandles[currentBgmIdx]);
+        // Запустить новый
+        ChangeVolumeSoundMem(volumePct * 255 / 100, bgmHandles[blockIdx]);
+        PlaySoundMem(bgmHandles[blockIdx], DX_PLAYTYPE_LOOP, TRUE);
+        currentBgmIdx = blockIdx;
+    };
+
+    auto stopBgm = [&]() {
+        if (currentBgmIdx >= 0 && bgmHandles[currentBgmIdx] != -1)
+            StopSoundMem(bgmHandles[currentBgmIdx]);
+        currentBgmIdx = -1;
+    };
+
     // === МОДЕЛЬ ИГРОКА ===
     int playerModelHandle = MV1LoadModel(L"models/converted_x/Character.mv1");
     int playerAnimAttach  = -1;
@@ -53,15 +109,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     float playerFacingAngle = 0.0f;
     int playerCurrentAnim = -1;
 
-    // Debug: вывести имена всех анимаций (видно в DebugView / VS Output)
+    // Debug: записать все анимации в AnimList.txt
     if (playerModelHandle != -1) {
         int animCount = MV1GetAnimNum(playerModelHandle);
-        wchar_t dbg[256];
-        swprintf_s(dbg, 256, L"[Player] Character.mv1 loaded, %d animations:\n", animCount);
-        OutputDebugStringW(dbg);
-        for (int i = 0; i < animCount; i++) {
-            swprintf_s(dbg, 256, L"  [%d] %s\n", i, MV1GetAnimName(playerModelHandle, i));
-            OutputDebugStringW(dbg);
+        FILE* f = nullptr;
+        fopen_s(&f, "AnimList.txt", "w");
+        if (f) {
+            fprintf(f, "Character.mv1 — %d animations:\n", animCount);
+            for (int i = 0; i < animCount; i++)
+                fprintf(f, "  [%d] %ls\n", i, MV1GetAnimName(playerModelHandle, i));
+            fclose(f);
         }
     }
 
@@ -80,6 +137,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     int animDeath = findAnim(L"Death");
     if (animDeath == 0) animDeath = findAnim(L"Die");
     if (animDeath == 0) animDeath = findAnim(L"Defeat");
+    int animWave  = findAnim(L"Wave");
+    int animYes   = findAnim(L"Yes");
 
     // Видеофон главного меню
     int menuBgMovie = OpenMovieToGraph(L"media/menu_bg.mp4", TRUE);
@@ -151,6 +210,48 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     float dyingTimer        = 0.0f;
     bool  levelWasCompleted = false;
 
+    // Система частиц (победный фейерверк)
+    srand((unsigned int)GetNowCount());
+    std::vector<Particle> particles;
+    particles.reserve(200);
+
+    const float CELEBRATION_DURATION = 2.8f;
+    float        celebrationTimer    = 0.0f;
+    VECTOR       celebrationFlagPos  = VGet(0.0f, 0.0f, 0.0f);
+    int          pendingCelebStars   = 0;
+    float        pendingCelebTime    = 0.0f;
+    bool         pendingCelebIsLast  = false;
+    int          celebPhase          = 0;    // 0=Yes, 1=Wave
+    bool         secondBurstFired    = false;
+
+    // Лямбда — выбросить burst частиц из точки origin
+    auto spawnBurst = [&](VECTOR origin, int count) {
+        static const unsigned int palette[] = {
+            GetColor(255, 210,  50),  // gold
+            GetColor(255, 255, 255),  // white
+            GetColor( 80, 220, 255),  // cyan
+            GetColor(255, 100, 200),  // pink
+            GetColor(100, 255, 150),  // green
+            GetColor(255, 160,  50),  // orange
+        };
+        for (int i = 0; i < count; i++) {
+            Particle p;
+            float az  = (rand() % 6284) * 0.001f;      // 0..2π azimuth
+            float elev = ((rand() % 100) - 20) * 0.02f; // -0.4..1.6 elevation bias upward
+            float spd  = 3.0f + (rand() % 100) * 0.06f; // 3..9 m/s
+            p.vel  = VGet(cosf(elev) * cosf(az) * spd,
+                          sinf(elev) * spd + 2.5f,
+                          cosf(elev) * sinf(az) * spd);
+            p.pos  = VAdd(origin, VGet((rand() % 100 - 50) * 0.01f,
+                                       (rand() % 80)        * 0.01f,
+                                       (rand() % 100 - 50) * 0.01f));
+            p.maxLife = 1.4f + (rand() % 100) * 0.012f; // 1.4..2.6 s
+            p.life    = p.maxLife;
+            p.color   = palette[rand() % 6];
+            particles.push_back(p);
+        }
+    };
+
     // Скрываем курсор мыши только в игре
     SetMouseDispFlag(TRUE);
 
@@ -210,6 +311,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
                 darknessLevel = 0.0f;
                 gameState = GameState::PLAYING;
                 if (menuBgMovie != -1) PauseMovieToGraph(menuBgMovie);
+                playBgm(0, menu.GetSettings().musicVolume);
                 SetMouseDispFlag(FALSE);
                 break;
 
@@ -242,6 +344,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
                     darknessLevel = 0.0f;
                     gameState = GameState::PLAYING;
                     if (menuBgMovie != -1) PauseMovieToGraph(menuBgMovie);
+                    playBgm((levelToLoad - 1) / 10, menu.GetSettings().musicVolume);
                     SetMouseDispFlag(FALSE);
                 }
                 else {
@@ -307,6 +410,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
                 darknessLevel = 0.0f;
                 gameState = GameState::PLAYING;
                 if (menuBgMovie != -1) PauseMovieToGraph(menuBgMovie);
+                playBgm((levelManager.GetCurrentLevelId() - 1) / 10, menu.GetSettings().musicVolume);
                 SetMouseDispFlag(FALSE);
                 break;
 
@@ -316,6 +420,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
                 break;
 
             case ButtonAction::BACK_TO_MENU:
+                stopBgm();
                 menu.SetSelectedBlock(0);
                 menu.ClearHistory();
                 menu.SetState(GameState::MAIN_MENU);
@@ -334,6 +439,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
                     playerVel = VGet(0, 0, 0);
                     darknessLevel = 0.0f;
                     gameState = GameState::PLAYING;
+                    playBgm((levelToLoad - 1) / 10, menu.GetSettings().musicVolume);
                     SetMouseDispFlag(FALSE);
                 }
                 else {
@@ -451,6 +557,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
             // === ОБНОВЛЕНИЕ ТАЙМЕРА УРОВНЯ ===
             levelManager.UpdateTimer(effectiveDeltaTime);
+
+            // Синхронизация громкости BGM с настройками профиля
+            if (currentBgmIdx >= 0 && bgmHandles[currentBgmIdx] != -1)
+                ChangeVolumeSoundMem(menu.GetSettings().musicVolume * 255 / 100, bgmHandles[currentBgmIdx]);
 
             // Block 4: определяем активен ли тёмный режим
             int currentLevelId = levelManager.GetCurrentLevelId();
@@ -616,14 +726,45 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
                 if (gameState == GameState::PLAYING && currentLevel->CheckWinTrigger(playerPos, playerSize)) {
                     levelManager.OnLevelComplete();
-                    float t        = levelManager.GetCurrentLevelTime();
+                    float t         = levelManager.GetCurrentLevelTime();
                     int   starCount = (t <= 15.0f) ? 3 : (t <= 30.0f) ? 2 : 1;
                     profileMgr.SetLevelResult(levelManager.GetCurrentLevelId(), starCount, t);
                     menu.UpdateUnlockState();
                     levelWasCompleted = true;
-                    menu.ShowResultScreen(true, starCount, t, levelManager.IsLastLevel());
-                    gameState = GameState::LEVEL_RESULT;
-                    SetMouseDispFlag(TRUE);
+
+                    // Сохраняем данные для result screen
+                    pendingCelebStars  = starCount;
+                    pendingCelebTime   = t;
+                    pendingCelebIsLast = levelManager.IsLastLevel();
+
+                    // Позиция флага в мировых координатах
+                    celebrationFlagPos = playerPos;
+                    for (const auto& block : currentLevel->GetBlocks()) {
+                        if (block.type == BlockType::TRIGGER) {
+                            celebrationFlagPos = VAdd(block.pos,
+                                VGet(block.size.x * 0.5f, block.size.y * 0.5f, block.size.z * 0.5f));
+                            break;
+                        }
+                    }
+
+                    // Запускаем фейерверк
+                    celebrationTimer   = CELEBRATION_DURATION;
+                    celebPhase         = 0;
+                    secondBurstFired   = false;
+                    particles.clear();
+                    spawnBurst(celebrationFlagPos, 80);
+
+                    // Victory анимация: Yes → Wave
+                    if (playerModelHandle != -1) {
+                        if (playerAnimAttach != -1) MV1DetachAnim(playerModelHandle, playerAnimAttach);
+                        playerAnimAttach  = MV1AttachAnim(playerModelHandle, animYes, -1, FALSE);
+                        playerAnimTime    = 0.0f;
+                        playerCurrentAnim = animYes;
+                    }
+
+                    menu.SetState(GameState::LEVEL_CELEBRATING);
+                    gameState = GameState::LEVEL_CELEBRATING;
+                    SetMouseDispFlag(FALSE);
                 }
             }
 
@@ -855,6 +996,105 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
             }
             levelManager.DrawLevelInfo(false);
         }
+        else if (gameState == GameState::LEVEL_CELEBRATING) {
+            SetMouseDispFlag(FALSE);
+
+            // Таймер + второй burst
+            celebrationTimer -= effectiveDeltaTime;
+            if (!secondBurstFired && celebrationTimer < CELEBRATION_DURATION - 1.2f) {
+                spawnBurst(celebrationFlagPos, 50);
+                secondBurstFired = true;
+            }
+
+            // Обновление частиц
+            for (auto& p : particles) {
+                p.vel.y -= 8.0f * effectiveDeltaTime;
+                p.pos    = VAdd(p.pos, VScale(p.vel, effectiveDeltaTime));
+                p.life  -= effectiveDeltaTime;
+            }
+            particles.erase(
+                std::remove_if(particles.begin(), particles.end(),
+                    [](const Particle& p) { return p.life <= 0.0f; }),
+                particles.end());
+
+            // Анимация: Yes → Wave
+            if (playerModelHandle != -1 && playerAnimAttach != -1) {
+                float totalTime = MV1GetAttachAnimTotalTime(playerModelHandle, playerAnimAttach);
+                if (totalTime > 0.0f) {
+                    playerAnimTime += effectiveDeltaTime * 24.0f;
+                    if (celebPhase == 0) {
+                        // Yes: одиночное воспроизведение
+                        if (playerAnimTime >= totalTime) {
+                            MV1DetachAnim(playerModelHandle, playerAnimAttach);
+                            playerAnimAttach  = MV1AttachAnim(playerModelHandle, animWave, -1, FALSE);
+                            playerAnimTime    = 0.0f;
+                            playerCurrentAnim = animWave;
+                            celebPhase        = 1;
+                        } else {
+                            MV1SetAttachAnimTime(playerModelHandle, playerAnimAttach, playerAnimTime);
+                        }
+                    } else {
+                        // Wave: loop
+                        playerAnimTime = fmodf(playerAnimTime, totalTime);
+                        MV1SetAttachAnimTime(playerModelHandle, playerAnimAttach, playerAnimTime);
+                    }
+                }
+            }
+
+            // Переход на экран результата
+            if (celebrationTimer <= 0.0f) {
+                particles.clear();
+                menu.ShowResultScreen(true, pendingCelebStars, pendingCelebTime, pendingCelebIsLast);
+                gameState = GameState::LEVEL_RESULT;
+                SetMouseDispFlag(TRUE);
+            }
+
+            // Рендер сцены
+            VECTOR celebCamPos = VGet(
+                playerPos.x + cameraDistance * sinf(cameraAngleY) * cosf(cameraAngleX),
+                playerPos.y + cameraDistance * sinf(cameraAngleX) + 2.0f,
+                playerPos.z + cameraDistance * cosf(cameraAngleY) * cosf(cameraAngleX));
+            SetCameraPositionAndTarget_UpVecY(celebCamPos, VAdd(playerPos, VGet(0, 1, 0)));
+            SetUseLighting(FALSE);
+            SetUseBackCulling(FALSE);
+            DrawSpaceSkybox(playerPos);
+            DrawStars(stars, celebCamPos);
+            if (levelManager.GetCurrentLevel()) levelManager.GetCurrentLevel()->Draw(false);
+
+            // Игрок — разворачиваем лицом к камере
+            if (playerModelHandle != -1) {
+                VECTOR modelPos = VGet(playerPos.x + playerSize.x * 0.5f,
+                                       playerPos.y,
+                                       playerPos.z + playerSize.z * 0.5f);
+                float faceCamAngle = atan2f(celebCamPos.x - modelPos.x,
+                                            celebCamPos.z - modelPos.z);
+                MV1SetPosition(playerModelHandle, modelPos);
+                MV1SetScale(playerModelHandle, VGet(0.006f, 0.006f, 0.006f));
+                MV1SetRotationXYZ(playerModelHandle, VGet(0.0f, faceCamAngle + DX_PI_F, 0.0f));
+                MV1DrawModel(playerModelHandle);
+            }
+
+            // Частицы: screen-space через ConvWorldPosToScreenPos
+            for (const auto& p : particles) {
+                VECTOR sp = ConvWorldPosToScreenPos(p.pos);
+                if (sp.z <= 0.0f || sp.z >= 1.0f) continue;
+                float lifeRatio = p.life / p.maxLife;
+                int   a = (int)(lifeRatio * 220.0f);
+                if (a < 5) continue;
+                float r = 7.0f / (sp.z + 0.05f);
+                if (r <  2.0f) r =  2.0f;
+                if (r > 14.0f) r = 14.0f;
+                // Core
+                SetDrawBlendMode(DX_BLENDMODE_ADD, a);
+                DrawCircle((int)sp.x, (int)sp.y, (int)r, p.color, TRUE);
+                // Glow halo
+                SetDrawBlendMode(DX_BLENDMODE_ADD, a / 4);
+                DrawCircle((int)sp.x, (int)sp.y, (int)(r * 2.8f), p.color, TRUE);
+            }
+            SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+
+            levelManager.DrawLevelInfo(false);
+        }
         else if (gameState == GameState::LEVEL_RESULT) {
             SetMouseDispFlag(TRUE);
 
@@ -922,8 +1162,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
                 menu.SetState(GameState::PLAYING);
                 gameState = GameState::PLAYING;
                 if (menuBgMovie != -1) PauseMovieToGraph(menuBgMovie);
+                playBgm((levelManager.GetCurrentLevelId() - 1) / 10, menu.GetSettings().musicVolume);
                 SetMouseDispFlag(FALSE);
             } else if (action == ButtonAction::BACK_TO_MENU) {
+                stopBgm();
                 menu.ClearHistory();
                 menu.SetState(GameState::MAIN_MENU);
                 gameState = GameState::MAIN_MENU;
@@ -943,6 +1185,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
                 menu.SetState(GameState::PLAYING);
                 gameState = GameState::PLAYING;
                 if (menuBgMovie != -1) PauseMovieToGraph(menuBgMovie);
+                playBgm((levelManager.GetCurrentLevelId() - 1) / 10, menu.GetSettings().musicVolume);
                 SetMouseDispFlag(FALSE);
             }
         }
@@ -951,6 +1194,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     }
 
 END_GAME:
+    // Очистка BGM
+    stopBgm();
+    for (int i = 0; i < 5; i++)
+        if (bgmHandles[i] != -1) DeleteSoundMem(bgmHandles[i]);
+
     // Очистка игрока
     if (playerModelHandle != -1)
         MV1DeleteModel(playerModelHandle);

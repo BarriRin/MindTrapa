@@ -85,6 +85,9 @@ void Menu::SetState(GameState state) {
     case GameState::DYING:
         buttons.clear();
         break;
+    case GameState::LEVEL_CELEBRATING:
+        buttons.clear();
+        break;
     case GameState::LEVEL_RESULT:
         CreateResultScreenButtons();
         ApplyFontToButtons(fontButton);
@@ -461,16 +464,11 @@ void Menu::Draw() const {
             int tw = GetDrawStringWidthToHandle(gameTitle, (int)wcslen(gameTitle), fontTitle);
             DrawStringToHandle(1920/2 - tw/2, 190, gameTitle, titleColor, fontTitle);
 
-            const wchar_t* subtitle = L"3D Trolling Platformer";
-            int sw = GetDrawStringWidthToHandle(subtitle, (int)wcslen(subtitle), fontNormal);
-            DrawStringToHandle(1920/2 - sw/2, 275, subtitle, GetColor(200,200,200), fontNormal);
-
             const Profile* p = ProfileManager::GetInstance().GetCurrentProfile();
             if (p) {
                 wchar_t profileBuf[64];
-                swprintf_s(profileBuf, L"Profile: %ls  [Stars: %d]", p->nickname.c_str(), p->TotalStars());
-                int pw = GetDrawStringWidthToHandle(profileBuf, (int)wcslen(profileBuf), fontSmall);
-                DrawStringToHandle(1920/2 - pw/2, 330, profileBuf, GetColor(120,180,255), fontSmall);
+                swprintf_s(profileBuf, L"%ls  |  Stars: %d", p->nickname.c_str(), p->TotalStars());
+                DrawStringToHandle(20, 20, profileBuf, GetColor(120, 180, 255), fontNormal);
             }
         }
         break;
@@ -826,14 +824,20 @@ ButtonAction Menu::ActivateSelectedButton(int& blockToLoad, int& levelToLoad) {
     // НО: BACK_TO_MENU из паузы означает "вернуться в главное меню" (не PopState)
     if (action == ButtonAction::BACK_TO_MENU) {
         if (currentState == GameState::PAUSED || currentState == GameState::LEVEL_RESULT) {
-            // Из паузы/результата "Main Menu" - возвращаем action для обработки в main.cpp
             return action;
         }
-        else {
-            // Из других меню - обычная навигация назад
-            PopState();
+        if (currentState == GameState::PROFILE_SELECT) {
+            if (profileSelectCanGoBack)
+                SetState(GameState::MAIN_MENU);
             return ButtonAction::NONE;
         }
+        if (currentState == GameState::PROFILE_CREATE) {
+            if (keyInputHandle != -1) { DeleteKeyInput(keyInputHandle); keyInputHandle = -1; }
+            SetState(GameState::PROFILE_SELECT);
+            return ButtonAction::NONE;
+        }
+        PopState();
+        return ButtonAction::NONE;
     }
 
     if (action == ButtonAction::BACK_TO_SETTINGS) {

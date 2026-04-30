@@ -15,6 +15,7 @@ enum class GameState {
     PLAYING,
     PAUSED,
     DYING,
+    LEVEL_CELEBRATING,
     LEVEL_RESULT
 };
 
