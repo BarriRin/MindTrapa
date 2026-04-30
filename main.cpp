@@ -2,6 +2,7 @@
 #include "LevelManager.h"
 #include "Menu.h"
 #include "ModelManager.h"
+#include "ProfileManager.h"
 #include "Renderer.h"
 #include <cmath>
 
@@ -72,14 +73,34 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
             if (wcsstr(MV1GetAnimName(playerModelHandle, i), substr)) return i;
         return 0;
     };
-    int animIdle = findAnim(L"Idle");
-    int animRun  = findAnim(L"Run");
-    int animJump = findAnim(L"Jump");
-    int animFall = findAnim(L"Jump_Idle");  // [7] зависание/падение (Fall отсутствует в паке)
+    int animIdle  = findAnim(L"Idle");
+    int animRun   = findAnim(L"Run");
+    int animJump  = findAnim(L"Jump");
+    int animFall  = findAnim(L"Jump_Idle");  // [7] зависание/падение (Fall отсутствует в паке)
+    int animDeath = findAnim(L"Death");
+    if (animDeath == 0) animDeath = findAnim(L"Die");
+    if (animDeath == 0) animDeath = findAnim(L"Defeat");
+
+    // Видеофон главного меню
+    int menuBgMovie = OpenMovieToGraph(L"media/menu_bg.mp4", TRUE);
+    if (menuBgMovie != -1) {
+        PlayMovieToGraph(menuBgMovie, DX_PLAYTYPE_LOOP);
+    }
+
+    // Профили
+    ProfileManager& profileMgr = ProfileManager::GetInstance();
+    profileMgr.Initialize();
 
     // Инициализация игры
     LevelManager levelManager;
     Menu menu(50); // 50 уровней - Block 1-5
+
+    // Если нет активного профиля — показываем экран выбора
+    if (!profileMgr.HasActiveProfile()) {
+        menu.OpenProfileSelect(false);
+    } else {
+        menu.SyncSettingsFromProfile();
+    }
 
     // Генерируем звёзды для космического фона
     std::vector<Star> stars = GenerateStars(500, 400.0f);
@@ -126,6 +147,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     // Block 4: уровень темноты (0.0 = полная видимость, 1.0 = полная тьма)
     float darknessLevel = 0.0f;
 
+    // Экран результата
+    float dyingTimer        = 0.0f;
+    bool  levelWasCompleted = false;
+
     // Скрываем курсор мыши только в игре
     SetMouseDispFlag(TRUE);
 
@@ -147,13 +172,26 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
         float effectiveDeltaTime = realDeltaTime * gameSpeed;
 
         // === ОБРАБОТКА В ЗАВИСИМОСТИ ОТ СОСТОЯНИЯ ===
-        if (gameState == GameState::MAIN_MENU || gameState == GameState::LEVEL_SELECT_BLOCKS ||
+        if (gameState == GameState::PROFILE_SELECT || gameState == GameState::PROFILE_CREATE ||
+            gameState == GameState::MAIN_MENU || gameState == GameState::LEVEL_SELECT_BLOCKS ||
             gameState == GameState::LEVEL_SELECT_LEVELS || gameState == GameState::SETTINGS ||
             gameState == GameState::MUSIC_SELECT) {
             // Показываем курсор в меню
             SetMouseDispFlag(TRUE);
 
-            // Отрисовка меню (не меняем состояние, меню само управляет стеком)
+            // Видеофон
+            if (menuBgMovie != -1) {
+                DrawExtendGraph(0, 0, 1920, 1080, menuBgMovie, FALSE);
+                SetDrawBlendMode(DX_BLENDMODE_ALPHA, 100);
+                DrawBox(0, 0, 1920, 1080, GetColor(0, 0, 0), TRUE);
+                SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+                // Громкость из профиля
+                const Profile* p = profileMgr.GetCurrentProfile();
+                int vol = p ? p->musicVolume * 100 : 8000;
+                SetMovieVolumeToGraph(vol, menuBgMovie);
+            }
+
+            // Отрисовка меню
             menu.Draw();
 
             // Обработка ввода в меню
@@ -164,13 +202,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
             switch (action) {
             case ButtonAction::START_GAME:
                 // Быстрый старт - сразу загружаем Level 1
-                menu.ClearHistory();  // Очищаем стек
-                menu.SetState(GameState::PLAYING);  // Устанавливаем состояние меню в PLAYING
+                menu.ClearHistory();
+                menu.SetState(GameState::PLAYING);
                 levelManager.LoadLevel(1);
                 playerPos = levelManager.GetCurrentLevel()->GetPlayerSpawn();
                 playerVel = VGet(0, 0, 0);
                 darknessLevel = 0.0f;
                 gameState = GameState::PLAYING;
+                if (menuBgMovie != -1) PauseMovieToGraph(menuBgMovie);
                 SetMouseDispFlag(FALSE);
                 break;
 
@@ -195,13 +234,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
             default:
                 // Загрузка конкретного уровня
                 if (levelToLoad > 0) {
-                    menu.ClearHistory();  // Очищаем стек
-                    menu.SetState(GameState::PLAYING);  // Устанавливаем состояние меню в PLAYING
+                    menu.ClearHistory();
+                    menu.SetState(GameState::PLAYING);
                     levelManager.LoadLevel(levelToLoad);
                     playerPos = levelManager.GetCurrentLevel()->GetPlayerSpawn();
                     playerVel = VGet(0, 0, 0);
                     darknessLevel = 0.0f;
                     gameState = GameState::PLAYING;
+                    if (menuBgMovie != -1) PauseMovieToGraph(menuBgMovie);
                     SetMouseDispFlag(FALSE);
                 }
                 else {
@@ -256,6 +296,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
             switch (action) {
             case ButtonAction::CONTINUE:
                 gameState = GameState::PLAYING;
+                if (menuBgMovie != -1) PauseMovieToGraph(menuBgMovie);
                 SetMouseDispFlag(FALSE);
                 break;
 
@@ -265,6 +306,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
                 playerVel = VGet(0, 0, 0);
                 darknessLevel = 0.0f;
                 gameState = GameState::PLAYING;
+                if (menuBgMovie != -1) PauseMovieToGraph(menuBgMovie);
                 SetMouseDispFlag(FALSE);
                 break;
 
@@ -274,10 +316,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
                 break;
 
             case ButtonAction::BACK_TO_MENU:
-                menu.SetSelectedBlock(0); // Сброс выбранного блока
-                menu.ClearHistory(); // Очищаем стек при возврате в главное меню
+                menu.SetSelectedBlock(0);
+                menu.ClearHistory();
                 menu.SetState(GameState::MAIN_MENU);
                 gameState = menu.GetState();
+                if (menuBgMovie != -1) PlayMovieToGraph(menuBgMovie, DX_PLAYTYPE_LOOP);
                 SetMouseDispFlag(TRUE);
                 break;
 
@@ -411,7 +454,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
             // Block 4: определяем активен ли тёмный режим
             int currentLevelId = levelManager.GetCurrentLevelId();
-            bool inBlock4 = (currentLevelId >= 31 && currentLevelId <= 40);
+            bool inBlock4      = (currentLevelId >= 31 && currentLevelId <= 40);
+            bool inPulseLevel  = (currentLevelId == 48 || currentLevelId == 50); // уровни 48+50: темнота со вспышками
 
             // === УПРАВЛЕНИЕ КАМЕРОЙ МЫШЬЮ ===
             int mouseX, mouseY;
@@ -420,8 +464,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
             int centerX = 1920 / 2;
             int centerY = 1080 / 2;
 
-            cameraAngleY += (mouseX - centerX) * 0.002f;
-            cameraAngleX += (mouseY - centerY) * 0.002f;
+            float mouseSens = 0.1f + menu.GetSettings().mouseSensitivity * 0.018f;
+            cameraAngleY += (mouseX - centerX) * 0.002f * mouseSens;
+            cameraAngleX += (mouseY - centerY) * 0.002f * mouseSens;
 
             if (cameraAngleX > 1.5f) cameraAngleX = 1.5f;
             if (cameraAngleX < -1.5f) cameraAngleX = -1.5f;
@@ -442,19 +487,27 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
             if (CheckHitKey(KEY_INPUT_A)) move = VAdd(move, VScale(right, moveSpeed));
             if (CheckHitKey(KEY_INPUT_D)) move = VAdd(move, VScale(right, -moveSpeed));
 
-            // Block 4: накопительная темнота — растёт при движении, спадает в покое
-            if (inBlock4) {
-                bool isMoving = CheckHitKey(KEY_INPUT_W) || CheckHitKey(KEY_INPUT_S) ||
-                                CheckHitKey(KEY_INPUT_A) || CheckHitKey(KEY_INPUT_D) ||
-                                CheckHitKey(KEY_INPUT_SPACE) || !onGround;
-                const float DARKEN_SPEED  = 0.8f; // сек до полной тьмы при движении
-                const float LIGHTEN_SPEED = 0.2f; // сек до полной видимости в покое
-                if (isMoving) {
-                    darknessLevel += effectiveDeltaTime * DARKEN_SPEED;
-                    if (darknessLevel > 1.0f) darknessLevel = 1.0f;
-                } else {
-                    darknessLevel -= effectiveDeltaTime * LIGHTEN_SPEED;
+            // Block 4 + уровень 48: накопительная темнота
+            if (inBlock4 || inPulseLevel) {
+                Level* lvl = levelManager.GetCurrentLevel();
+                bool lightFlash = inPulseLevel && lvl && lvl->IsAnyLightPulseZoneActive();
+                if (lightFlash) {
+                    // Вспышка — темнота быстро спадает
+                    darknessLevel -= effectiveDeltaTime * 3.0f;
                     if (darknessLevel < 0.0f) darknessLevel = 0.0f;
+                } else {
+                    bool isMoving = CheckHitKey(KEY_INPUT_W) || CheckHitKey(KEY_INPUT_S) ||
+                                    CheckHitKey(KEY_INPUT_A) || CheckHitKey(KEY_INPUT_D) ||
+                                    CheckHitKey(KEY_INPUT_SPACE) || !onGround;
+                    const float DARKEN_SPEED  = inPulseLevel ? 2.0f : 0.8f;
+                    const float LIGHTEN_SPEED = inPulseLevel ? 0.5f : 0.2f;
+                    if (isMoving) {
+                        darknessLevel += effectiveDeltaTime * DARKEN_SPEED;
+                        if (darknessLevel > 1.0f) darknessLevel = 1.0f;
+                    } else {
+                        darknessLevel -= effectiveDeltaTime * LIGHTEN_SPEED;
+                        if (darknessLevel < 0.0f) darknessLevel = 0.0f;
+                    }
                 }
             }
 
@@ -489,22 +542,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
             }
             else {
                 activatePressed = false;
-            }
-
-            // Рестарт уровня на R
-            static bool restartPressed = false;
-            if (CheckHitKey(KEY_INPUT_R)) {
-                if (!restartPressed) {
-                    levelManager.RestartLevel();
-                    playerPos = levelManager.GetCurrentLevel()->GetPlayerSpawn();
-                    playerVel = VGet(0, 0, 0);
-                    playerHorizVel = VGet(0, 0, 0);
-                    darknessLevel = 0.0f;
-                }
-                restartPressed = true;
-            }
-            else {
-                restartPressed = false;
             }
 
             // === ФИЗИКА ===
@@ -554,11 +591,18 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
                 playerPos = newPos;
 
                 if (currentLevel->CheckDeadlyTrigger(playerPos, playerSize)) {
-                    levelManager.RestartLevel();
-                    playerPos = levelManager.GetCurrentLevel()->GetPlayerSpawn();
+                    levelManager.OnPlayerDeath();
+                    dyingTimer = 1.0f;
+                    levelWasCompleted = false;
                     playerVel = VGet(0, 0, 0);
                     playerHorizVel = VGet(0, 0, 0);
-                    darknessLevel = 0.0f;
+                    if (playerModelHandle != -1) {
+                        if (playerAnimAttach != -1) MV1DetachAnim(playerModelHandle, playerAnimAttach);
+                        playerAnimAttach  = MV1AttachAnim(playerModelHandle, animDeath, -1, FALSE);
+                        playerAnimTime    = 0.0f;
+                        playerCurrentAnim = animDeath;
+                    }
+                    gameState = GameState::DYING;
                 }
 
                 VECTOR teleportTarget;
@@ -570,26 +614,36 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
                 currentLevel->ActivateButton(playerPos, playerSize, activateKeyPressed);
 
-                if (currentLevel->CheckWinTrigger(playerPos, playerSize)) {
-                    levelManager.OnLevelComplete(); // Сохраняем время перед переходом
-                    levelManager.NextLevel();
-                    playerPos = levelManager.GetCurrentLevel()->GetPlayerSpawn();
-                    playerVel = VGet(0, 0, 0);
-                    playerHorizVel = VGet(0, 0, 0);
-                    darknessLevel = 0.0f;
+                if (gameState == GameState::PLAYING && currentLevel->CheckWinTrigger(playerPos, playerSize)) {
+                    levelManager.OnLevelComplete();
+                    float t        = levelManager.GetCurrentLevelTime();
+                    int   starCount = (t <= 15.0f) ? 3 : (t <= 30.0f) ? 2 : 1;
+                    profileMgr.SetLevelResult(levelManager.GetCurrentLevelId(), starCount, t);
+                    menu.UpdateUnlockState();
+                    levelWasCompleted = true;
+                    menu.ShowResultScreen(true, starCount, t, levelManager.IsLastLevel());
+                    gameState = GameState::LEVEL_RESULT;
+                    SetMouseDispFlag(TRUE);
                 }
             }
 
             if (playerPos.y < -10) {
-                levelManager.RestartLevel();
-                playerPos = levelManager.GetCurrentLevel()->GetPlayerSpawn();
+                levelManager.OnPlayerDeath();
+                dyingTimer = 1.0f;
+                levelWasCompleted = false;
                 playerVel = VGet(0, 0, 0);
                 playerHorizVel = VGet(0, 0, 0);
-                darknessLevel = 0.0f;
+                if (playerModelHandle != -1) {
+                    if (playerAnimAttach != -1) MV1DetachAnim(playerModelHandle, playerAnimAttach);
+                    playerAnimAttach  = MV1AttachAnim(playerModelHandle, animDeath, -1, FALSE);
+                    playerAnimTime    = 0.0f;
+                    playerCurrentAnim = animDeath;
+                }
+                gameState = GameState::DYING;
             }
 
             // === АНИМАЦИЯ ИГРОКА ===
-            if (playerModelHandle != -1) {
+            if (gameState == GameState::PLAYING && playerModelHandle != -1) {
                 bool isMovingH = (fabsf(move.x) > 0.001f || fabsf(move.z) > 0.001f);
 
                 // Поворачиваем персонажа по направлению движения
@@ -717,8 +771,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
                     GetColor(100, 255, 100), GetColor(50, 200, 50), TRUE);
             }
 
-            // === BLOCK 4: DARKNESS ===
-            if (inBlock4 && darknessLevel > 0.01f) {
+            // === BLOCK 4 / LEVEL 48: DARKNESS ===
+            if ((inBlock4 || inPulseLevel) && darknessLevel > 0.01f) {
                 int alpha = (int)(darknessLevel * 240.0f);
                 SetDrawBlendMode(DX_BLENDMODE_ALPHA, alpha);
                 DrawBox(0, 0, 1920, 1080, GetColor(0, 0, 0), TRUE);
@@ -751,10 +805,145 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
                 DrawFormatString(10, 220, GetColor(100, 200, 255), L"Models: %d/%d loaded",
                     loadedModels, (int)ModelID::COUNT);
 
-                if (inBlock4) {
-                    DrawFormatString(10, 240, GetColor(150, 100, 255), L"BLOCK4 | darkness: %.2f",
+                if (inBlock4 || inPulseLevel) {
+                    DrawFormatString(10, 240, GetColor(150, 100, 255), L"DARKNESS | level: %.2f",
                         darknessLevel);
                 }
+            }
+        }
+        else if (gameState == GameState::DYING) {
+            SetMouseDispFlag(FALSE);
+
+            // Обновляем анимацию смерти (один раз, без зацикливания)
+            if (playerModelHandle != -1 && playerAnimAttach != -1) {
+                float totalTime = MV1GetAttachAnimTotalTime(playerModelHandle, playerAnimAttach);
+                if (totalTime > 0.0f) {
+                    playerAnimTime += effectiveDeltaTime * 24.0f;
+                    if (playerAnimTime > totalTime) playerAnimTime = totalTime;
+                    MV1SetAttachAnimTime(playerModelHandle, playerAnimAttach, playerAnimTime);
+                }
+            }
+
+            dyingTimer -= effectiveDeltaTime;
+            if (dyingTimer <= 0.0f) {
+                menu.ShowResultScreen(false, 0, levelManager.GetCurrentLevelTime());
+                gameState = GameState::LEVEL_RESULT;
+                SetMouseDispFlag(TRUE);
+            }
+
+            // Рисуем сцену (игрок виден на месте смерти)
+            VECTOR cameraPos = VGet(
+                playerPos.x + cameraDistance * sin(cameraAngleY) * cos(cameraAngleX),
+                playerPos.y + cameraDistance * sin(cameraAngleX) + 2.0f,
+                playerPos.z + cameraDistance * cos(cameraAngleY) * cos(cameraAngleX)
+            );
+            SetCameraPositionAndTarget_UpVecY(cameraPos, VAdd(playerPos, VGet(0, 1, 0)));
+            SetUseLighting(FALSE);
+            SetUseBackCulling(FALSE);
+            DrawSpaceSkybox(playerPos);
+            DrawStars(stars, cameraPos);
+            if (levelManager.GetCurrentLevel()) levelManager.GetCurrentLevel()->Draw(debugMode);
+            if (playerModelHandle != -1) {
+                VECTOR modelPos = VGet(playerPos.x + playerSize.x * 0.5f,
+                                       playerPos.y,
+                                       playerPos.z + playerSize.z * 0.5f);
+                float pScale = 0.006f;
+                MV1SetPosition(playerModelHandle, modelPos);
+                MV1SetScale(playerModelHandle, VGet(pScale, pScale, pScale));
+                MV1SetRotationXYZ(playerModelHandle, VGet(0.0f, playerFacingAngle + DX_PI_F, 0.0f));
+                MV1DrawModel(playerModelHandle);
+            }
+            levelManager.DrawLevelInfo(false);
+        }
+        else if (gameState == GameState::LEVEL_RESULT) {
+            SetMouseDispFlag(TRUE);
+
+            // Рисуем сцену в фоне (игрок заморожен)
+            VECTOR cameraPos = VGet(
+                playerPos.x + cameraDistance * sin(cameraAngleY) * cos(cameraAngleX),
+                playerPos.y + cameraDistance * sin(cameraAngleX) + 2.0f,
+                playerPos.z + cameraDistance * cos(cameraAngleY) * cos(cameraAngleX)
+            );
+            SetCameraPositionAndTarget_UpVecY(cameraPos, VAdd(playerPos, VGet(0, 1, 0)));
+            SetUseLighting(FALSE);
+            SetUseBackCulling(FALSE);
+            DrawSpaceSkybox(playerPos);
+            DrawStars(stars, cameraPos);
+            if (levelManager.GetCurrentLevel()) levelManager.GetCurrentLevel()->Draw(false);
+            if (playerModelHandle != -1) {
+                VECTOR modelPos = VGet(playerPos.x + playerSize.x * 0.5f,
+                                       playerPos.y,
+                                       playerPos.z + playerSize.z * 0.5f);
+                float pScale = 0.006f;
+                MV1SetPosition(playerModelHandle, modelPos);
+                MV1SetScale(playerModelHandle, VGet(pScale, pScale, pScale));
+                MV1SetRotationXYZ(playerModelHandle, VGet(0.0f, playerFacingAngle + DX_PI_F, 0.0f));
+                MV1DrawModel(playerModelHandle);
+            }
+
+            // Оверлей + кнопки
+            menu.Draw();
+
+            // Ввод на экране результата
+            int dummy1 = -1, dummy2 = -1;
+            ButtonAction action = menu.HandleInput(dummy1, dummy2);
+
+            // R → рестарт
+            static bool rKeyPressed = false;
+            if (CheckHitKey(KEY_INPUT_R)) {
+                if (!rKeyPressed) action = ButtonAction::RESTART;
+                rKeyPressed = true;
+            } else {
+                rKeyPressed = false;
+            }
+
+            // Space → следующий уровень (если прошли)
+            static bool spaceKeyPressed = false;
+            if (CheckHitKey(KEY_INPUT_SPACE)) {
+                if (!spaceKeyPressed && levelWasCompleted && !levelManager.IsLastLevel()) {
+                    action = ButtonAction::NEXT_LEVEL;
+                }
+                spaceKeyPressed = true;
+            } else {
+                spaceKeyPressed = false;
+            }
+
+            if (action == ButtonAction::RESTART) {
+                levelManager.ReloadCurrentLevel();
+                playerPos = levelManager.GetCurrentLevel()->GetPlayerSpawn();
+                playerVel = VGet(0, 0, 0);
+                playerHorizVel = VGet(0, 0, 0);
+                darknessLevel = 0.0f;
+                if (playerModelHandle != -1 && playerAnimAttach != -1) {
+                    MV1DetachAnim(playerModelHandle, playerAnimAttach);
+                    playerAnimAttach  = -1;
+                    playerCurrentAnim = -1;
+                }
+                menu.SetState(GameState::PLAYING);
+                gameState = GameState::PLAYING;
+                if (menuBgMovie != -1) PauseMovieToGraph(menuBgMovie);
+                SetMouseDispFlag(FALSE);
+            } else if (action == ButtonAction::BACK_TO_MENU) {
+                menu.ClearHistory();
+                menu.SetState(GameState::MAIN_MENU);
+                gameState = GameState::MAIN_MENU;
+                if (menuBgMovie != -1) PlayMovieToGraph(menuBgMovie, DX_PLAYTYPE_LOOP);
+                SetMouseDispFlag(TRUE);
+            } else if (action == ButtonAction::NEXT_LEVEL && levelWasCompleted) {
+                levelManager.NextLevel();
+                playerPos = levelManager.GetCurrentLevel()->GetPlayerSpawn();
+                playerVel = VGet(0, 0, 0);
+                playerHorizVel = VGet(0, 0, 0);
+                darknessLevel = 0.0f;
+                if (playerModelHandle != -1 && playerAnimAttach != -1) {
+                    MV1DetachAnim(playerModelHandle, playerAnimAttach);
+                    playerAnimAttach  = -1;
+                    playerCurrentAnim = -1;
+                }
+                menu.SetState(GameState::PLAYING);
+                gameState = GameState::PLAYING;
+                if (menuBgMovie != -1) PauseMovieToGraph(menuBgMovie);
+                SetMouseDispFlag(FALSE);
             }
         }
 

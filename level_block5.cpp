@@ -330,103 +330,307 @@ void Level::LoadBlock5(int id) {
         blocks.push_back(Block(VGet(60, 28, -1), VGet(3, 1, 3), BlockType::TRIGGER));
         break;
 
-    case 48: // Level 48 - ICE + темнота (Block 4 crossover): скользим в темноте
-        playerSpawn = VGet(0, 1, 0);
+    case 48: // Level 48 — ICE + темнота: 5 поворотов, вспышка только у T3
+        // Тьма стакается мгновенно (2f/s). Одна вспышка на полпути — успей запомнить маршрут.
+        // Финал: 3 реальных ступени → батут вверх на финиш. Впереди — только фейки.
+        // Corridor E: фейковые шипы вместо реальных — паника вхолостую.
+        playerSpawn = VGet(0, 1, 2);
+
         // Старт
-        blocks.push_back(Block(VGet(-3, -1, -3), VGet(7, 1, 7), BlockType::PLATFORM));
-        // Зона темноты
-        blocks.push_back(Block(VGet(5, -3, -5), VGet(50, 10, 12), BlockType::LIGHT_PULSE_ZONE,
-            0, true, VGet(0,0,0), VGet(0,0,0), 2.0f, 0.0f));
-        // Ледяные платформы в темноте — не видно куда скользишь
-        blocks.push_back(Block(VGet(5, -1, -2), VGet(8, 1, 5), BlockType::ICE_PLATFORM));
-        blocks.push_back(Block(VGet(15, -1, -2), VGet(6, 1, 5), BlockType::ICE_PLATFORM));
-        blocks.push_back(Block(VGet(23, -1, -2), VGet(6, 1, 5), BlockType::ICE_PLATFORM));
-        // Шипы в темноте — не видишь до последнего
-        for (int tx = 20; tx < 23; tx++)
-            blocks.push_back(Block(VGet((float)tx, 0, -1), VGet(1, 1, 1), BlockType::SPIKES));
-        blocks.push_back(Block(VGet(31, -1, -2), VGet(8, 1, 5), BlockType::ICE_PLATFORM));
-        blocks.push_back(Block(VGet(41, -1, -2), VGet(7, 1, 5), BlockType::PLATFORM));
-        // Финал
-        blocks.push_back(Block(VGet(43, 0, -1), VGet(3, 1, 3), BlockType::TRIGGER));
+        blocks.push_back(Block(VGet(-4, -1, -2), VGet(8, 1, 7), BlockType::PLATFORM));
+
+        // Зон осветления нет — уровень тёмный всегда (DARKEN_SPEED=2f/s)
+
+        // --- A: +X, Z:0..4 ---
+        { Block b(VGet(4, -1, 0), VGet(12, 1, 4), BlockType::ICE_PLATFORM);
+          b.frictionMultiplier = 0.990f; blocks.push_back(b); }
+        blocks.push_back(Block(VGet(7,  0, 3), VGet(4, 1, 1), BlockType::SPIKES)); // дальняя стена
+        blocks.push_back(Block(VGet(12, 0, 0), VGet(3, 1, 1), BlockType::SPIKES)); // ближняя стена
+
+        // --- T1: +X → +Z ---
+        { Block b(VGet(14, -1, -2), VGet(8, 1, 10), BlockType::ICE_PLATFORM);
+          b.frictionMultiplier = 0.990f; blocks.push_back(b); }
+        blocks.push_back(Block(VGet(14, 0, -2), VGet(2, 1, 3), BlockType::SPIKES)); // inner corner
+
+        // --- B: +Z, X:20..24 ---
+        { Block b(VGet(20, -1, 6), VGet(4, 1, 14), BlockType::ICE_PLATFORM);
+          b.frictionMultiplier = 0.990f; blocks.push_back(b); }
+        blocks.push_back(Block(VGet(20, 0, 10), VGet(1, 1, 4), BlockType::SPIKES)); // дальняя стена
+        blocks.push_back(Block(VGet(20, 0, 17), VGet(1, 1, 2), BlockType::SPIKES)); // конец B
+
+        // --- T2: +Z → +X ---
+        { Block b(VGet(16, -1, 18), VGet(10, 1, 10), BlockType::ICE_PLATFORM);
+          b.frictionMultiplier = 0.990f; blocks.push_back(b); }
+        blocks.push_back(Block(VGet(16, 0, 18), VGet(3, 1, 2), BlockType::SPIKES)); // inner corner
+
+        // --- C: +X, Z:24..28 ---
+        { Block b(VGet(24, -1, 24), VGet(14, 1, 4), BlockType::ICE_PLATFORM);
+          b.frictionMultiplier = 0.990f; blocks.push_back(b); }
+        blocks.push_back(Block(VGet(27, 0, 27), VGet(4, 1, 1), BlockType::SPIKES)); // дальняя стена
+        blocks.push_back(Block(VGet(33, 0, 24), VGet(3, 1, 1), BlockType::SPIKES)); // ближняя стена
+
+        // --- T3: +X → +Z (зона вспышки вокруг этого угла) ---
+        { Block b(VGet(36, -1, 22), VGet(10, 1, 12), BlockType::ICE_PLATFORM);
+          b.frictionMultiplier = 0.990f; blocks.push_back(b); }
+        blocks.push_back(Block(VGet(36, 0, 22), VGet(3, 1, 2), BlockType::SPIKES)); // inner corner
+
+        // --- D: +Z, X:42..46 ---
+        { Block b(VGet(42, -1, 32), VGet(4, 1, 14), BlockType::ICE_PLATFORM);
+          b.frictionMultiplier = 0.990f; blocks.push_back(b); }
+        blocks.push_back(Block(VGet(45, 0, 36), VGet(1, 1, 5), BlockType::SPIKES)); // дальняя стена
+        blocks.push_back(Block(VGet(42, 0, 43), VGet(1, 1, 2), BlockType::SPIKES)); // ближняя стена
+
+        // --- T4: +Z → +X ---
+        { Block b(VGet(38, -1, 44), VGet(12, 1, 10), BlockType::ICE_PLATFORM);
+          b.frictionMultiplier = 0.990f; blocks.push_back(b); }
+        blocks.push_back(Block(VGet(38, 0, 44), VGet(3, 1, 2), BlockType::SPIKES)); // inner corner
+
+        // --- E: +X, Z:52..56 (FAKE_SPIKES — выглядят страшно, но безвредны) ---
+        { Block b(VGet(48, -1, 52), VGet(14, 1, 4), BlockType::ICE_PLATFORM);
+          b.frictionMultiplier = 0.990f; blocks.push_back(b); }
+        blocks.push_back(Block(VGet(51, 0, 55), VGet(6, 1, 1), BlockType::FAKE_SPIKES)); // ФЕЙК — паника
+        blocks.push_back(Block(VGet(52, 0, 52), VGet(3, 1, 1), BlockType::SPIKES));      // реальная угроза
+
+        // --- T5: +X → +Z ---
+        { Block b(VGet(60, -1, 50), VGet(10, 1, 14), BlockType::ICE_PLATFORM);
+          b.frictionMultiplier = 0.990f; blocks.push_back(b); }
+        blocks.push_back(Block(VGet(60, 0, 50), VGet(2, 1, 3), BlockType::SPIKES)); // inner corner
+
+        // --- F: +Z, X:66..70 ---
+        { Block b(VGet(66, -1, 62), VGet(4, 1, 14), BlockType::ICE_PLATFORM);
+          b.frictionMultiplier = 0.990f; blocks.push_back(b); }
+        blocks.push_back(Block(VGet(69, 0, 66), VGet(1, 1, 5), BlockType::SPIKES)); // дальняя стена
+        blocks.push_back(Block(VGet(69, 0, 73), VGet(1, 1, 2), BlockType::SPIKES)); // конец F
+
+        // BOUNCE_PAD — выход со льда вверх
+        blocks.push_back(Block(VGet(66, -1, 75), VGet(4, 1, 4), BlockType::BOUNCE_PAD));
+
+        // === ФИНАЛЬНАЯ СЕКЦИЯ: развилка в центре ===
+        // Посадочная площадка (top=7) после прыжка с батута
+        blocks.push_back(Block(VGet(64, 6, 79), VGet(10, 1, 8), BlockType::PLATFORM));
+
+        // Ступень A — реальная (4×4)
+        blocks.push_back(Block(VGet(65, 6, 89), VGet(4, 1, 4), BlockType::PLATFORM));
+
+        // Ступень B — реальная (3×3) с фейковыми шипами — паника вхолостую
+        blocks.push_back(Block(VGet(66, 6, 96), VGet(3, 1, 3), BlockType::PLATFORM));
+        blocks.push_back(Block(VGet(66, 7, 96), VGet(3, 1, 2), BlockType::FAKE_SPIKES));
+
+        // *** РАЗВИЛКА (top=7, 8×6): наступаешь — видишь два пути ***
+        blocks.push_back(Block(VGet(64, 6, 102), VGet(8, 1, 6), BlockType::PLATFORM));
+
+        // Фейковый путь (+Z) — три ступени вперёд, выглядят как продолжение
+        blocks.push_back(Block(VGet(65, 6, 111), VGet(4, 1, 3), BlockType::FAKE_PLATFORM));
+        blocks.push_back(Block(VGet(65, 6, 117), VGet(3, 1, 3), BlockType::FAKE_PLATFORM));
+        blocks.push_back(Block(VGet(65, 6, 123), VGet(3, 1, 3), BlockType::FAKE_PLATFORM));
+
+        // Реальный путь (+X от развилки) — одна маленькая реальная платформа с триггером
+        blocks.push_back(Block(VGet(72, 6, 103), VGet(4, 1, 4), BlockType::PLATFORM));
+        blocks.push_back(Block(VGet(72, 7, 103), VGet(4, 1, 4), BlockType::TRIGGER));
         break;
 
-    case 49: // Level 49 - ICE + BOUNCE + всё: сложная комбинация
-        playerSpawn = VGet(0, 1, 0);
-        // Старт (end X=4)
-        blocks.push_back(Block(VGet(-3, -1, -3), VGet(7, 1, 7), BlockType::PLATFORM));
-        // Секция 1: лёд + выдвижные шипы (start X=4, end X=15)
-        blocks.push_back(Block(VGet(4, -1, -2), VGet(11, 1, 5), BlockType::ICE_PLATFORM));
-        for (int tx = 7; tx < 14; tx += 2)
-            blocks.push_back(Block(VGet((float)tx, 0, -1), VGet(1, 1, 3), BlockType::RETRACTABLE_SPIKES,
-                0, false, VGet(0,0,0), VGet(0,0,0), 1.5f, 0.0f));
-        // Секция 2: площадка + батут (start X=15, примыкает ко льду)
-        blocks.push_back(Block(VGet(15, -1, -2), VGet(7, 1, 5), BlockType::PLATFORM));
-        blocks.push_back(Block(VGet(15, -1, -1), VGet(3, 1, 3), BlockType::BOUNCE_PAD));
-        // Маятник над зоной батута
-        {
-            Block pendulum(VGet(17, 6, 0), VGet(2, 1, 2), BlockType::PENDULUM_BLADE,
-                0, true, VGet(0,0,0), VGet(0,0,0), 1.2f, 0.0f);
-            pendulum.pivotPoint = VGet(18, 10, 1);
-            pendulum.swingSpeed = 1.5f;
-            pendulum.swingRange = DX_PI_F / 2.5f;
-            blocks.push_back(pendulum);
-        }
-        // Секция 3: зона гравитации + лёд (start X=23, примыкает к платформе end X=22)
-        {
-            Block gravZone(VGet(22, -2, -4), VGet(20, 15, 10), BlockType::GRAVITY_ZONE);
-            gravZone.gravityMultiplier = 0.4f;
-            blocks.push_back(gravZone);
-        }
-        blocks.push_back(Block(VGet(22, -1, -2), VGet(8, 1, 5), BlockType::ICE_PLATFORM));
-        // Финал (start X=30, примыкает ко льду end X=30)
-        blocks.push_back(Block(VGet(30, -1, -2), VGet(6, 1, 5), BlockType::PLATFORM));
-        blocks.push_back(Block(VGet(36, -1, -2), VGet(6, 1, 5), BlockType::PLATFORM));
-        blocks.push_back(Block(VGet(38, 0, -1), VGet(3, 1, 3), BlockType::TRIGGER));
+    case 49: // Level 49 — ICE + RETRACTABLE_SPIKES + CRUMBLING
+        // Три ледяных коридора со слаломом из мигающих ворот (5-юнитовые коридоры).
+        // Между секциями — рассыпающиеся мосты с 5-6 юнитовыми разрывами: разогнался — торопись.
+        playerSpawn = VGet(0, 1, 2);
+
+        // Старт
+        blocks.push_back(Block(VGet(-3, -1, -1), VGet(7, 1, 7), BlockType::PLATFORM));
+
+        // === СЕКЦИЯ A: +X, коридор Z:0..5, 4 слаломных ворот ===
+        { Block b(VGet(4, -1, 0), VGet(16, 1, 5), BlockType::ICE_PLATFORM);
+          b.frictionMultiplier = 0.990f; blocks.push_back(b); }
+        blocks.push_back(Block(VGet(7,  0, 0), VGet(1, 1, 2), BlockType::RETRACTABLE_SPIKES,
+            0, false, VGet(0,0,0), VGet(0,0,0), 1.4f, 0.0f));   // G1: лево Z:0..2
+        blocks.push_back(Block(VGet(11, 0, 3), VGet(1, 1, 2), BlockType::RETRACTABLE_SPIKES,
+            0, false, VGet(0,0,0), VGet(0,0,0), 1.4f, 0.35f));  // G2: право Z:3..5
+        blocks.push_back(Block(VGet(14, 0, 0), VGet(1, 1, 2), BlockType::RETRACTABLE_SPIKES,
+            0, false, VGet(0,0,0), VGet(0,0,0), 1.2f, 0.0f));   // G3: лево
+        blocks.push_back(Block(VGet(17, 0, 3), VGet(1, 1, 2), BlockType::RETRACTABLE_SPIKES,
+            0, false, VGet(0,0,0), VGet(0,0,0), 1.2f, 0.6f));   // G4: право
+
+        // === РАССЫПАЮЩИЙСЯ МОСТ 1 (X:20..44) ===
+        blocks.push_back(Block(VGet(20, -1, 0), VGet(4, 1, 5), BlockType::CRUMBLING, 0, true)); // C1 полная ширина
+        // Разрыв X:24..30 (6 юнитов)
+        blocks.push_back(Block(VGet(30, -1, 1), VGet(4, 1, 3), BlockType::CRUMBLING, 0, true)); // C2 узкий Z:1..4
+        // Разрыв X:34..40 (6 юнитов)
+        blocks.push_back(Block(VGet(40, -1, 0), VGet(4, 1, 5), BlockType::CRUMBLING, 0, true)); // C3 полная ширина
+
+        // Угловая площадка (переход к секции B)
+        blocks.push_back(Block(VGet(44, -1, -2), VGet(9, 1, 9), BlockType::PLATFORM));
+
+        // === СЕКЦИЯ B: +Z, коридор X:47..52, 4 ворот ===
+        { Block b(VGet(47, -1, 5), VGet(5, 1, 17), BlockType::ICE_PLATFORM);
+          b.frictionMultiplier = 0.990f; blocks.push_back(b); }
+        blocks.push_back(Block(VGet(47, 0, 9),  VGet(2, 1, 1), BlockType::RETRACTABLE_SPIKES,
+            0, false, VGet(0,0,0), VGet(0,0,0), 1.3f, 0.0f));   // G5: X-лево (X:47..49)
+        blocks.push_back(Block(VGet(50, 0, 14), VGet(2, 1, 1), BlockType::RETRACTABLE_SPIKES,
+            0, false, VGet(0,0,0), VGet(0,0,0), 1.3f, 0.43f));  // G6: X-право (X:50..52)
+        blocks.push_back(Block(VGet(47, 0, 18), VGet(2, 1, 1), BlockType::RETRACTABLE_SPIKES,
+            0, false, VGet(0,0,0), VGet(0,0,0), 1.1f, 0.0f));   // G7: X-лево
+        blocks.push_back(Block(VGet(50, 0, 19), VGet(2, 1, 1), BlockType::RETRACTABLE_SPIKES,
+            0, false, VGet(0,0,0), VGet(0,0,0), 1.1f, 0.55f));  // G8: X-право
+
+        // === РАССЫПАЮЩИЙСЯ МОСТ 2 (Z:22..44) ===
+        blocks.push_back(Block(VGet(47, -1, 22), VGet(5, 1, 4), BlockType::CRUMBLING, 0, true)); // D1 полная ширина
+        // Разрыв Z:26..31 (5 юнитов)
+        blocks.push_back(Block(VGet(48, -1, 31), VGet(3, 1, 4), BlockType::CRUMBLING, 0, true)); // D2 узкий X:48..51
+        // Разрыв Z:35..40 (5 юнитов)
+        blocks.push_back(Block(VGet(47, -1, 40), VGet(5, 1, 4), BlockType::CRUMBLING, 0, true)); // D3 полная ширина
+
+        // Угловая площадка (переход к секции C)
+        blocks.push_back(Block(VGet(44, -1, 44), VGet(9, 1, 8), BlockType::PLATFORM));
+
+        // === СЕКЦИЯ C: +X, коридор Z:46..51, 5 ворот (нормальная гравитация) ===
+        // Ритм шипов ускоряется: 1.0s → 0.9s → 0.8s.
+        { Block b(VGet(53, -1, 46), VGet(21, 1, 5), BlockType::ICE_PLATFORM);
+          b.frictionMultiplier = 0.990f; blocks.push_back(b); }
+        blocks.push_back(Block(VGet(57, 0, 46), VGet(1, 1, 2), BlockType::RETRACTABLE_SPIKES,
+            0, false, VGet(0,0,0), VGet(0,0,0), 1.0f, 0.0f));   // G9:  лево
+        blocks.push_back(Block(VGet(61, 0, 49), VGet(1, 1, 2), BlockType::RETRACTABLE_SPIKES,
+            0, false, VGet(0,0,0), VGet(0,0,0), 1.0f, 0.25f));  // G10: право
+        blocks.push_back(Block(VGet(65, 0, 46), VGet(1, 1, 2), BlockType::RETRACTABLE_SPIKES,
+            0, false, VGet(0,0,0), VGet(0,0,0), 0.9f, 0.0f));   // G11: лево
+        blocks.push_back(Block(VGet(69, 0, 49), VGet(1, 1, 2), BlockType::RETRACTABLE_SPIKES,
+            0, false, VGet(0,0,0), VGet(0,0,0), 0.9f, 0.45f));  // G12: право
+        blocks.push_back(Block(VGet(73, 0, 46), VGet(1, 1, 2), BlockType::RETRACTABLE_SPIKES,
+            0, false, VGet(0,0,0), VGet(0,0,0), 0.8f, 0.0f));   // G13: лево (самый быстрый)
+
+        // BOUNCE_PAD — выход со льда (нормальная гравитация)
+        blocks.push_back(Block(VGet(74, -1, 47), VGet(3, 1, 3), BlockType::BOUNCE_PAD));
+
+        // Финальная платформа (top=7) + триггер
+        blocks.push_back(Block(VGet(79, 6, 45), VGet(9, 1, 7), BlockType::PLATFORM));
+        blocks.push_back(Block(VGet(81, 7, 47), VGet(3, 1, 3), BlockType::TRIGGER));
         break;
 
-    case 50: // Level 50 - ФИНАЛ: все механики всех блоков
-        playerSpawn = VGet(0, 1, 0);
+    case 50: // Level 50 — ФИНАЛ: все механики
+        // С1: форк (фейки + движущаяся) → С2: рассыпашки под мигающими шипами →
+        // С3: low-g + маятники → С4: темнота + исчезающие → С5: лёд + батут
+        playerSpawn = VGet(0, 1, 3);
+
         // Старт
-        blocks.push_back(Block(VGet(-3, -1, -3), VGet(7, 1, 7), BlockType::PLATFORM));
+        blocks.push_back(Block(VGet(-4, -1, -2), VGet(8, 1, 10), BlockType::PLATFORM));
 
-        // === СЕКЦИЯ 1: Лёд + шипы (Block 5) ===  (start X=4, примыкает к старту end X=4)
-        blocks.push_back(Block(VGet(4, -1, -2), VGet(11, 1, 5), BlockType::ICE_PLATFORM));
-        for (int tx = 8; tx < 15; tx++)
-            blocks.push_back(Block(VGet((float)tx, 0, 0), VGet(1, 1, 1), BlockType::SPIKES));
+        // ================================================================
+        // СЕКЦИЯ 1: ФОРК — три пути, два фейковых, один реальный
+        // ================================================================
+        // Движущаяся платформа-мост через разрыв X:4..10
+        { Block m(VGet(4, -1, 0), VGet(6, 1, 6), BlockType::MOVING,
+              0, true, VGet(4,-1,0), VGet(6,-1,0), 1.0f, 0.0f);
+          blocks.push_back(m); }
 
-        // === СЕКЦИЯ 2: Рассыпающиеся + ретракт. шипы (Block 2) === (start X=15, примыкает ко льду)
-        blocks.push_back(Block(VGet(15, -1, -2), VGet(5, 1, 5), BlockType::PLATFORM));
-        blocks.push_back(Block(VGet(24, -1, -2), VGet(4, 1, 4), BlockType::CRUMBLING, 0, true));
-        blocks.push_back(Block(VGet(28, -1, -1), VGet(1, 1, 3), BlockType::RETRACTABLE_SPIKES,
+        // Узел форка: три коридора по Z
+        blocks.push_back(Block(VGet(10, -1, -4), VGet(8, 1, 14), BlockType::PLATFORM));
+        blocks.push_back(Block(VGet(17,  0, -4), VGet(1, 1, 2), BlockType::FAKE_SPIKES)); // угол у пути A
+        blocks.push_back(Block(VGet(17,  0,  8), VGet(1, 1, 2), BlockType::FAKE_SPIKES)); // угол у пути C
+
+        // Путь A (Z:-4..0): FAKE — чистый, широкий, "безопасный" вид
+        blocks.push_back(Block(VGet(18, -1, -4), VGet(10, 1, 4), BlockType::FAKE_PLATFORM));
+
+        // Путь B (Z:1..5): REAL — мигающие шипы, надо дождаться окна
+        blocks.push_back(Block(VGet(18, -1,  1), VGet(10, 1, 4), BlockType::PLATFORM));
+        blocks.push_back(Block(VGet(21,  0,  1), VGet(2, 1, 2), BlockType::RETRACTABLE_SPIKES,
+            0, false, VGet(0,0,0), VGet(0,0,0), 1.5f, 0.0f));
+        blocks.push_back(Block(VGet(25,  0,  3), VGet(2, 1, 2), BlockType::RETRACTABLE_SPIKES,
+            0, false, VGet(0,0,0), VGet(0,0,0), 1.5f, 0.5f));
+
+        // Путь C (Z:6..10): FAKE — с фейковыми шипами (выглядит опасно = "значит реальный")
+        blocks.push_back(Block(VGet(18, -1,  6), VGet(10, 1, 4), BlockType::FAKE_PLATFORM));
+        blocks.push_back(Block(VGet(20,  0,  7), VGet(4, 1, 2), BlockType::FAKE_SPIKES));
+
+        // Площадка после форка (только путь B Z:1..5 сюда доходит)
+        blocks.push_back(Block(VGet(28, -1,  0), VGet(7, 1, 6), BlockType::PLATFORM));
+
+        // ================================================================
+        // СЕКЦИЯ 2: РАССЫПАШКИ + МИГАЮЩИЕ ШИПЫ НА КАЖДОЙ
+        // ================================================================
+        blocks.push_back(Block(VGet(35, -1,  0), VGet(4, 1, 4), BlockType::CRUMBLING, 0, true)); // R1
+        blocks.push_back(Block(VGet(36,  0,  1), VGet(2, 1, 2), BlockType::RETRACTABLE_SPIKES,
             0, false, VGet(0,0,0), VGet(0,0,0), 1.2f, 0.0f));
-        blocks.push_back(Block(VGet(30, -1, -2), VGet(5, 1, 5), BlockType::PLATFORM));
+        // Разрыв X:39..44
+        blocks.push_back(Block(VGet(44, -1,  1), VGet(4, 1, 3), BlockType::CRUMBLING, 0, true)); // R2
+        blocks.push_back(Block(VGet(45,  0,  1), VGet(2, 1, 2), BlockType::RETRACTABLE_SPIKES,
+            0, false, VGet(0,0,0), VGet(0,0,0), 1.1f, 0.3f));
+        // Разрыв X:48..53
+        blocks.push_back(Block(VGet(53, -1,  0), VGet(4, 1, 4), BlockType::CRUMBLING, 0, true)); // R3
+        blocks.push_back(Block(VGet(54,  0,  1), VGet(2, 1, 2), BlockType::RETRACTABLE_SPIKES,
+            0, false, VGet(0,0,0), VGet(0,0,0), 1.0f, 0.0f));
+        // Разрыв X:57..62
+        blocks.push_back(Block(VGet(62, -1,  0), VGet(4, 1, 4), BlockType::CRUMBLING, 0, true)); // R4
+        blocks.push_back(Block(VGet(63,  0,  1), VGet(2, 1, 2), BlockType::RETRACTABLE_SPIKES,
+            0, false, VGet(0,0,0), VGet(0,0,0), 0.9f, 0.45f));
 
-        // === СЕКЦИЯ 3: Зона гравитации + маятник (Block 3) ===
-        {
-            Block gravZone(VGet(37, -3, -4), VGet(20, 15, 10), BlockType::GRAVITY_ZONE);
-            gravZone.gravityMultiplier = 0.5f;
-            blocks.push_back(gravZone);
-        }
-        blocks.push_back(Block(VGet(37, -1, -2), VGet(6, 1, 5), BlockType::ICE_PLATFORM));
-        {
-            Block pendulum(VGet(46, 3, 0), VGet(2, 1, 2), BlockType::PENDULUM_BLADE,
-                0, true, VGet(0,0,0), VGet(0,0,0), 1.3f, 0.0f);
-            pendulum.pivotPoint = VGet(47, 8, 1);
-            pendulum.swingSpeed = 1.2f;
-            pendulum.swingRange = DX_PI_F / 2.5f;
-            blocks.push_back(pendulum);
-        }
-        blocks.push_back(Block(VGet(50, -1, -2), VGet(5, 1, 5), BlockType::PLATFORM));
+        blocks.push_back(Block(VGet(66, -1, -1), VGet(7, 1, 7), BlockType::PLATFORM));
 
-        // === СЕКЦИЯ 4: Батут + темнота + финал (Block 4+5) ===
-        blocks.push_back(Block(VGet(57, -3, -5), VGet(30, 20, 12), BlockType::LIGHT_PULSE_ZONE,
-            0, true, VGet(0,0,0), VGet(0,0,0), 1.8f, 0.0f));
-        blocks.push_back(Block(VGet(57, -1, -2), VGet(4, 1, 4), BlockType::BOUNCE_PAD));
-        blocks.push_back(Block(VGet(64, 7, -2), VGet(8, 1, 5), BlockType::PLATFORM));  // top=8
-        blocks.push_back(Block(VGet(74, 7, -2), VGet(5, 1, 5), BlockType::ICE_PLATFORM));
-        // Финальная платформа
-        blocks.push_back(Block(VGet(81, 7, -2), VGet(6, 1, 5), BlockType::PLATFORM));
-        blocks.push_back(Block(VGet(83, 8, -1), VGet(3, 1, 3), BlockType::TRIGGER));
+        // ================================================================
+        // СЕКЦИЯ 3: LOW-G (0.65x) + МАЯТНИКИ НАД РАЗРЫВАМИ
+        // ================================================================
+        // Все платформы на уровне земли. Прыжки в 1.5× длиннее — но маятники блокируют разрывы.
+        { Block gz(VGet(73, -3, -5), VGet(38, 20, 12), BlockType::GRAVITY_ZONE);
+          gz.gravityMultiplier = 0.65f; blocks.push_back(gz); }
+
+        blocks.push_back(Block(VGet(73, -1, -2), VGet(6, 1, 5), BlockType::PLATFORM)); // GA
+        // Разрыв X:79..84, маятник в центре разрыва
+        { Block p(VGet(79, 2,  0), VGet(2, 1, 2), BlockType::PENDULUM_BLADE,
+              0, true, VGet(0,0,0), VGet(0,0,0), 1.4f, 0.0f);
+          p.pivotPoint = VGet(80, 8, 1);
+          p.swingSpeed = 1.3f;
+          p.swingRange = DX_PI_F / 2.8f;
+          blocks.push_back(p); }
+        blocks.push_back(Block(VGet(84, -1,  1), VGet(6, 1, 5), BlockType::PLATFORM)); // GB (Z-сдвиг)
+        // Разрыв X:90..96, маятник быстрее
+        { Block p(VGet(90, 2, -1), VGet(2, 1, 2), BlockType::PENDULUM_BLADE,
+              0, true, VGet(0,0,0), VGet(0,0,0), 1.2f, 0.5f);
+          p.pivotPoint = VGet(91, 8, 0);
+          p.swingSpeed = 1.4f;
+          p.swingRange = DX_PI_F / 2.5f;
+          blocks.push_back(p); }
+        blocks.push_back(Block(VGet(96, -1, -2), VGet(6, 1, 5), BlockType::PLATFORM)); // GC
+        // Разрыв X:102..107 — без маятника, выход из зоны (зона X:73..111)
+        blocks.push_back(Block(VGet(107, -1, -2), VGet(7, 1, 6), BlockType::PLATFORM));
+
+        // ================================================================
+        // СЕКЦИЯ 4: ТЕМНОТА (LIGHT_PULSE_ZONE) + ИСЧЕЗАЮЩИЕ ПЛАТФОРМЫ
+        // ================================================================
+        // Темнота 2f/s, вспышка каждые 2с. Платформы в противофазе — одна есть, другой нет.
+        blocks.push_back(Block(VGet(114, -3, -4), VGet(32, 20, 11), BlockType::LIGHT_PULSE_ZONE,
+            0, true, VGet(0,0,0), VGet(0,0,0), 2.0f, 0.0f));
+
+        blocks.push_back(Block(VGet(114, -1, -1), VGet(6, 1, 5), BlockType::DISAPPEARING,
+            0, true, VGet(0,0,0), VGet(0,0,0), 1.5f, 0.0f));  // E1
+        // Разрыв X:120..125
+        blocks.push_back(Block(VGet(125, -1, -1), VGet(6, 1, 5), BlockType::DISAPPEARING,
+            0, true, VGet(0,0,0), VGet(0,0,0), 1.5f, 0.5f));  // E2 противофаза
+        // Разрыв X:131..136
+        blocks.push_back(Block(VGet(136, -1, -1), VGet(6, 1, 5), BlockType::DISAPPEARING,
+            0, true, VGet(0,0,0), VGet(0,0,0), 1.5f, 0.0f));  // E3
+
+        blocks.push_back(Block(VGet(142, -1, -2), VGet(7, 1, 7), BlockType::PLATFORM));
+
+        // ================================================================
+        // СЕКЦИЯ 5: ЛЁД + РЕТРАКТ ВОРОТА + БАТУТ НА ФИНИШ
+        // ================================================================
+        { Block b(VGet(149, -1, -1), VGet(22, 1, 5), BlockType::ICE_PLATFORM);
+          b.frictionMultiplier = 0.990f; blocks.push_back(b); }
+        // 5 ворот: лево/право по Z, ритм 1.0s→0.8s
+        blocks.push_back(Block(VGet(152, 0, -1), VGet(1, 1, 2), BlockType::RETRACTABLE_SPIKES,
+            0, false, VGet(0,0,0), VGet(0,0,0), 1.0f, 0.0f));   // лево
+        blocks.push_back(Block(VGet(156, 0,  2), VGet(1, 1, 2), BlockType::RETRACTABLE_SPIKES,
+            0, false, VGet(0,0,0), VGet(0,0,0), 1.0f, 0.25f));  // право
+        blocks.push_back(Block(VGet(160, 0, -1), VGet(1, 1, 2), BlockType::RETRACTABLE_SPIKES,
+            0, false, VGet(0,0,0), VGet(0,0,0), 0.9f, 0.0f));   // лево
+        blocks.push_back(Block(VGet(164, 0,  2), VGet(1, 1, 2), BlockType::RETRACTABLE_SPIKES,
+            0, false, VGet(0,0,0), VGet(0,0,0), 0.9f, 0.45f));  // право
+        blocks.push_back(Block(VGet(168, 0, -1), VGet(1, 1, 2), BlockType::RETRACTABLE_SPIKES,
+            0, false, VGet(0,0,0), VGet(0,0,0), 0.8f, 0.0f));   // лево (самый быстрый)
+
+        // BOUNCE_PAD — выход со льда на финиш
+        blocks.push_back(Block(VGet(171, -1,  0), VGet(3, 1, 3), BlockType::BOUNCE_PAD));
+
+        // Финальная платформа (top=10) — достижима батутом (max height ~12u)
+        blocks.push_back(Block(VGet(177,  9, -1), VGet(10, 1, 7), BlockType::PLATFORM));
+        blocks.push_back(Block(VGet(179, 10,  1), VGet(4, 1, 4), BlockType::TRIGGER));
         break;
     }
 }

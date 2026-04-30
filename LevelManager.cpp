@@ -1,4 +1,5 @@
 ﻿#include "LevelManager.h"
+#include "ProfileManager.h"
 
 LevelManager::LevelManager()
     : currentLevelId(1), totalLevels(50), deathCount(0), currentLevelTime(0.0f) {
@@ -28,6 +29,10 @@ void LevelManager::NextLevel() {
 
 void LevelManager::RestartLevel() {
     OnPlayerDeath();
+    LoadLevel(currentLevelId);
+}
+
+void LevelManager::ReloadCurrentLevel() {
     LoadLevel(currentLevelId);
 }
 
@@ -96,13 +101,14 @@ void LevelManager::OnLevelComplete() {
 }
 
 float LevelManager::GetBestTime(int levelId) const {
+    // Profile has persistent data; fall back to session cache
+    const ProfileManager& pm = ProfileManager::GetInstance();
+    if (pm.HasBestTime(levelId)) return pm.GetBestTime(levelId);
     auto it = bestTimes.find(levelId);
-    if (it != bestTimes.end()) {
-        return it->second;
-    }
-    return 0.0f;
+    return (it != bestTimes.end()) ? it->second : 0.0f;
 }
 
 bool LevelManager::HasBestTime(int levelId) const {
+    if (ProfileManager::GetInstance().HasBestTime(levelId)) return true;
     return bestTimes.find(levelId) != bestTimes.end();
 }

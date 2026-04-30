@@ -372,3 +372,11 @@ nul
 
 # Source asset packs (large, binary)
 models/Ultimate Platformer Pack by Quaternius/
+
+# Runtime save data
+saves/
+
+# Large binary media (use Git LFS if needed)
+media/*.mp4
+media/*.mkv
+media/*.avi

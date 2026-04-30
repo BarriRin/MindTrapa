@@ -23,6 +23,7 @@ public:
     void LoadLevel(int levelId);
     void NextLevel();
     void RestartLevel();
+    void ReloadCurrentLevel();
 
     // �C�u�����u����
     Level* GetCurrentLevel() const { return currentLevel.get(); }
