@@ -135,6 +135,15 @@ bool ModelManager::IsModelLoaded(ModelID id) const {
     return models.find(id) != models.end();
 }
 
+void ModelManager::UnloadModel(ModelID id) {
+    auto it = models.find(id);
+    if (it != models.end()) {
+        if (it->second.handle != -1)
+            MV1DeleteModel(it->second.handle);
+        models.erase(it);
+    }
+}
+
 bool ModelManager::IsSkyboxLoaded(int blockId) const {
     return skyboxes.find(blockId) != skyboxes.end();
 }

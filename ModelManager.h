@@ -112,6 +112,9 @@ public:
     // Проверка загружен ли скайбокс
     bool IsSkyboxLoaded(int blockId) const;
 
+    // Выгрузить модель (чтобы потом загрузить другую на её место)
+    void UnloadModel(ModelID id);
+
     // Установить путь к папке с моделями
     void SetModelsPath(const std::string& path) { modelsPath = path; }
     void SetSkyboxesPath(const std::string& path) { skyboxesPath = path; }

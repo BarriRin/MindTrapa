@@ -37,19 +37,21 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     ModelManager& modelMgr = ModelManager::GetInstance();
     modelMgr.Initialize();
 
-    // Загрузка моделей (converted_x/ - конвертированные из Quaternius pack)
-    modelMgr.LoadModel(ModelID::PLATFORM,           "converted_x/Cube_Grass_Single.x", 1.0f);
+    // Интерактивные модели — единый стиль для всех блоков (Quaternius)
     modelMgr.LoadModel(ModelID::SPIKES,             "converted_x/Cube_Spikes.x",       1.0f);
     modelMgr.LoadModel(ModelID::FAKE_SPIKES,        "converted_x/Cube_Spikes.x",       1.0f);
-    modelMgr.LoadModel(ModelID::CRUMBLING,          "converted_x/Cube_Crate.x",        1.0f);
-    modelMgr.LoadModel(ModelID::MOVING,             "converted_x/Cube_Dirt_Single.x",  1.0f);
-    modelMgr.LoadModel(ModelID::DISAPPEARING,       "converted_x/Cube_Bricks.x",       1.0f);
-    modelMgr.LoadModel(ModelID::FAKE_PLATFORM,      "converted_x/Cube_Grass_Single.x", 1.0f);
+    modelMgr.LoadModel(ModelID::RETRACTABLE_SPIKES, "converted_x/Cube_Spikes.x",       1.0f);
     modelMgr.LoadModel(ModelID::TRIGGER,            "converted_x/Goal_Flag.x",         1.0f);
     modelMgr.LoadModel(ModelID::BUTTON,             "converted_x/Cube_Exclamation.x",  1.0f);
     modelMgr.LoadModel(ModelID::TELEPORT,           "converted_x/Gem_Pink.x",          1.0f);
-    modelMgr.LoadModel(ModelID::RETRACTABLE_SPIKES, "converted_x/Cube_Spikes.x",       1.0f);
-    modelMgr.LoadModel(ModelID::PENDULUM_BLADE,     "converted_x/Hazard_Cylinder.x",   1.0f);
+    // PENDULUM_BLADE — примитив (прямоугольник + цепь + точка подвеса, не нуждается в модели)
+
+    // Платформенные модели блока 0 — стартовые (Quaternius, блоки 1-2)
+    modelMgr.LoadModel(ModelID::PLATFORM,      "converted_x/Cube_Grass_Single.x", 1.0f);
+    modelMgr.LoadModel(ModelID::FAKE_PLATFORM, "converted_x/Cube_Grass_Single.x", 1.0f);
+    modelMgr.LoadModel(ModelID::CRUMBLING,     "converted_x/Cube_Crate.x",        1.0f);
+    modelMgr.LoadModel(ModelID::MOVING,        "converted_x/Cube_Dirt_Single.x",  1.0f);
+    modelMgr.LoadModel(ModelID::DISAPPEARING,  "converted_x/Cube_Bricks.x",       1.0f);
 
     // TODO: Загрузка скайбоксов (когда будут готовы)
     // modelMgr.LoadSkybox(0, "block0_mars.mqo", 1000.0f);   // Block 1 (Mars)
@@ -100,6 +102,48 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
         if (currentBgmIdx >= 0 && bgmHandles[currentBgmIdx] != -1)
             StopSoundMem(bgmHandles[currentBgmIdx]);
         currentBgmIdx = -1;
+    };
+
+    // Смена темы платформ при переходе между группами блоков:
+    //   blockIdx 0-1 → тема 0 (Quaternius, блоки 1-2)
+    //   blockIdx 2-3 → тема 1 (Space Station, блоки 3-4)
+    //   blockIdx 4   → тема 2 (KayKit Space Base, блок 5)
+    int currentThemeGroup = 0;
+    auto applyBlockTheme = [&](int blockIdx) {
+        int theme = (blockIdx <= 1) ? 0 : (blockIdx <= 3) ? 1 : 2;
+        if (theme == currentThemeGroup) return;
+        currentThemeGroup = theme;
+
+        modelMgr.UnloadModel(ModelID::PLATFORM);
+        modelMgr.UnloadModel(ModelID::FAKE_PLATFORM);
+        modelMgr.UnloadModel(ModelID::CRUMBLING);
+        modelMgr.UnloadModel(ModelID::MOVING);
+        modelMgr.UnloadModel(ModelID::DISAPPEARING);
+        modelMgr.UnloadModel(ModelID::ICE_PLATFORM);
+        modelMgr.UnloadModel(ModelID::BOUNCE_PAD);
+
+        if (theme == 0) {
+            modelMgr.LoadModel(ModelID::PLATFORM,      "converted_x/Cube_Grass_Single.x", 1.0f);
+            modelMgr.LoadModel(ModelID::FAKE_PLATFORM, "converted_x/Cube_Grass_Single.x", 1.0f);
+            modelMgr.LoadModel(ModelID::CRUMBLING,     "converted_x/Cube_Crate.x",        1.0f);
+            modelMgr.LoadModel(ModelID::MOVING,        "converted_x/Cube_Dirt_Single.x",  1.0f);
+            modelMgr.LoadModel(ModelID::DISAPPEARING,  "converted_x/Cube_Bricks.x",       1.0f);
+        } else if (theme == 1) {
+            modelMgr.LoadModel(ModelID::PLATFORM,      "space_station/floor-panel.x",        1.0f);
+            modelMgr.LoadModel(ModelID::FAKE_PLATFORM, "space_station/floor-panel.x",        1.0f);
+            modelMgr.LoadModel(ModelID::CRUMBLING,     "space_station/container.x",          1.0f);
+            modelMgr.LoadModel(ModelID::MOVING,        "space_station/container-flat.x",     1.0f);
+            modelMgr.LoadModel(ModelID::DISAPPEARING,  "space_station/door-single-closed.x", 1.0f);
+            modelMgr.LoadModel(ModelID::BOUNCE_PAD,    "converted_x/Bouncer.x",             1.0f);
+        } else {
+            modelMgr.LoadModel(ModelID::PLATFORM,      "space_station/floor-panel.x",      1.0f);
+            modelMgr.LoadModel(ModelID::FAKE_PLATFORM, "space_station/floor-panel.x",      1.0f);
+            modelMgr.LoadModel(ModelID::CRUMBLING,     "space_kaykit/cargo_B_stacked.x",   1.0f);
+            modelMgr.LoadModel(ModelID::MOVING,        "space_kaykit/cargo_A.x",           1.0f);
+            modelMgr.LoadModel(ModelID::DISAPPEARING,  "space_kaykit/containers_A.x",      1.0f);
+            // ICE_PLATFORM — примитив (голубой DrawCube3D), модель не нужна
+            modelMgr.LoadModel(ModelID::BOUNCE_PAD,    "converted_x/Bouncer.x",            1.0f);
+        }
     };
 
     // === МОДЕЛЬ ИГРОКА ===
@@ -305,6 +349,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
                 // Быстрый старт - сразу загружаем Level 1
                 menu.ClearHistory();
                 menu.SetState(GameState::PLAYING);
+                applyBlockTheme(0);
                 levelManager.LoadLevel(1);
                 playerPos = levelManager.GetCurrentLevel()->GetPlayerSpawn();
                 playerVel = VGet(0, 0, 0);
@@ -338,6 +383,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
                 if (levelToLoad > 0) {
                     menu.ClearHistory();
                     menu.SetState(GameState::PLAYING);
+                    applyBlockTheme((levelToLoad - 1) / 10);
                     levelManager.LoadLevel(levelToLoad);
                     playerPos = levelManager.GetCurrentLevel()->GetPlayerSpawn();
                     playerVel = VGet(0, 0, 0);
@@ -404,6 +450,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
                 break;
 
             case ButtonAction::RESTART:
+                applyBlockTheme((levelManager.GetCurrentLevelId() - 1) / 10);
                 levelManager.RestartLevel();
                 playerPos = levelManager.GetCurrentLevel()->GetPlayerSpawn();
                 playerVel = VGet(0, 0, 0);
@@ -434,6 +481,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
                 if (levelToLoad > 0) {
                     menu.ClearHistory();  // Очищаем стек
                     menu.SetState(GameState::PLAYING);  // Устанавливаем состояние меню в PLAYING
+                    applyBlockTheme((levelToLoad - 1) / 10);
                     levelManager.LoadLevel(levelToLoad);
                     playerPos = levelManager.GetCurrentLevel()->GetPlayerSpawn();
                     playerVel = VGet(0, 0, 0);
@@ -1149,6 +1197,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
             }
 
             if (action == ButtonAction::RESTART) {
+                applyBlockTheme((levelManager.GetCurrentLevelId() - 1) / 10);
                 levelManager.ReloadCurrentLevel();
                 playerPos = levelManager.GetCurrentLevel()->GetPlayerSpawn();
                 playerVel = VGet(0, 0, 0);
@@ -1172,6 +1221,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
                 if (menuBgMovie != -1) PlayMovieToGraph(menuBgMovie, DX_PLAYTYPE_LOOP);
                 SetMouseDispFlag(TRUE);
             } else if (action == ButtonAction::NEXT_LEVEL && levelWasCompleted) {
+                int nextLevelId = levelManager.GetCurrentLevelId() + 1;
+                applyBlockTheme((nextLevelId - 1) / 10);
                 levelManager.NextLevel();
                 playerPos = levelManager.GetCurrentLevel()->GetPlayerSpawn();
                 playerVel = VGet(0, 0, 0);

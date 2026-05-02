@@ -33,6 +33,29 @@ void Level::LoadLevelData(int id) {
     blocks.push_back(Block(VGet(5, 1, 0), VGet(2, 1, 2), BlockType::TRIGGER));
 }
 
+static unsigned int GetDebugColor(BlockType type) {
+    switch (type) {
+    case BlockType::PLATFORM:           return GetColor(255, 255, 255);
+    case BlockType::FAKE_PLATFORM:      return GetColor(170, 170, 170);
+    case BlockType::INVISIBLE_WALL:     return GetColor(255, 136,   0);
+    case BlockType::SPIKES:             return GetColor(255,  51,  51);
+    case BlockType::FAKE_SPIKES:        return GetColor(255, 136, 170);
+    case BlockType::RETRACTABLE_SPIKES: return GetColor(204,  34,   0);
+    case BlockType::DISAPPEARING:       return GetColor(255, 255,   0);
+    case BlockType::CRUMBLING:          return GetColor(255, 136,  51);
+    case BlockType::MOVING:             return GetColor(  0, 255,  68);
+    case BlockType::BUTTON:             return GetColor(255,   0, 255);
+    case BlockType::TELEPORT:           return GetColor(204,   0, 255);
+    case BlockType::TRIGGER:            return GetColor(  0, 255, 255);
+    case BlockType::GRAVITY_ZONE:       return GetColor(136,  68, 255);
+    case BlockType::PENDULUM_BLADE:     return GetColor(255,  34,  34);
+    case BlockType::LIGHT_PULSE_ZONE:   return GetColor(204, 102, 255);
+    case BlockType::ICE_PLATFORM:       return GetColor(136, 204, 255);
+    case BlockType::BOUNCE_PAD:         return GetColor(255, 170,   0);
+    default:                            return GetColor(255, 255, 255);
+    }
+}
+
 void Level::Draw(bool debugMode) const {
     for (const auto& block : blocks) {
         // Если у блока есть модель — отрисовать модель (с учётом видимости)
@@ -87,10 +110,6 @@ void Level::Draw(bool debugMode) const {
             break;
 
         case BlockType::INVISIBLE_WALL:
-            if (debugMode) {
-                DrawCube3D(block.pos, VAdd(block.pos, block.size),
-                    GetColor(255, 0, 0), GetColor(255, 0, 0), FALSE);
-            }
             break;
 
         case BlockType::FAKE_PLATFORM:
@@ -230,9 +249,8 @@ void Level::Draw(bool debugMode) const {
             break;
 
         case BlockType::ICE_PLATFORM:
-            // Ледяная платформа — светло-голубая
             DrawCube3D(block.pos, VAdd(block.pos, block.size),
-                GetColor(180, 220, 255), GetColor(130, 180, 230), TRUE);
+                GetColor(160, 210, 250), GetColor(110, 165, 225), TRUE);
             break;
 
         case BlockType::BOUNCE_PAD:
@@ -241,6 +259,33 @@ void Level::Draw(bool debugMode) const {
                 GetColor(255, 200, 50), GetColor(220, 150, 20), TRUE);
             break;
         }
+    }
+
+    // Постоянный wireframe на платформах Block 3+ (космический стиль)
+    if (blockId >= 2) {
+        SetUseZBuffer3D(FALSE);
+        for (const auto& block : blocks) {
+            if (block.type == BlockType::PLATFORM || block.type == BlockType::FAKE_PLATFORM ||
+                block.type == BlockType::MOVING ||
+                (block.type == BlockType::CRUMBLING && block.isActive)) {
+                DrawCube3D(block.pos, VAdd(block.pos, block.size),
+                    GetColor(255, 255, 255), GetColor(255, 255, 255), FALSE);
+            }
+        }
+        SetUseZBuffer3D(TRUE);
+    }
+
+    if (debugMode) {
+        SetUseZBuffer3D(FALSE);  // отключаем Z-тест, чтобы рамки были видны поверх геометрии
+        for (const auto& block : blocks) {
+            if (!block.isActive && (block.type == BlockType::DISAPPEARING ||
+                block.type == BlockType::CRUMBLING ||
+                block.type == BlockType::RETRACTABLE_SPIKES ||
+                (block.type == BlockType::SPIKES && block.linkId == 1))) continue;
+            unsigned int col = GetDebugColor(block.type);
+            DrawCube3D(block.pos, VAdd(block.pos, block.size), col, col, FALSE);
+        }
+        SetUseZBuffer3D(TRUE);
     }
 }
 
