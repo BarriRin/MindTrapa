@@ -80,8 +80,11 @@ struct Button {
         unsigned int borderColor = disabled ? GetColor(55, 55, 55)   : (isHovered ? GetColor(120, 180, 255) : GetColor(60, 90, 180));
         unsigned int textColor   = disabled ? GetColor(90, 90, 90)   : GetColor(255, 255, 255);
 
-        // Фон кнопки
+        // Полупрозрачный фон
+        int bgAlpha = disabled ? 130 : (isHovered ? 220 : 170);
+        SetDrawBlendMode(DX_BLENDMODE_ALPHA, bgAlpha);
         DrawBox(x, y, x + width, y + height, bgColor, TRUE);
+        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
         // Рамка
         DrawBox(x, y, x + width, y + height, borderColor, FALSE);
 

@@ -485,6 +485,40 @@ void Menu::Draw() const {
             swprintf_s(blockHeader, L"BLOCK %d — LEVELS 1-10", selectedBlock);
             int hw = GetDrawStringWidthToHandle(blockHeader, (int)wcslen(blockHeader), fontHeading);
             DrawStringToHandle(1920/2 - hw/2, 150, blockHeader, titleColor, fontHeading);
+
+            // Звёзды под кнопками уровней
+            const Profile* p = ProfileManager::GetInstance().GetCurrentProfile();
+            const float PI = 3.14159265f;
+            auto drawSmallStar = [&](int cx, int cy, int earned) {
+                float outerR = 7.0f, innerR = 3.0f;
+                unsigned int col = earned ? GetColor(255, 200, 0) : GetColor(45, 45, 65);
+                for (int t = 0; t < 5; t++) {
+                    float a0 = PI / 2 + t * 2 * PI / 5;
+                    float a1 = a0 + PI / 5;
+                    float a2 = a0 + 2 * PI / 5;
+                    int x0 = cx + (int)(outerR * cosf(a0)), y0 = cy - (int)(outerR * sinf(a0));
+                    int x1 = cx + (int)(innerR * cosf(a1)), y1 = cy - (int)(innerR * sinf(a1));
+                    int x2 = cx + (int)(outerR * cosf(a2)), y2 = cy - (int)(outerR * sinf(a2));
+                    DrawTriangle(cx, cy, x0, y0, x1, y1, col, TRUE);
+                    DrawTriangle(cx, cy, x1, y1, x2, y2, col, TRUE);
+                }
+            };
+
+            int startX = 400, startY = 300;
+            int buttonWidth = 120, buttonHeight = 80;
+            int spacingX = 150, spacingY = 100;
+            for (int i = 0; i < 10; i++) {
+                int row = i / 5, col = i % 5;
+                int bx = startX + col * spacingX;
+                int by = startY + row * spacingY;
+                int levelId = (selectedBlock - 1) * 10 + i + 1;
+                int earned = (p && levelId <= PROFILE_LEVEL_COUNT) ? p->stars[levelId - 1] : 0;
+
+                int starBaseX = bx + buttonWidth / 2 - 16;
+                int starY = by + buttonHeight + 12;
+                for (int s = 0; s < 3; s++)
+                    drawSmallStar(starBaseX + s * 16, starY, s < earned);
+            }
         }
         break;
     case GameState::SETTINGS:

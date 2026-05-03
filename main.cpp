@@ -59,7 +59,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     // ...
 
     // === BGM (фоновая музыка по блокам) ===
-    // Пробует .ogg → .mp3 → .wav для каждого блока
+    // FILE-тип: стриминг с диска во время воспроизведения, не грузит весь трек в память
+    SetCreateSoundDataType(DX_SOUNDDATATYPE_FILE);
     auto loadBgm = [](const wchar_t* name) -> int {
         const wchar_t* exts[] = { L".ogg", L".mp3", L".wav" };
         for (auto ext : exts) {
@@ -77,6 +78,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
         loadBgm(L"block4"),
         loadBgm(L"block5"),
     };
+    SetCreateSoundDataType(DX_SOUNDDATATYPE_MEMNOPRESS); // SFX грузим в память для моментального воспроизведения
 
     int currentBgmIdx = -1;  // индекс текущего играющего трека (0-4)
 
@@ -102,6 +104,20 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
         if (currentBgmIdx >= 0 && bgmHandles[currentBgmIdx] != -1)
             StopSoundMem(bgmHandles[currentBgmIdx]);
         currentBgmIdx = -1;
+    };
+
+    // === SFX ===
+    int sfxJump  = LoadSoundMem(L"media/sfx/jump.wav");
+    int sfxLand  = LoadSoundMem(L"media/sfx/land.wav");
+    int sfxDeath = LoadSoundMem(L"media/sfx/fall.wav");
+    int sfxWin   = LoadSoundMem(L"media/sfx/win.wav");
+
+    auto playSfx = [](int handle, int volumePct) {
+        if (handle == -1) return;
+        int vol = volumePct * 255 / 100;
+        StopSoundMem(handle);
+        ChangeVolumeSoundMem(vol, handle);
+        PlaySoundMem(handle, DX_PLAYTYPE_BACK, TRUE);
     };
 
     // Смена темы платформ при переходе между группами блоков:
@@ -233,6 +249,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     float jumpPower = 0.4f;
     float gravity = -0.015f;
     bool onGround = false;
+    bool wasOnGround = false;
 
     // Система контроля скорости игры
     float gameSpeed = 1.0f;
@@ -679,9 +696,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
             static bool jumpPressed = false;
             if (CheckHitKey(KEY_INPUT_SPACE)) {
                 if (!jumpPressed && onGround && iceFriction >= 1.0f) {
-                    // jumpPower нормализован к 60 FPS, не нужно умножать на deltaTime (это начальная скорость)
                     playerVel.y = jumpPower;
                     onGround = false;
+                    playSfx(sfxJump, menu.GetSettings().soundVolume);
                 }
                 jumpPressed = true;
             }
@@ -743,6 +760,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
                 currentLevel->Update(effectiveDeltaTime);
 
                 VECTOR platformVelocity = VGet(0, 0, 0);
+                wasOnGround = onGround;
                 currentLevel->CheckCollision(playerPos, playerSize, newPos, playerVel, onGround, platformVelocity);
 
                 newPos = VAdd(newPos, platformVelocity);
@@ -760,6 +778,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
                         playerAnimTime    = 0.0f;
                         playerCurrentAnim = animDeath;
                     }
+                    wasOnGround = false;
+                    playSfx(sfxDeath, menu.GetSettings().soundVolume);
                     gameState = GameState::DYING;
                 }
 
@@ -773,6 +793,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
                 currentLevel->ActivateButton(playerPos, playerSize, activateKeyPressed);
 
                 if (gameState == GameState::PLAYING && currentLevel->CheckWinTrigger(playerPos, playerSize)) {
+                    playSfx(sfxWin, menu.GetSettings().soundVolume);
                     levelManager.OnLevelComplete();
                     float t         = levelManager.GetCurrentLevelTime();
                     int   starCount = (t <= 15.0f) ? 3 : (t <= 30.0f) ? 2 : 1;
@@ -816,7 +837,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
                 }
             }
 
-            if (playerPos.y < -10) {
+            if (gameState == GameState::PLAYING && playerPos.y < -10) {
                 levelManager.OnPlayerDeath();
                 dyingTimer = 1.0f;
                 levelWasCompleted = false;
@@ -828,8 +849,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
                     playerAnimTime    = 0.0f;
                     playerCurrentAnim = animDeath;
                 }
+                wasOnGround = false;
+                playSfx(sfxDeath, menu.GetSettings().soundVolume);
                 gameState = GameState::DYING;
             }
+
+            if (gameState == GameState::PLAYING && !wasOnGround && onGround) playSfx(sfxLand, menu.GetSettings().soundVolume);
 
             // === АНИМАЦИЯ ИГРОКА ===
             if (gameState == GameState::PLAYING && playerModelHandle != -1) {
@@ -1249,6 +1274,12 @@ END_GAME:
     stopBgm();
     for (int i = 0; i < 5; i++)
         if (bgmHandles[i] != -1) DeleteSoundMem(bgmHandles[i]);
+
+    // Очистка SFX
+    if (sfxJump  != -1) DeleteSoundMem(sfxJump);
+    if (sfxLand  != -1) DeleteSoundMem(sfxLand);
+    if (sfxDeath != -1) DeleteSoundMem(sfxDeath);
+    if (sfxWin   != -1) DeleteSoundMem(sfxWin);
 
     // Очистка игрока
     if (playerModelHandle != -1)
