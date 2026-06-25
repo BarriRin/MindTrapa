@@ -1,82 +1,38 @@
-﻿// camera.cpp
-#include "camera.h"
-#define NOMINMAX
-#include <DxLib.h>
+#include "Camera.h"
 #include <cmath>
-#include <cfloat>
-
-static float clampf(float v, float lo, float hi) {
-    return v < lo ? lo : (v > hi ? hi : v);
-}
 
 Camera::Camera()
-    : target(nullptr)
-    , yaw(0.0f)
-    , pitch(10.0f)
-{
-    SetMouseDispFlag(FALSE);
-    int w, h;
-    GetDrawScreenSize(&w, &h);
-    SetMousePoint(w / 2, h / 2);
+    : angleX(0.0f), angleY(0.0f), distance(10.0f)
+{}
 
-    // Настраиваем параметры камеры DxLib
-    SetCameraNearFar(1.0f, 1000.0f);  // Ближняя и дальняя плоскости
-    SetupCamera_Perspective(60.0f * DX_PI_F / 180.0f);  // Угол обзора 60 градусов
+VECTOR Camera::GetPosition(VECTOR targetPos) const {
+    return VGet(
+        targetPos.x + distance * sinf(angleY) * cosf(angleX),
+        targetPos.y + distance * sinf(angleX) + 2.0f,
+        targetPos.z + distance * cosf(angleY) * cosf(angleX)
+    );
 }
 
-void Camera::setTarget(const VECTOR* t) {
-    target = t;
+void Camera::Apply(VECTOR targetPos) const {
+    VECTOR camPos = GetPosition(targetPos);
+    SetCameraPositionAndTarget_UpVecY(camPos, VAdd(targetPos, VGet(0, 1, 0)));
 }
 
-void Camera::update() {
-    int screenW, screenH;
-    GetDrawScreenSize(&screenW, &screenH);
+void Camera::Update(VECTOR targetPos, float sensitivity, float /*deltaTime*/) {
+    int mouseX, mouseY;
+    GetMousePoint(&mouseX, &mouseY);
 
-    int mx, my;
-    GetMousePoint(&mx, &my);
+    int centerX = SCREEN_W / 2;
+    int centerY = SCREEN_H / 2;
 
-    int dx = mx - screenW / 2;
-    int dy = my - screenH / 2;
+    angleY += (mouseX - centerX) * 0.002f * sensitivity;
+    angleX += (mouseY - centerY) * 0.002f * sensitivity;
 
-    SetMousePoint(screenW / 2, screenH / 2);
+    if (angleX >  ANGLE_X_MAX) angleX =  ANGLE_X_MAX;
+    if (angleX < -ANGLE_X_MAX) angleX = -ANGLE_X_MAX;
 
-    // Более плавная чувствительность мыши
-    yaw += dx * 0.15f;
-    pitch -= dy * 0.15f;
+    SetMousePoint(centerX, centerY);
 
-    // Ограничиваем pitch (вертикальный угол)
-    pitch = clampf(pitch, -85.0f, 85.0f);
-
-    if (target) {
-        float ry = yaw * DX_PI_F / 180.0f;
-        float rp = pitch * DX_PI_F / 180.0f;
-
-        // Камера должна быть ближе и ниже, чтобы видеть игрока
-        float distance = 8.0f;   // Ближе
-        float height = 3.0f;     // Ниже
-
-        // Позиция камеры за игроком
-        float cx = target->x + std::sinf(ry) * distance;
-        float cz = target->z + std::cosf(ry) * distance;
-        float cy = target->y + height + std::sinf(rp) * 3.0f;
-
-        // Смотрим прямо на игрока
-        VECTOR camPos = VGet(cx, cy, cz);
-        VECTOR lookAt = VGet(target->x, target->y, target->z);
-        VECTOR upVec = VGet(0.0f, 1.0f, 0.0f);
-
-        SetCameraPositionAndTargetAndUpVec(camPos, lookAt, upVec);
-    }
-}
-
-VECTOR Camera::getForwardVector() const {
-    float ry = yaw * DX_PI_F / 180.0f;
-    // Направление "вперед" = туда, куда смотрит камера горизонтально
-    return VGet(-std::sinf(ry), 0.0f, -std::cosf(ry));
-}
-
-VECTOR Camera::getRightVector() const {
-    float ry = yaw * DX_PI_F / 180.0f;
-    // Направление "вправо"
-    return VGet(-std::cosf(ry), 0.0f, std::sinf(ry));
+    VECTOR camPos = GetPosition(targetPos);
+    SetCameraPositionAndTarget_UpVecY(camPos, VAdd(targetPos, VGet(0, 1, 0)));
 }

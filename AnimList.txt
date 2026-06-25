@@ -1,0 +1,19 @@
+Character.mv1 — 18 animations:
+  [0] CharacterArmature|Death
+  [1] CharacterArmature|Duck
+  [2] CharacterArmature|HitReact
+  [3] CharacterArmature|Idle
+  [4] CharacterArmature|Idle_Gun
+  [5] CharacterArmature|Idle_Shoot
+  [6] CharacterArmature|Jump
+  [7] CharacterArmature|Jump_Idle
+  [8] CharacterArmature|Jump_Land
+  [9] CharacterArmature|No
+  [10] CharacterArmature|Punch
+  [11] CharacterArmature|Run
+  [12] CharacterArmature|Run_Gun
+  [13] CharacterArmature|Run_Shoot
+  [14] CharacterArmature|Walk
+  [15] CharacterArmature|Walk_Gun
+  [16] CharacterArmature|Wave
+  [17] CharacterArmature|Yes
