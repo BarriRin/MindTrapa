@@ -30,6 +30,10 @@ public:
     bool HasActiveProfile() const { return currentSlot >= 0; }
     int  GetCurrentSlot()   const { return currentSlot; }
 
+    // Глобальный язык интерфейса ("EN"/"RU"/"JA"), не привязан к профилю
+    const std::string& GetLanguageCode() const { return languageCode; }
+    void SetLanguageCode(const std::string& code) { languageCode = code; SaveConfig(); }
+
     bool CreateProfile(int slot, const std::wstring& nickname);
     bool LoadProfile(int slot);
     void DeleteProfile(int slot);
@@ -54,6 +58,7 @@ private:
     std::array<Profile, PROFILE_SLOT_COUNT> slots;
     int currentSlot  = -1;
     int lastUsedSlot = -1;
+    std::string languageCode = "EN";
 
     void LoadSlotFromFile(int slot);
     void SaveSlotToFile(int slot) const;

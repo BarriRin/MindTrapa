@@ -263,7 +263,6 @@ void Level::Draw(bool debugMode) const {
 
     // Постоянный wireframe на платформах Block 3+ (космический стиль)
     if (blockId >= 2) {
-        SetUseZBuffer3D(FALSE);
         for (const auto& block : blocks) {
             if (block.type == BlockType::PLATFORM || block.type == BlockType::FAKE_PLATFORM ||
                 block.type == BlockType::MOVING ||
@@ -272,7 +271,6 @@ void Level::Draw(bool debugMode) const {
                     GetColor(255, 255, 255), GetColor(255, 255, 255), FALSE);
             }
         }
-        SetUseZBuffer3D(TRUE);
     }
 
     if (debugMode) {

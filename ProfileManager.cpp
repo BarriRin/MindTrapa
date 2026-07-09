@@ -206,13 +206,20 @@ void ProfileManager::LoadConfig() {
     while (std::getline(f, line)) {
         auto eq = line.find('=');
         if (eq == std::string::npos) continue;
-        if (line.substr(0, eq) == "LAST_SLOT") {
-            try { lastUsedSlot = std::stoi(line.substr(eq + 1)); } catch (...) {}
+        std::string key = line.substr(0, eq);
+        std::string value = line.substr(eq + 1);
+        if (key == "LAST_SLOT") {
+            try { lastUsedSlot = std::stoi(value); } catch (...) {}
+        } else if (key == "LANGUAGE") {
+            if (value == "RU" || value == "JA" || value == "EN") languageCode = value;
         }
     }
 }
 
 void ProfileManager::SaveConfig() const {
     std::ofstream f(GetConfigPath());
-    if (f.is_open()) f << "LAST_SLOT=" << lastUsedSlot << "\n";
+    if (f.is_open()) {
+        f << "LAST_SLOT=" << lastUsedSlot << "\n";
+        f << "LANGUAGE=" << languageCode << "\n";
+    }
 }

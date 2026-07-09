@@ -3,17 +3,6 @@
 #include <cmath>
 #include <windows.h>
 
-void Menu::LoadFonts() {
-    AddFontResourceEx(L"fonts/Orbitron/static/Orbitron-Bold.ttf",    FR_PRIVATE, NULL);
-    AddFontResourceEx(L"fonts/Orbitron/static/Orbitron-Regular.ttf", FR_PRIVATE, NULL);
-
-    fontTitle   = CreateFontToHandle(L"Orbitron", 60, -1, DX_FONTTYPE_ANTIALIASING_EDGE_4X4, -1, 3);
-    fontHeading = CreateFontToHandle(L"Orbitron", 32, -1, DX_FONTTYPE_ANTIALIASING_EDGE_4X4, -1, 2);
-    fontButton  = CreateFontToHandle(L"Orbitron", 22, -1, DX_FONTTYPE_ANTIALIASING_4X4);
-    fontNormal  = CreateFontToHandle(L"Orbitron", 18, -1, DX_FONTTYPE_ANTIALIASING_4X4);
-    fontSmall   = CreateFontToHandle(L"Orbitron", 13, -1, DX_FONTTYPE_ANTIALIASING_4X4);
-}
-
 void Menu::ApplyFontToButtons(int handle) {
     for (auto& b : buttons) b.fontHandle = handle;
 }
@@ -24,19 +13,13 @@ Menu::Menu(int levels)
       mousePressed(false), upPressed(false), downPressed(false),
       enterPressed(false), escPressed(false) {
     stateHistory.clear();
-    LoadFonts();
+    Localization::GetInstance().Init();
     CreateMainMenuButtons();
-    ApplyFontToButtons(fontButton);
+    ApplyFontToButtons(Localization::GetInstance().GetFont(FontSize::Button));
 }
 
 Menu::~Menu() {
-    if (fontTitle   != -1) DeleteFontToHandle(fontTitle);
-    if (fontHeading != -1) DeleteFontToHandle(fontHeading);
-    if (fontButton  != -1) DeleteFontToHandle(fontButton);
-    if (fontNormal  != -1) DeleteFontToHandle(fontNormal);
-    if (fontSmall   != -1) DeleteFontToHandle(fontSmall);
-    RemoveFontResourceEx(L"fonts/Orbitron/static/Orbitron-Bold.ttf",    FR_PRIVATE, NULL);
-    RemoveFontResourceEx(L"fonts/Orbitron/static/Orbitron-Regular.ttf", FR_PRIVATE, NULL);
+    Localization::GetInstance().Shutdown();
     buttons.clear();
 }
 
@@ -45,39 +28,41 @@ void Menu::SetState(GameState state) {
     selectedButtonIndex = 0;
     buttons.clear();
 
+    Localization& loc = Localization::GetInstance();
+
     switch (state) {
     case GameState::MAIN_MENU:
         CreateMainMenuButtons();
-        ApplyFontToButtons(fontButton);
+        ApplyFontToButtons(loc.GetFont(FontSize::Button));
         break;
     case GameState::LEVEL_SELECT_BLOCKS:
         // НЕ обнуляем selectedBlock - он уже установлен если пришли из выбора блока
         CreateBlockSelectButtons();
-        ApplyFontToButtons(fontButton);
+        ApplyFontToButtons(loc.GetFont(FontSize::Button));
         break;
     case GameState::LEVEL_SELECT_LEVELS:
         CreateLevelSelectButtons();
-        ApplyFontToButtons(fontSmall);
+        ApplyFontToButtons(loc.GetFont(FontSize::Small));
         break;
     case GameState::SETTINGS:
         CreateSettingsButtons();
-        ApplyFontToButtons(fontButton);
+        ApplyFontToButtons(loc.GetFont(FontSize::Button));
         break;
     case GameState::MUSIC_SELECT:
         CreateMusicSelectButtons();
-        ApplyFontToButtons(fontButton);
+        ApplyFontToButtons(loc.GetFont(FontSize::Button));
         break;
     case GameState::PAUSED:
         CreatePauseMenuButtons();
-        ApplyFontToButtons(fontButton);
+        ApplyFontToButtons(loc.GetFont(FontSize::Button));
         break;
     case GameState::PROFILE_SELECT:
         CreateProfileSelectButtons();
-        ApplyFontToButtons(fontButton);
+        ApplyFontToButtons(loc.GetFont(FontSize::Button));
         break;
     case GameState::PROFILE_CREATE:
         CreateProfileCreateButtons();
-        ApplyFontToButtons(fontButton);
+        ApplyFontToButtons(loc.GetFont(FontSize::Button));
         break;
     case GameState::PLAYING:
         buttons.clear();
@@ -90,7 +75,7 @@ void Menu::SetState(GameState state) {
         break;
     case GameState::LEVEL_RESULT:
         CreateResultScreenButtons();
-        ApplyFontToButtons(fontButton);
+        ApplyFontToButtons(loc.GetFont(FontSize::Button));
         break;
     }
 }
@@ -138,20 +123,22 @@ void Menu::ResetInputFlags() {
 }
 
 void Menu::CreateMainMenuButtons() {
+    Localization& loc = Localization::GetInstance();
     int centerX = 1920 / 2;
     int startY = 400;
     int buttonWidth = 300;
     int buttonHeight = 60;
     int spacing = 80;
 
-    buttons.push_back(Button(L"Start Game",     centerX - buttonWidth / 2, startY,             buttonWidth, buttonHeight, ButtonAction::START_GAME));
-    buttons.push_back(Button(L"Level Select",   centerX - buttonWidth / 2, startY + spacing,   buttonWidth, buttonHeight, ButtonAction::OPEN_LEVEL_SELECT));
-    buttons.push_back(Button(L"Settings",       centerX - buttonWidth / 2, startY + spacing*2, buttonWidth, buttonHeight, ButtonAction::OPEN_SETTINGS));
-    buttons.push_back(Button(L"Change Profile", centerX - buttonWidth / 2, startY + spacing*3, buttonWidth, buttonHeight, ButtonAction::CHANGE_PROFILE));
-    buttons.push_back(Button(L"Exit",           centerX - buttonWidth / 2, startY + spacing*4, buttonWidth, buttonHeight, ButtonAction::EXIT_GAME));
+    buttons.push_back(Button(loc.Tr(StrId::START_GAME),     centerX - buttonWidth / 2, startY,             buttonWidth, buttonHeight, ButtonAction::START_GAME));
+    buttons.push_back(Button(loc.Tr(StrId::LEVEL_SELECT),   centerX - buttonWidth / 2, startY + spacing,   buttonWidth, buttonHeight, ButtonAction::OPEN_LEVEL_SELECT));
+    buttons.push_back(Button(loc.Tr(StrId::SETTINGS_BTN),   centerX - buttonWidth / 2, startY + spacing*2, buttonWidth, buttonHeight, ButtonAction::OPEN_SETTINGS));
+    buttons.push_back(Button(loc.Tr(StrId::CHANGE_PROFILE), centerX - buttonWidth / 2, startY + spacing*3, buttonWidth, buttonHeight, ButtonAction::CHANGE_PROFILE));
+    buttons.push_back(Button(loc.Tr(StrId::EXIT),           centerX - buttonWidth / 2, startY + spacing*4, buttonWidth, buttonHeight, ButtonAction::EXIT_GAME));
 }
 
 void Menu::CreateBlockSelectButtons() {
+    Localization& loc = Localization::GetInstance();
     int startX = 500;
     int startY = 250;
     int buttonWidth = 220;
@@ -167,9 +154,11 @@ void Menu::CreateBlockSelectButtons() {
         int x = startX + col * spacingX;
         int y = startY + row * spacingY;
 
-        std::wstring blockText = L"Block " + std::to_wstring(i + 1);
+        wchar_t buf[32];
+        swprintf_s(buf, loc.Tr(StrId::BLOCK_LABEL), i + 1);
+        std::wstring blockText = buf;
         if (i >= unlockedBlocks) {
-            blockText += L"\n(LOCKED)";
+            blockText += loc.Tr(StrId::LOCKED_SUFFIX);
         }
 
         ButtonAction action = (ButtonAction)((int)ButtonAction::SELECT_BLOCK_1 + i);
@@ -177,10 +166,11 @@ void Menu::CreateBlockSelectButtons() {
     }
 
     // Кнопка назад
-    buttons.push_back(Button(L"< Back", 100, 950, 200, 60, ButtonAction::BACK_TO_MENU));
+    buttons.push_back(Button(loc.Tr(StrId::BACK), 100, 950, 200, 60, ButtonAction::BACK_TO_MENU));
 }
 
 void Menu::CreateLevelSelectButtons() {
+    Localization& loc = Localization::GetInstance();
     int startX = 400;
     int startY = 300;
     int buttonWidth = 120;
@@ -196,22 +186,25 @@ void Menu::CreateLevelSelectButtons() {
         int x = startX + col * spacingX;
         int y = startY + row * spacingY;
 
-        std::wstring levelText = L"Level " + std::to_wstring(i + 1);
+        wchar_t buf[32];
+        swprintf_s(buf, loc.Tr(StrId::LEVEL_LABEL), i + 1);
+        std::wstring levelText = buf;
 
         // Check if block is unlocked and level exists
         int calculatedLevel = (selectedBlock - 1) * 10 + i + 1;
         if (selectedBlock > unlockedBlocks || calculatedLevel > totalLevels || calculatedLevel > unlockedLevels) {
-            levelText += L"\n(LOCKED)";
+            levelText += loc.Tr(StrId::LOCKED_SUFFIX);
         }
 
         buttons.push_back(Button(levelText, x, y, buttonWidth, buttonHeight, ButtonAction::LOAD_LEVEL));
     }
 
     // Back button - returns to block selection
-    buttons.push_back(Button(L"< Back to Blocks", 100, 900, 250, 60, ButtonAction::BACK_TO_MENU));
+    buttons.push_back(Button(loc.Tr(StrId::BACK_TO_BLOCKS), 100, 900, 250, 60, ButtonAction::BACK_TO_MENU));
 }
 
 void Menu::CreateSettingsButtons() {
+    Localization& loc = Localization::GetInstance();
     int centerX = 1920 / 2;
     int startY = 350;
     int buttonWidth = 300;
@@ -219,11 +212,17 @@ void Menu::CreateSettingsButtons() {
     int spacing = 120;
 
     // Sliders drawn in Draw(); buttons only for navigation
-    buttons.push_back(Button(L"Music Select", centerX - buttonWidth / 2, startY + spacing * 3, buttonWidth, buttonHeight, ButtonAction::OPEN_MUSIC_SELECT));
-    buttons.push_back(Button(L"< Back",       100, 950, 200, 60,                                ButtonAction::BACK_TO_MENU));
+    buttons.push_back(Button(loc.Tr(StrId::MUSIC_SELECT_BTN), centerX - buttonWidth / 2, startY + spacing * 3, buttonWidth, buttonHeight, ButtonAction::OPEN_MUSIC_SELECT));
+
+    wchar_t langBuf[48];
+    swprintf_s(langBuf, loc.Tr(StrId::LANGUAGE_BUTTON), loc.LanguageDisplayName(loc.GetLanguage()));
+    buttons.push_back(Button(langBuf, centerX - buttonWidth / 2, startY + spacing * 4, buttonWidth, buttonHeight, ButtonAction::CYCLE_LANGUAGE));
+
+    buttons.push_back(Button(loc.Tr(StrId::BACK), 100, 950, 200, 60, ButtonAction::BACK_TO_MENU));
 }
 
 void Menu::CreateMusicSelectButtons() {
+    Localization& loc = Localization::GetInstance();
     int centerX = 1920 / 2;
     int startY = 300;
     int buttonWidth = 400;
@@ -231,22 +230,18 @@ void Menu::CreateMusicSelectButtons() {
     int spacing = 90;
 
     // 5 music tracks: Default + 4 custom (unlocked by achievements)
-    const wchar_t* trackNames[] = {
-        L"Default Theme",
-        L"Track 1 (LOCKED)",
-        L"Track 2 (LOCKED)",
-        L"Track 3 (LOCKED)",
-        L"Track 4 (LOCKED)"
-    };
-
-    for (int i = 0; i < 5; i++) {
-        buttons.push_back(Button(trackNames[i], centerX - buttonWidth / 2, startY + i * spacing, buttonWidth, buttonHeight, ButtonAction::NONE));
+    buttons.push_back(Button(loc.Tr(StrId::DEFAULT_THEME), centerX - buttonWidth / 2, startY, buttonWidth, buttonHeight, ButtonAction::NONE));
+    for (int i = 1; i < 5; i++) {
+        wchar_t buf[48];
+        swprintf_s(buf, loc.Tr(StrId::TRACK_LOCKED), i);
+        buttons.push_back(Button(buf, centerX - buttonWidth / 2, startY + i * spacing, buttonWidth, buttonHeight, ButtonAction::NONE));
     }
 
-    buttons.push_back(Button(L"< Back", 100, 950, 200, 60, ButtonAction::BACK_TO_SETTINGS));
+    buttons.push_back(Button(loc.Tr(StrId::BACK), 100, 950, 200, 60, ButtonAction::BACK_TO_SETTINGS));
 }
 
 void Menu::CreatePauseMenuButtons() {
+    Localization& loc = Localization::GetInstance();
     int centerX = 1920 / 2;
     int startY = 400;
     int buttonWidth = 300;
@@ -254,13 +249,14 @@ void Menu::CreatePauseMenuButtons() {
     int spacing = 80;
 
     // 4 кнопки: Continue, Restart, Settings, Main Menu
-    buttons.push_back(Button(L"Continue", centerX - buttonWidth / 2, startY, buttonWidth, buttonHeight, ButtonAction::CONTINUE));
-    buttons.push_back(Button(L"Restart Level", centerX - buttonWidth / 2, startY + spacing, buttonWidth, buttonHeight, ButtonAction::RESTART));
-    buttons.push_back(Button(L"Settings", centerX - buttonWidth / 2, startY + spacing * 2, buttonWidth, buttonHeight, ButtonAction::OPEN_SETTINGS));
-    buttons.push_back(Button(L"Main Menu", centerX - buttonWidth / 2, startY + spacing * 3, buttonWidth, buttonHeight, ButtonAction::BACK_TO_MENU));
+    buttons.push_back(Button(loc.Tr(StrId::CONTINUE),      centerX - buttonWidth / 2, startY,             buttonWidth, buttonHeight, ButtonAction::CONTINUE));
+    buttons.push_back(Button(loc.Tr(StrId::RESTART_LEVEL),  centerX - buttonWidth / 2, startY + spacing,   buttonWidth, buttonHeight, ButtonAction::RESTART));
+    buttons.push_back(Button(loc.Tr(StrId::SETTINGS_BTN),   centerX - buttonWidth / 2, startY + spacing*2, buttonWidth, buttonHeight, ButtonAction::OPEN_SETTINGS));
+    buttons.push_back(Button(loc.Tr(StrId::MAIN_MENU_BTN),  centerX - buttonWidth / 2, startY + spacing*3, buttonWidth, buttonHeight, ButtonAction::BACK_TO_MENU));
 }
 
 void Menu::CreateResultScreenButtons() {
+    Localization& loc = Localization::GetInstance();
     int buttonWidth  = 240;
     int buttonHeight = 60;
     int gap          = 30;
@@ -269,9 +265,9 @@ void Menu::CreateResultScreenButtons() {
     int y            = 750;
 
     bool nextDisabled = !resultCompleted || resultIsLastLevel;
-    buttons.push_back(Button(L"Restart",    startX,                           y, buttonWidth, buttonHeight, ButtonAction::RESTART));
-    buttons.push_back(Button(L"Main Menu",  startX + (buttonWidth + gap),     y, buttonWidth, buttonHeight, ButtonAction::BACK_TO_MENU));
-    buttons.push_back(Button(L"Next Level", startX + (buttonWidth + gap) * 2, y, buttonWidth, buttonHeight, ButtonAction::NEXT_LEVEL, nextDisabled));
+    buttons.push_back(Button(loc.Tr(StrId::RESTART),    startX,                           y, buttonWidth, buttonHeight, ButtonAction::RESTART));
+    buttons.push_back(Button(loc.Tr(StrId::MAIN_MENU_BTN),  startX + (buttonWidth + gap),     y, buttonWidth, buttonHeight, ButtonAction::BACK_TO_MENU));
+    buttons.push_back(Button(loc.Tr(StrId::NEXT_LEVEL), startX + (buttonWidth + gap) * 2, y, buttonWidth, buttonHeight, ButtonAction::NEXT_LEVEL, nextDisabled));
 }
 
 // ── Profile screens ───────────────────────────────────────────────────────────
@@ -322,13 +318,14 @@ void Menu::UpdateUnlockState() {
 }
 
 void Menu::CreateProfileSelectButtons() {
+    Localization& loc = Localization::GetInstance();
     ProfileManager& pm = ProfileManager::GetInstance();
 
     if (pendingDeleteSlot >= 0) {
         const int bw = 240, bh = 60, gap = 30;
         int startX = 1920 / 2 - (bw * 2 + gap) / 2;
-        buttons.push_back(Button(L"Yes, Delete", startX,           540, bw, bh, ButtonAction::DELETE_PROFILE_CONFIRM));
-        buttons.push_back(Button(L"Cancel",      startX + bw + gap, 540, bw, bh, ButtonAction::DELETE_PROFILE_CANCEL));
+        buttons.push_back(Button(loc.Tr(StrId::YES_DELETE), startX,           540, bw, bh, ButtonAction::DELETE_PROFILE_CONFIRM));
+        buttons.push_back(Button(loc.Tr(StrId::CANCEL),      startX + bw + gap, 540, bw, bh, ButtonAction::DELETE_PROFILE_CANCEL));
         return;
     }
 
@@ -346,24 +343,25 @@ void Menu::CreateProfileSelectButtons() {
         ButtonAction selAction = (ButtonAction)((int)ButtonAction::SELECT_PROFILE_0 + i);
 
         if (pm.IsSlotEmpty(i)) {
-            buttons.push_back(Button(L"+ Create", cx + (cardW - btnW) / 2, cardY + cardH - 65, btnW, btnH, selAction));
+            buttons.push_back(Button(loc.Tr(StrId::CREATE_PLUS), cx + (cardW - btnW) / 2, cardY + cardH - 65, btnW, btnH, selAction));
         } else {
-            buttons.push_back(Button(L"Select",   cx + (cardW - btnW) / 2, cardY + cardH - 65, btnW, btnH, selAction));
+            buttons.push_back(Button(loc.Tr(StrId::SELECT_BTN),  cx + (cardW - btnW) / 2, cardY + cardH - 65, btnW, btnH, selAction));
             ButtonAction delAction = (ButtonAction)((int)ButtonAction::DELETE_PROFILE_0 + i);
-            buttons.push_back(Button(L"X", cx + cardW - 38, cardY + 5, 33, 33, delAction));
+            buttons.push_back(Button(loc.Tr(StrId::DELETE_X), cx + cardW - 38, cardY + 5, 33, 33, delAction));
         }
     }
 
     if (profileSelectCanGoBack) {
-        buttons.push_back(Button(L"< Back", 100, 950, 200, 60, ButtonAction::BACK_TO_MENU));
+        buttons.push_back(Button(loc.Tr(StrId::BACK), 100, 950, 200, 60, ButtonAction::BACK_TO_MENU));
     }
 }
 
 void Menu::CreateProfileCreateButtons() {
+    Localization& loc = Localization::GetInstance();
     const int bw = 240, bh = 60, gap = 30;
     int startX = 1920 / 2 - (bw * 2 + gap) / 2;
-    buttons.push_back(Button(L"Create", startX,           620, bw, bh, ButtonAction::CREATE_PROFILE_CONFIRM));
-    buttons.push_back(Button(L"Cancel", startX + bw + gap, 620, bw, bh, ButtonAction::BACK_TO_MENU));
+    buttons.push_back(Button(loc.Tr(StrId::CREATE_BTN), startX,           620, bw, bh, ButtonAction::CREATE_PROFILE_CONFIRM));
+    buttons.push_back(Button(loc.Tr(StrId::CANCEL),     startX + bw + gap, 620, bw, bh, ButtonAction::BACK_TO_MENU));
 }
 
 void Menu::UpdateHover(int mouseX, int mouseY) {
@@ -376,6 +374,8 @@ void Menu::UpdateHover(int mouseX, int mouseY) {
 }
 
 void Menu::Draw() const {
+    Localization& loc = Localization::GetInstance();
+
     // Затемнённый фон
     if (currentState == GameState::PAUSED || currentState == GameState::LEVEL_RESULT) {
         int alpha = (currentState == GameState::LEVEL_RESULT) ? 180 : 128;
@@ -393,9 +393,9 @@ void Menu::Draw() const {
         {
             ProfileManager& pm = ProfileManager::GetInstance();
             {
-                const wchar_t* hdr = L"SELECT PROFILE";
-                int hw = GetDrawStringWidthToHandle(hdr, (int)wcslen(hdr), fontHeading);
-                DrawStringToHandle(1920/2 - hw/2, 170, hdr, titleColor, fontHeading);
+                const wchar_t* hdr = loc.Tr(StrId::SELECT_PROFILE_HDR);
+                int hw = GetDrawStringWidthToHandle(hdr, (int)wcslen(hdr), loc.GetFont(FontSize::Heading));
+                DrawStringToHandle(1920/2 - hw/2, 170, hdr, titleColor, loc.GetFont(FontSize::Heading));
             }
 
             const int cardW   = 250, cardH = 300;
@@ -414,18 +414,18 @@ void Menu::Draw() const {
                 DrawBox(cx, cardY, cx+cardW, cardY+cardH, border, FALSE);
 
                 wchar_t slotLabel[16];
-                swprintf_s(slotLabel, L"SLOT %d", i+1);
-                DrawStringToHandle(cx+10, cardY+10, slotLabel, GetColor(130,130,160), fontSmall);
+                swprintf_s(slotLabel, loc.Tr(StrId::SLOT_LABEL), i+1);
+                DrawStringToHandle(cx+10, cardY+10, slotLabel, GetColor(130,130,160), loc.GetFont(FontSize::Small));
 
                 if (pm.IsSlotEmpty(i)) {
-                    DrawStringToHandle(cx+55, cardY+110, L"EMPTY", GetColor(80,80,100), fontNormal);
+                    DrawStringToHandle(cx+55, cardY+110, loc.Tr(StrId::EMPTY_LABEL), GetColor(80,80,100), loc.GetFont(FontSize::Normal));
                 } else {
                     const Profile& p = pm.GetSlot(i);
-                    int nameW = GetDrawStringWidthToHandle(p.nickname.c_str(), (int)p.nickname.size(), fontNormal);
-                    DrawStringToHandle(cx + (cardW-nameW)/2, cardY+90, p.nickname.c_str(), GetColor(220,220,255), fontNormal);
+                    int nameW = GetDrawStringWidthToHandle(p.nickname.c_str(), (int)p.nickname.size(), loc.GetFont(FontSize::Normal));
+                    DrawStringToHandle(cx + (cardW-nameW)/2, cardY+90, p.nickname.c_str(), GetColor(220,220,255), loc.GetFont(FontSize::Normal));
                     wchar_t starsBuf[32];
-                    swprintf_s(starsBuf, L"Stars: %d / %d", p.TotalStars(), PROFILE_LEVEL_COUNT * 3);
-                    DrawStringToHandle(cx+20, cardY+140, starsBuf, GetColor(255,210,0), fontSmall);
+                    swprintf_s(starsBuf, loc.Tr(StrId::STARS_FRACTION), p.TotalStars(), PROFILE_LEVEL_COUNT * 3);
+                    DrawStringToHandle(cx+20, cardY+140, starsBuf, GetColor(255,210,0), loc.GetFont(FontSize::Small));
                 }
             }
 
@@ -435,21 +435,21 @@ void Menu::Draw() const {
                 DrawBox(0, 0, 1920, 1080, GetColor(0,0,0), TRUE);
                 SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
                 const Profile& p = pm.GetSlot(pendingDeleteSlot);
-                wchar_t confirmMsg[64];
-                swprintf_s(confirmMsg, L"Delete profile \"%ls\"?", p.nickname.c_str());
-                int mw = GetDrawStringWidthToHandle(confirmMsg, (int)wcslen(confirmMsg), fontNormal);
-                DrawStringToHandle(1920/2 - mw/2, 460, confirmMsg, GetColor(255,80,80), fontNormal);
-                DrawStringToHandle(1920/2 - 220, 510, L"All progress will be lost.", GetColor(180,180,180), fontSmall);
+                wchar_t confirmMsg[96];
+                swprintf_s(confirmMsg, loc.Tr(StrId::DELETE_PROFILE_CONFIRM_MSG), p.nickname.c_str());
+                int mw = GetDrawStringWidthToHandle(confirmMsg, (int)wcslen(confirmMsg), loc.GetFont(FontSize::Normal));
+                DrawStringToHandle(1920/2 - mw/2, 460, confirmMsg, GetColor(255,80,80), loc.GetFont(FontSize::Normal));
+                DrawStringToHandle(1920/2 - 220, 510, loc.Tr(StrId::PROGRESS_LOST), GetColor(180,180,180), loc.GetFont(FontSize::Small));
             }
         }
         break;
 
     case GameState::PROFILE_CREATE:
         {
-            const wchar_t* hdr = L"CREATE PROFILE";
-            int hw = GetDrawStringWidthToHandle(hdr, (int)wcslen(hdr), fontHeading);
-            DrawStringToHandle(1920/2 - hw/2, 280, hdr, titleColor, fontHeading);
-            DrawStringToHandle(1920/2 - 160, 450, L"Enter nickname:", GetColor(200,200,200), fontNormal);
+            const wchar_t* hdr = loc.Tr(StrId::CREATE_PROFILE_HDR);
+            int hw = GetDrawStringWidthToHandle(hdr, (int)wcslen(hdr), loc.GetFont(FontSize::Heading));
+            DrawStringToHandle(1920/2 - hw/2, 280, hdr, titleColor, loc.GetFont(FontSize::Heading));
+            DrawStringToHandle(1920/2 - 160, 450, loc.Tr(StrId::ENTER_NICKNAME), GetColor(200,200,200), loc.GetFont(FontSize::Normal));
         }
         if (keyInputHandle != -1) {
             DrawBox(1920/2 - 160, 490, 1920/2 + 160, 540, GetColor(30,30,60), TRUE);
@@ -461,30 +461,30 @@ void Menu::Draw() const {
     case GameState::MAIN_MENU:
         {
             const wchar_t* gameTitle = L"MINDTRAPA";
-            int tw = GetDrawStringWidthToHandle(gameTitle, (int)wcslen(gameTitle), fontTitle);
-            DrawStringToHandle(1920/2 - tw/2, 190, gameTitle, titleColor, fontTitle);
+            int tw = GetDrawStringWidthToHandle(gameTitle, (int)wcslen(gameTitle), loc.GetFont(FontSize::Title));
+            DrawStringToHandle(1920/2 - tw/2, 190, gameTitle, titleColor, loc.GetFont(FontSize::Title));
 
             const Profile* p = ProfileManager::GetInstance().GetCurrentProfile();
             if (p) {
-                wchar_t profileBuf[64];
-                swprintf_s(profileBuf, L"%ls  |  Stars: %d", p->nickname.c_str(), p->TotalStars());
-                DrawStringToHandle(20, 20, profileBuf, GetColor(120, 180, 255), fontNormal);
+                wchar_t profileBuf[96];
+                swprintf_s(profileBuf, loc.Tr(StrId::PROFILE_BAR), p->nickname.c_str(), p->TotalStars());
+                DrawStringToHandle(20, 20, profileBuf, GetColor(120, 180, 255), loc.GetFont(FontSize::Normal));
             }
         }
         break;
     case GameState::LEVEL_SELECT_BLOCKS:
         {
-            const wchar_t* hdr = L"SELECT BLOCK";
-            int hw = GetDrawStringWidthToHandle(hdr, (int)wcslen(hdr), fontHeading);
-            DrawStringToHandle(1920/2 - hw/2, 150, hdr, titleColor, fontHeading);
+            const wchar_t* hdr = loc.Tr(StrId::SELECT_BLOCK_HDR);
+            int hw = GetDrawStringWidthToHandle(hdr, (int)wcslen(hdr), loc.GetFont(FontSize::Heading));
+            DrawStringToHandle(1920/2 - hw/2, 150, hdr, titleColor, loc.GetFont(FontSize::Heading));
         }
         break;
     case GameState::LEVEL_SELECT_LEVELS:
         {
             wchar_t blockHeader[64];
-            swprintf_s(blockHeader, L"BLOCK %d — LEVELS 1-10", selectedBlock);
-            int hw = GetDrawStringWidthToHandle(blockHeader, (int)wcslen(blockHeader), fontHeading);
-            DrawStringToHandle(1920/2 - hw/2, 150, blockHeader, titleColor, fontHeading);
+            swprintf_s(blockHeader, loc.Tr(StrId::BLOCK_LEVELS_HDR), selectedBlock);
+            int hw = GetDrawStringWidthToHandle(blockHeader, (int)wcslen(blockHeader), loc.GetFont(FontSize::Heading));
+            DrawStringToHandle(1920/2 - hw/2, 150, blockHeader, titleColor, loc.GetFont(FontSize::Heading));
 
             // Звёзды под кнопками уровней
             const Profile* p = ProfileManager::GetInstance().GetCurrentProfile();
@@ -523,26 +523,26 @@ void Menu::Draw() const {
         break;
     case GameState::SETTINGS:
         {
-            const wchar_t* hdr = L"SETTINGS";
-            int hw = GetDrawStringWidthToHandle(hdr, (int)wcslen(hdr), fontHeading);
-            DrawStringToHandle(1920/2 - hw/2, 200, hdr, titleColor, fontHeading);
+            const wchar_t* hdr = loc.Tr(StrId::SETTINGS_HDR);
+            int hw = GetDrawStringWidthToHandle(hdr, (int)wcslen(hdr), loc.GetFont(FontSize::Heading));
+            DrawStringToHandle(1920/2 - hw/2, 200, hdr, titleColor, loc.GetFont(FontSize::Heading));
         }
-        DrawSlider(1920/2 - 200, 350, 400, settings.musicVolume,      L"Music Volume");
-        DrawSlider(1920/2 - 200, 470, 400, settings.soundVolume,      L"Sound Volume");
-        DrawSlider(1920/2 - 200, 590, 400, settings.mouseSensitivity, L"Mouse Sensitivity");
+        DrawSlider(1920/2 - 200, 350, 400, settings.musicVolume,      loc.Tr(StrId::MUSIC_VOLUME));
+        DrawSlider(1920/2 - 200, 470, 400, settings.soundVolume,      loc.Tr(StrId::SOUND_VOLUME));
+        DrawSlider(1920/2 - 200, 590, 400, settings.mouseSensitivity, loc.Tr(StrId::MOUSE_SENSITIVITY));
         break;
     case GameState::MUSIC_SELECT:
         {
-            const wchar_t* hdr = L"MUSIC SELECT";
-            int hw = GetDrawStringWidthToHandle(hdr, (int)wcslen(hdr), fontHeading);
-            DrawStringToHandle(1920/2 - hw/2, 200, hdr, titleColor, fontHeading);
+            const wchar_t* hdr = loc.Tr(StrId::MUSIC_SELECT_HDR);
+            int hw = GetDrawStringWidthToHandle(hdr, (int)wcslen(hdr), loc.GetFont(FontSize::Heading));
+            DrawStringToHandle(1920/2 - hw/2, 200, hdr, titleColor, loc.GetFont(FontSize::Heading));
         }
         break;
     case GameState::PAUSED:
         {
-            const wchar_t* hdr = L"PAUSED";
-            int hw = GetDrawStringWidthToHandle(hdr, (int)wcslen(hdr), fontHeading);
-            DrawStringToHandle(1920/2 - hw/2, 250, hdr, titleColor, fontHeading);
+            const wchar_t* hdr = loc.Tr(StrId::PAUSED_HDR);
+            int hw = GetDrawStringWidthToHandle(hdr, (int)wcslen(hdr), loc.GetFont(FontSize::Heading));
+            DrawStringToHandle(1920/2 - hw/2, 250, hdr, titleColor, loc.GetFont(FontSize::Heading));
         }
         break;
     case GameState::LEVEL_RESULT:
@@ -569,18 +569,18 @@ void Menu::Draw() const {
             };
 
             // Заголовок
-            const wchar_t* headline = resultCompleted ? L"LEVEL COMPLETE!" : L"YOU DIED";
+            const wchar_t* headline = resultCompleted ? loc.Tr(StrId::LEVEL_COMPLETE) : loc.Tr(StrId::YOU_DIED);
             unsigned int headlineColor = resultCompleted ? GetColor(100, 255, 150) : GetColor(255, 80, 80);
-            int headlineW = GetDrawStringWidthToHandle(headline, (int)wcslen(headline), fontHeading);
-            DrawStringToHandle(1920 / 2 - headlineW / 2, 230, headline, headlineColor, fontHeading);
+            int headlineW = GetDrawStringWidthToHandle(headline, (int)wcslen(headline), loc.GetFont(FontSize::Heading));
+            DrawStringToHandle(1920 / 2 - headlineW / 2, 230, headline, headlineColor, loc.GetFont(FontSize::Heading));
 
             // Время
             int minutes = (int)(resultTime / 60.0f);
             float secs  = resultTime - minutes * 60.0f;
             wchar_t timeBuf[64];
-            swprintf_s(timeBuf, L"Time: %d:%05.2f", minutes, secs);
-            int timeW = GetDrawStringWidthToHandle(timeBuf, (int)wcslen(timeBuf), fontNormal);
-            DrawStringToHandle(1920 / 2 - timeW / 2, 320, timeBuf, GetColor(220, 220, 220), fontNormal);
+            swprintf_s(timeBuf, loc.Tr(StrId::TIME_LABEL), minutes, secs);
+            int timeW = GetDrawStringWidthToHandle(timeBuf, (int)wcslen(timeBuf), loc.GetFont(FontSize::Normal));
+            DrawStringToHandle(1920 / 2 - timeW / 2, 320, timeBuf, GetColor(220, 220, 220), loc.GetFont(FontSize::Normal));
 
             // Звёзды — 3 геометрические пятиконечные звезды
             {
@@ -605,10 +605,10 @@ void Menu::Draw() const {
             // Подсказки клавиш
             {
                 const wchar_t* hint = (resultCompleted && !resultIsLastLevel)
-                    ? L"[R] Restart   [Space] Next Level   [ESC] Main Menu"
-                    : L"[R] Restart   [ESC] Main Menu";
-                int hw = GetDrawStringWidthToHandle(hint, (int)wcslen(hint), fontSmall);
-                DrawStringToHandle(1920/2 - hw/2, 860, hint, GetColor(120, 120, 120), fontSmall);
+                    ? loc.Tr(StrId::HINT_RESULT_NEXT)
+                    : loc.Tr(StrId::HINT_RESULT_NOLAST);
+                int hw = GetDrawStringWidthToHandle(hint, (int)wcslen(hint), loc.GetFont(FontSize::Small));
+                DrawStringToHandle(1920/2 - hw/2, 860, hint, GetColor(120, 120, 120), loc.GetFont(FontSize::Small));
             }
         }
         break;
@@ -629,19 +629,20 @@ void Menu::Draw() const {
 
     // Подсказки управления
     if (currentState != GameState::PLAYING) {
-        const wchar_t* hint = L"Mouse: Click | Arrow Keys + Enter | ESC: Back";
-        DrawStringToHandle(10, 1040, hint, GetColor(150, 150, 150), fontSmall);
+        const wchar_t* hint = loc.Tr(StrId::NAV_HINT);
+        DrawStringToHandle(10, 1040, hint, GetColor(150, 150, 150), loc.GetFont(FontSize::Small));
     }
 }
 
 void Menu::DrawSlider(int x, int y, int width, int value, const wchar_t* label) const {
+    Localization& loc = Localization::GetInstance();
     unsigned int labelColor   = GetColor(220, 220, 220);
     unsigned int barBgColor   = GetColor(60, 60, 80);
     unsigned int barFillColor = GetColor(100, 150, 255);
     unsigned int borderColor  = GetColor(120, 120, 150);
 
     // Label
-    DrawStringToHandle(x, y - 28, label, labelColor, fontNormal);
+    DrawStringToHandle(x, y - 28, label, labelColor, loc.GetFont(FontSize::Normal));
 
     // Background bar
     DrawBox(x, y, x + width, y + 30, barBgColor, TRUE);
@@ -654,7 +655,7 @@ void Menu::DrawSlider(int x, int y, int width, int value, const wchar_t* label) 
     // Value text
     wchar_t valueText[16];
     swprintf_s(valueText, L"%d%%", value);
-    DrawStringToHandle(x + width + 20, y + 5, valueText, labelColor, fontSmall);
+    DrawStringToHandle(x + width + 20, y + 5, valueText, labelColor, loc.GetFont(FontSize::Small));
 }
 
 int Menu::HandleSliderClick(int x, int y, int width, int mouseX, int mouseY) {
@@ -946,6 +947,15 @@ ButtonAction Menu::ActivateSelectedButton(int& blockToLoad, int& levelToLoad) {
     // CHANGE_PROFILE: открыть выбор из главного меню
     if (action == ButtonAction::CHANGE_PROFILE) {
         OpenProfileSelect(true);
+        return ButtonAction::NONE;
+    }
+
+    // CYCLE_LANGUAGE: EN -> RU -> JA -> EN, перестраивает экран настроек с новым языком/шрифтом
+    if (action == ButtonAction::CYCLE_LANGUAGE) {
+        Localization& loc = Localization::GetInstance();
+        int next = ((int)loc.GetLanguage() + 1) % (int)Language::COUNT;
+        loc.SetLanguage((Language)next);
+        SetState(GameState::SETTINGS);
         return ButtonAction::NONE;
     }
 

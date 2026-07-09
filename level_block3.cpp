@@ -198,8 +198,8 @@ void Level::LoadBlock3(int id) {
         blocks.back().gravityMultiplier = 0.35f;
 
         blocks.push_back(Block(VGet(6, 1, -1), VGet(3, 1, 2), BlockType::PLATFORM));
-        blocks.push_back(Block(VGet(10, 1, 0), VGet(1.5f, 1.5f, 1.5f), BlockType::PENDULUM_BLADE));
-        blocks.back().pivotPoint = VGet(10, 10, 0);
+        blocks.push_back(Block(VGet(10, 1, -1), VGet(1.5f, 1.5f, 2.0f), BlockType::PENDULUM_BLADE));
+        blocks.back().pivotPoint = VGet(10, 10, -1);
         blocks.back().swingSpeed = 1.4f;
         blocks.back().swingRange = DX_PI_F / 3.5f;
 
@@ -210,8 +210,8 @@ void Level::LoadBlock3(int id) {
         blocks.back().gravityMultiplier = 2.8f;
 
         blocks.push_back(Block(VGet(19, 0, -1), VGet(3, 1, 2), BlockType::PLATFORM));
-        blocks.push_back(Block(VGet(23, 1, 0), VGet(1.5f, 1.5f, 1.5f), BlockType::PENDULUM_BLADE));
-        blocks.back().pivotPoint = VGet(23, 6, 0);
+        blocks.push_back(Block(VGet(23, 1, -1), VGet(1.5f, 1.5f, 2.0f), BlockType::PENDULUM_BLADE));
+        blocks.back().pivotPoint = VGet(23, 6, -1);
         blocks.back().swingSpeed = 2.5f;
         blocks.back().swingRange = DX_PI_F / 4.0f;
         blocks.back().timer = 1.0f;
@@ -325,8 +325,8 @@ void Level::LoadBlock3(int id) {
         blocks.back().gravityMultiplier = 0.35f;
 
         blocks.push_back(Block(VGet(6, 1, -1), VGet(3, 1, 2), BlockType::PLATFORM));
-        blocks.push_back(Block(VGet(11, 3, 0), VGet(1.5f, 1.5f, 1.5f), BlockType::PENDULUM_BLADE));
-        blocks.back().pivotPoint = VGet(11, 12, 0);
+        blocks.push_back(Block(VGet(11, 3, -1), VGet(1.5f, 1.5f, 2.0f), BlockType::PENDULUM_BLADE));
+        blocks.back().pivotPoint = VGet(11, 12, -1);
         blocks.back().swingSpeed = 1.6f;
         blocks.back().swingRange = DX_PI_F / 3.0f;
 
@@ -351,13 +351,13 @@ void Level::LoadBlock3(int id) {
         blocks.push_back(Block(VGet(52, 14, -1), VGet(4, 1, 2), BlockType::PLATFORM));
 
         // Маятники на "полу" (который теперь потолок)
-        blocks.push_back(Block(VGet(43, 8, 0), VGet(1.5f, 1.5f, 1.5f), BlockType::PENDULUM_BLADE));
-        blocks.back().pivotPoint = VGet(43, 2, 0);
+        blocks.push_back(Block(VGet(43, 8, -1), VGet(1.5f, 1.5f, 2.0f), BlockType::PENDULUM_BLADE));
+        blocks.back().pivotPoint = VGet(43, 2, -1);
         blocks.back().swingSpeed = 1.7f;
         blocks.back().swingRange = DX_PI_F / 3.5f;
 
-        blocks.push_back(Block(VGet(49, 7, 0), VGet(1.5f, 1.5f, 1.5f), BlockType::PENDULUM_BLADE));
-        blocks.back().pivotPoint = VGet(49, 1, 0);
+        blocks.push_back(Block(VGet(49, 7, -1), VGet(1.5f, 1.5f, 2.0f), BlockType::PENDULUM_BLADE));
+        blocks.back().pivotPoint = VGet(49, 1, -1);
         blocks.back().swingSpeed = 2.1f;
         blocks.back().swingRange = DX_PI_F / 2.8f;
         blocks.back().timer = 1.5f;
@@ -373,8 +373,8 @@ void Level::LoadBlock3(int id) {
             VGet(71, 2, -1), VGet(71, 8, -1), 1.8f));
 
         // Последний маятник
-        blocks.push_back(Block(VGet(77, 5, 0), VGet(1.5f, 1.5f, 1.5f), BlockType::PENDULUM_BLADE));
-        blocks.back().pivotPoint = VGet(77, 14, 0);
+        blocks.push_back(Block(VGet(77, 5, -1), VGet(1.5f, 1.5f, 3.0f), BlockType::PENDULUM_BLADE));
+        blocks.back().pivotPoint = VGet(77, 14, -1);
         blocks.back().swingSpeed = 2.0f;
         blocks.back().swingRange = DX_PI_F / 2.5f;
 

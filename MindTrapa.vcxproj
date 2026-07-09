@@ -152,6 +152,7 @@
     <ClCompile Include="level_block4.cpp" />
     <ClCompile Include="level_block5.cpp" />
     <ClCompile Include="LevelManager.cpp" />
+    <ClCompile Include="Localization.cpp" />
     <ClCompile Include="ParticleSystem.cpp" />
     <ClCompile Include="Player.cpp" />
     <ClCompile Include="Renderer.cpp" />
@@ -165,6 +166,7 @@
     <ClInclude Include="Camera.h" />
     <ClInclude Include="Level.h" />
     <ClInclude Include="LevelManager.h" />
+    <ClInclude Include="Localization.h" />
     <ClInclude Include="Menu.h" />
     <ClInclude Include="ModelManager.h" />
     <ClInclude Include="ParticleSystem.h" />

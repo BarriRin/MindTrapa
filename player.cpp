@@ -9,11 +9,10 @@ Player::Player()
     : pos(VGet(0,0,0)), vel(VGet(0,0,0)), horizVel(VGet(0,0,0))
     , size(VGet(1,1,1))
     , onGround(false), wasOnGround(false), dead(false)
-    , facingAngle(0.0f), iceFriction(1.0f)
+    , facingAngle(0.0f), iceFriction(1.0f), savedPlatVel(VGet(0,0,0))
     , modelHandle(-1), animAttach(-1), animTime(0.0f), currentAnim(-1)
     , animIdle(0), animRun(0), animJump(0), animFall(0)
     , animDeath(0), animWave(0), animYes(0)
-    , celebPhase(0)
     , jumpPressed(false), activatePressed(false)
 {}
 
@@ -56,6 +55,7 @@ void Player::Reset(VECTOR spawnPos) {
     wasOnGround = false;
     dead      = false;
     iceFriction = 1.0f;
+    savedPlatVel = VGet(0, 0, 0);
     if (modelHandle != -1 && animAttach != -1) {
         MV1DetachAnim(modelHandle, animAttach);
         animAttach   = -1;
@@ -126,10 +126,17 @@ bool Player::Update(float dt, const Camera& camera, Level* level, AudioManager& 
     // === КОЛЛИЗИЯ ===
     VECTOR newPos = VAdd(pos, VAdd(horizVel, VGet(0, vel.y * (dt * 60.0f), 0)));
 
+    // Тянем игрока вниз за опускающейся платформой (иначе AABB не засечёт перекрытие)
+    if (savedPlatVel.y < 0.0f)
+        newPos.y += savedPlatVel.y;
+
     if (level) {
         VECTOR platVel = VGet(0, 0, 0);
         level->CheckCollision(pos, size, newPos, vel, onGround, platVel);
-        newPos = VAdd(newPos, platVel);
+        newPos.x += platVel.x;
+        newPos.z += platVel.z;
+        // platVel.y пропускаем — CheckCollision уже снэпнул игрока на верх платформы
+        savedPlatVel = onGround ? platVel : VGet(0, 0, 0);
 
         // Телепорт — обрабатывается снаружи (cooldown)
         // Кнопка — здесь вызываем
@@ -243,8 +250,11 @@ void Player::DrawShadow(Level* level) const {
 }
 
 void Player::StartCelebration() {
-    celebPhase = 0;
     SwitchAnim(animYes);
+}
+
+void Player::PlayWave() {
+    SwitchAnim(animWave);
 }
 
 void Player::UpdateAnimOnly(float dt, bool looping) {

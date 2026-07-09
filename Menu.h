@@ -1,5 +1,6 @@
 #pragma once
 #include "DxLib.h"
+#include "Localization.h"
 #include <vector>
 #include <string>
 
@@ -50,6 +51,7 @@ enum class ButtonAction {
     DELETE_PROFILE_CONFIRM,
     DELETE_PROFILE_CANCEL,
     CREATE_PROFILE_CONFIRM,
+    CYCLE_LANGUAGE,
     NONE
 };
 
@@ -107,7 +109,6 @@ struct Settings {
     int musicVolume      = 80;   // 0-100
     int soundVolume      = 60;   // 0-100
     int mouseSensitivity = 50;   // 0-100, 50 = 1.0x
-    std::string language = "EN";
     int selectedMusicTrack = 0;
 };
 
@@ -127,14 +128,6 @@ private:
     // Стек навигации (для ESC/Back)
     std::vector<GameState> stateHistory;
 
-    // Шрифты
-    int fontTitle   = -1;   // Orbitron Bold 60px, edge
-    int fontHeading = -1;   // Orbitron Bold 32px, edge
-    int fontButton  = -1;   // Orbitron Bold 22px
-    int fontNormal  = -1;   // Orbitron Regular 18px
-    int fontSmall   = -1;   // Orbitron Regular 13px
-
-    void LoadFonts();
     void ApplyFontToButtons(int handle);
 
     // Состояния ввода (member variables, не static)

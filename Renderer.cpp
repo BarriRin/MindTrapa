@@ -103,21 +103,16 @@ static const BiomeConfig BIOMES[5] = {
 
 // ── Сферический скайбокс ──────────────────────────────────────────────────────
 
-void DrawSkyboxSphere(VECTOR playerPos, int graphHandle, float radius) {
-    if (graphHandle == -1) {
-        DrawSpaceSkybox(playerPos, 0);
-        return;
-    }
-
+// Форма сферы неизменна между кадрами — меняется только положение игрока.
+// Локальные смещения/нормали/UV считаются один раз и кэшируются;
+// каждый кадр обновляется только позиция (VAdd), без тригонометрии и реаллокаций.
+static void BuildSkyboxSphereCache(float radius, std::vector<VECTOR>& offsets, std::vector<VERTEX3D>& verts) {
     const int STACKS = 18;
     const int SLICES = 36;
 
-    SetUseZBuffer3D(FALSE);
-    SetWriteZBuffer3D(FALSE);
-    SetUseLighting(FALSE);
-    SetUseBackCulling(FALSE);
-
-    std::vector<VERTEX3D> verts;
+    offsets.clear();
+    verts.clear();
+    offsets.reserve(STACKS * SLICES * 6);
     verts.reserve(STACKS * SLICES * 6);
 
     for (int ti = 0; ti < STACKS; ti++) {
@@ -137,7 +132,7 @@ void DrawSkyboxSphere(VECTOR playerPos, int graphHandle, float radius) {
                 float y = radius * cosf(theta);
                 float z = radius * sinf(theta) * cosf(phi);
                 VERTEX3D vert;
-                vert.pos  = VAdd(playerPos, VGet(x, y, z));
+                vert.pos  = VGet(x, y, z);  // перезаписывается каждый кадр в DrawSkyboxSphere
                 vert.norm = VGet(-sinf(theta)*sinf(phi), -cosf(theta), -sinf(theta)*cosf(phi));
                 vert.dif.r = 255; vert.dif.g = 255; vert.dif.b = 255; vert.dif.a = 255;
                 vert.spc.r = 0;   vert.spc.g = 0;   vert.spc.b = 0;   vert.spc.a = 0;
@@ -151,12 +146,43 @@ void DrawSkyboxSphere(VECTOR playerPos, int graphHandle, float radius) {
             VERTEX3D v11 = makeV(phi1, theta1, u1, v1);
 
             // Перевёрнутый winding — смотрим изнутри сферы
-            verts.push_back(v00); verts.push_back(v01); verts.push_back(v10);
-            verts.push_back(v10); verts.push_back(v01); verts.push_back(v11);
+            // offsets пушится в том же порядке и с той же кратностью, что и verts —
+            // иначе индексы разъезжаются (баг: offsets был короче verts в 1.5 раза)
+            verts.push_back(v00); offsets.push_back(v00.pos);
+            verts.push_back(v01); offsets.push_back(v01.pos);
+            verts.push_back(v10); offsets.push_back(v10.pos);
+            verts.push_back(v10); offsets.push_back(v10.pos);
+            verts.push_back(v01); offsets.push_back(v01.pos);
+            verts.push_back(v11); offsets.push_back(v11.pos);
         }
     }
+}
 
-    DrawPolygon3D(verts.data(), (int)verts.size() / 3, graphHandle, TRUE);
+void DrawSkyboxSphere(VECTOR playerPos, int graphHandle, float radius) {
+    if (graphHandle == -1) {
+        DrawSpaceSkybox(playerPos, 0);
+        return;
+    }
+
+    static std::vector<VECTOR>   s_offsets;
+    static std::vector<VERTEX3D> s_verts;
+    static float                 s_cachedRadius = -1.0f;
+
+    if (s_verts.empty() || s_cachedRadius != radius) {
+        BuildSkyboxSphereCache(radius, s_offsets, s_verts);
+        s_cachedRadius = radius;
+    }
+
+    for (size_t i = 0; i < s_verts.size(); i++) {
+        s_verts[i].pos = VAdd(playerPos, s_offsets[i]);
+    }
+
+    SetUseZBuffer3D(FALSE);
+    SetWriteZBuffer3D(FALSE);
+    SetUseLighting(FALSE);
+    SetUseBackCulling(FALSE);
+
+    DrawPolygon3D(s_verts.data(), (int)s_verts.size() / 3, graphHandle, TRUE);
 
     SetUseZBuffer3D(TRUE);
     SetWriteZBuffer3D(TRUE);

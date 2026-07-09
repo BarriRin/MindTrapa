@@ -25,8 +25,11 @@ public:
     // Рисует тень под игроком
     void DrawShadow(Level* level) const;
 
-    // Запускает анимацию победы
+    // Запускает анимацию победы (Yes, однократно)
     void StartCelebration();
+
+    // Переключает на зацикленную анимацию Wave (вторая фаза победы)
+    void PlayWave();
 
     // Обновляет только анимацию (без физики — для DYING/CELEBRATING состояний)
     void UpdateAnimOnly(float deltaTime, bool looping = false);
@@ -59,6 +62,7 @@ private:
     bool   dead;
     float  facingAngle;
     float  iceFriction;
+    VECTOR savedPlatVel;  // скорость платформы прошлого кадра (для спуска)
 
     // Параметры
     static constexpr float SPEED      = 0.2f;
@@ -78,8 +82,6 @@ private:
     int animDeath;
     int animWave;
     int animYes;
-
-    int celebPhase;
 
     // Антиспам клавиш
     bool jumpPressed;

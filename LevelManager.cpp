@@ -1,5 +1,6 @@
 ﻿#include "LevelManager.h"
 #include "ProfileManager.h"
+#include "Localization.h"
 
 LevelManager::LevelManager()
     : currentLevelId(1), totalLevels(50), deathCount(0), currentLevelTime(0.0f) {
@@ -45,14 +46,17 @@ bool LevelManager::IsLastLevel() const {
 }
 
 void LevelManager::DrawLevelInfo(bool debugMode) const {
+    Localization& loc = Localization::GetInstance();
+    int fontNormal = loc.GetFont(FontSize::Normal);
+
     // Всегда показываем базовую информацию
-    DrawFormatString(10, 10, GetColor(255, 255, 255), L"Level: %d/%d", currentLevelId, totalLevels);
-    DrawFormatString(10, 30, GetColor(255, 255, 255), L"Deaths: %d", deathCount);
+    DrawFormatStringToHandle(10, 10, GetColor(255, 255, 255), fontNormal, loc.Tr(StrId::HUD_LEVEL), currentLevelId, totalLevels);
+    DrawFormatStringToHandle(10, 30, GetColor(255, 255, 255), fontNormal, loc.Tr(StrId::HUD_DEATHS), deathCount);
 
     // Таймер (всегда показываем)
     int minutes = (int)(currentLevelTime / 60.0f);
     float seconds = currentLevelTime - (minutes * 60.0f);
-    DrawFormatString(10, 50, GetColor(255, 255, 255), L"Time: %d:%05.2f", minutes, seconds);
+    DrawFormatStringToHandle(10, 50, GetColor(255, 255, 255), fontNormal, loc.Tr(StrId::TIME_LABEL), minutes, seconds);
 
     // Лучшее время (если есть)
     if (HasBestTime(currentLevelId)) {
@@ -64,27 +68,27 @@ void LevelManager::DrawLevelInfo(bool debugMode) const {
         if (currentLevelTime < bestTime) {
             bestColor = GetColor(255, 215, 0); // Золотой - бьём рекорд!
         }
-        DrawFormatString(10, 70, bestColor, L"Best: %d:%05.2f", bestMinutes, bestSeconds);
+        DrawFormatStringToHandle(10, 70, bestColor, fontNormal, loc.Tr(StrId::HUD_BEST), bestMinutes, bestSeconds);
     }
 
     // Tutorial подсказки (всегда показываем)
     if (currentLevelId == 6) {
-        DrawFormatString(10, 110, GetColor(255, 255, 0), L"Get close to YELLOW button and press E!");
+        DrawStringToHandle(10, 110, loc.Tr(StrId::HUD_HINT_BUTTON), GetColor(255, 255, 0), fontNormal);
     }
     if (currentLevelId == 8) {
-        DrawFormatString(10, 110, GetColor(255, 50, 50), L"WARNING: Platforms disappear 1.5 sec after touch!");
+        DrawStringToHandle(10, 110, loc.Tr(StrId::HUD_HINT_CRUMBLE), GetColor(255, 50, 50), fontNormal);
     }
     if (currentLevelId == 9) {
-        DrawFormatString(10, 110, GetColor(255, 150, 50), L"Watch the spikes! They retract every 2 seconds!");
+        DrawStringToHandle(10, 110, loc.Tr(StrId::HUD_HINT_SPIKES), GetColor(255, 150, 50), fontNormal);
     }
 
     // Debug информация (только если F3 нажат)
     if (debugMode) {
-        DrawFormatString(10, 130, GetColor(200, 200, 200), L"WASD - move, Space - jump, R - restart");
-        DrawFormatString(10, 150, GetColor(200, 200, 200), L"E - activate button/switch");
+        DrawStringToHandle(10, 130, loc.Tr(StrId::HUD_CONTROLS), GetColor(200, 200, 200), fontNormal);
+        DrawStringToHandle(10, 150, loc.Tr(StrId::HUD_BUTTON_HINT), GetColor(200, 200, 200), fontNormal);
 
         if (currentLevel) {
-            DrawFormatString(10, 170, GetColor(255, 255, 0), L"Blocks in level: %d", (int)currentLevel->GetBlockCount());
+            DrawFormatStringToHandle(10, 170, GetColor(255, 255, 0), fontNormal, loc.Tr(StrId::HUD_BLOCK_COUNT), (int)currentLevel->GetBlockCount());
         }
     }
 }

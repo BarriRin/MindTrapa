@@ -248,7 +248,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
                 DrawBox(0, 0, 1920, 1080, GetColor(0, 0, 0), TRUE);
                 SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
                 const Profile* p = profileMgr.GetCurrentProfile();
-                int vol = p ? p->musicVolume * 100 : 8000;
+                // Аудио видео тише BGM-треков по записи — сдвигаем кривую так,
+                // чтобы максимум громкости видео (10000) достигался уже на 75% ползунка
+                int vol = p ? p->musicVolume * 10000 / 75 : 10000;
+                if (vol > 10000) vol = 10000;
                 SetMovieVolumeToGraph(vol, menuBgMovie);
             }
 
@@ -622,14 +625,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
             particles.Update(dt);
 
-            // Анимация: Yes (однократно) → Wave (зацикленно)
+            // Анимация: Yes (однократно, ~1.2с) → Wave (зацикленно до конца праздника)
             if (celebPhase == 0) {
                 player.UpdateAnimOnly(dt, false);
-                // переключение в Wave — Player возвращает конец анимации через флаг;
-                // пока используем таймер: Yes длится ~1.2 с (24fps * ~30 frames)
                 if (celebrationTimer < CELEBRATION_DURATION - 1.2f) {
-                    player.StartCelebration(); // перезапускает — нет, нужен Wave
-                    // временно: сразу Wave после первого burst
+                    player.PlayWave();
                     celebPhase = 1;
                 }
             } else {
