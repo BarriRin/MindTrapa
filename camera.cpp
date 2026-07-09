@@ -18,7 +18,7 @@ void Camera::Apply(VECTOR targetPos) const {
     SetCameraPositionAndTarget_UpVecY(camPos, VAdd(targetPos, VGet(0, 1, 0)));
 }
 
-void Camera::Update(VECTOR targetPos, float sensitivity, float /*deltaTime*/) {
+void Camera::Update(VECTOR targetPos, float sensitivity) {
     int mouseX, mouseY;
     GetMousePoint(&mouseX, &mouseY);
 

@@ -59,11 +59,12 @@ struct Block {
     Block(VECTOR p, VECTOR s, BlockType t, int link = 0, bool active = true,
           VECTOR moveStart = VGet(0, 0, 0), VECTOR moveEnd = VGet(0, 0, 0),
           float speed = 1.0f, float tim = 0.0f)
-        : pos(p), size(s), type(t), linkId(link), isActive(active),
+        : pos(p), size(s), type(t),
           originalPos((t == BlockType::PENDULUM_BLADE) ? p : moveStart),
-          moveTarget(moveEnd), moveSpeed(speed),
+          prevPos(p),
           timer(t == BlockType::LIGHT_PULSE_ZONE && !active ? speed * 0.5f : tim),
-          prevPos(p), modelHandle(-1), rotation(VGet(0, 0, 0)),
+          isActive(active), moveTarget(moveEnd), linkId(link), moveSpeed(speed),
+          modelHandle(-1), rotation(VGet(0, 0, 0)),
           modelScale(VGet(1, 1, 1)), useModel(false),
           gravityMultiplier(1.0f), swingAngle(0.0f), swingSpeed(1.0f),
           swingRange(DX_PI_F / 3.0f), pivotPoint(VGet(0, 0, 0)),
@@ -88,6 +89,7 @@ private:
 
     // Инициализация моделей для блоков
     void InitializeModels();
+    static ModelID BlockTypeToModelID(BlockType type);
 
 public:
     Level(int id);
@@ -98,7 +100,7 @@ public:
     void Update(float deltaTime);
 
     // Проверки коллизий и триггеров
-    bool CheckCollision(VECTOR playerPos, VECTOR playerSize, VECTOR& newPos, VECTOR& velocity, bool& onGround, VECTOR& platformVelocity);
+    bool CheckCollision(VECTOR playerPos, VECTOR playerSize, VECTOR& newPos, VECTOR& velocity, bool& onGround, VECTOR& platformVelocity, bool gravityReversed = false);
     bool CheckWinTrigger(VECTOR playerPos, VECTOR playerSize) const;
     bool CheckDeadlyTrigger(VECTOR playerPos, VECTOR playerSize) const;
     bool CheckTeleportTrigger(VECTOR playerPos, VECTOR playerSize, VECTOR& teleportTarget) const;
@@ -115,9 +117,6 @@ public:
     const std::vector<Block>& GetBlocks() const { return blocks; }
     VECTOR GetPlayerSpawn() const { return playerSpawn; }
     size_t GetBlockCount() const { return blocks.size(); }
-
-    // Получить блок по индексу (для активации кнопок)
-    Block* GetBlockByIndex(int index);
 
     // Активация кнопки
     void ActivateButton(VECTOR playerPos, VECTOR playerSize, bool keyPressed);

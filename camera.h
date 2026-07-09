@@ -1,12 +1,13 @@
 #pragma once
 #include "DxLib.h"
+#include "Constants.h"
 
 class Camera {
 public:
     Camera();
 
     // Обновляет углы по движению мыши и применяет SetCameraPositionAndTarget
-    void Update(VECTOR targetPos, float sensitivity, float deltaTime);
+    void Update(VECTOR targetPos, float sensitivity);
 
     // Применяет позицию камеры без обработки ввода (для пауза/result экранов)
     void Apply(VECTOR targetPos) const;
@@ -20,7 +21,5 @@ private:
     float angleY;
     float distance;
 
-    static constexpr int   SCREEN_W = 1920;
-    static constexpr int   SCREEN_H = 1080;
     static constexpr float ANGLE_X_MAX = 1.5f;
 };

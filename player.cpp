@@ -11,19 +11,27 @@ Player::Player()
     , onGround(false), wasOnGround(false), dead(false)
     , facingAngle(0.0f), iceFriction(1.0f), savedPlatVel(VGet(0,0,0))
     , modelHandle(-1), animAttach(-1), animTime(0.0f), currentAnim(-1)
-    , animIdle(0), animRun(0), animJump(0), animFall(0)
-    , animDeath(0), animWave(0), animYes(0)
+    , animIdle(-1), animRun(-1), animJump(-1), animFall(-1)
+    , animDeath(-1), animWave(-1), animYes(-1)
     , jumpPressed(false), activatePressed(false)
 {}
 
 Player::~Player() {
-    if (modelHandle != -1) MV1DeleteModel(modelHandle);
+    ReleaseModel();
+}
+
+void Player::ReleaseModel() {
+    if (modelHandle != -1) {
+        MV1DeleteModel(modelHandle);
+        modelHandle = -1;
+    }
 }
 
 bool Player::LoadModel(const wchar_t* path) {
     modelHandle = MV1LoadModel(path);
     if (modelHandle == -1) return false;
 
+#ifdef _DEBUG
     // Debug: записать список анимаций
     int animCount = MV1GetAnimNum(modelHandle);
     FILE* f = nullptr;
@@ -34,14 +42,15 @@ bool Player::LoadModel(const wchar_t* path) {
             fprintf(f, "  [%d] %ls\n", i, MV1GetAnimName(modelHandle, i));
         fclose(f);
     }
+#endif
 
     animIdle  = FindAnim(L"Idle");
     animRun   = FindAnim(L"Run");
     animJump  = FindAnim(L"Jump");
     animFall  = FindAnim(L"Jump_Idle");
     animDeath = FindAnim(L"Death");
-    if (animDeath == 0) animDeath = FindAnim(L"Die");
-    if (animDeath == 0) animDeath = FindAnim(L"Defeat");
+    if (animDeath == -1) animDeath = FindAnim(L"Die");
+    if (animDeath == -1) animDeath = FindAnim(L"Defeat");
     animWave  = FindAnim(L"Wave");
     animYes   = FindAnim(L"Yes");
     return true;
@@ -135,15 +144,16 @@ bool Player::Update(float dt, const Camera& camera, Level* level, AudioManager& 
 
     if (level) {
         VECTOR platVel = VGet(0, 0, 0);
-        level->CheckCollision(pos, size, newPos, vel, onGround, platVel);
+        level->CheckCollision(pos, size, newPos, vel, onGround, platVel, gravMult < 0.0f);
         newPos.x += platVel.x;
         newPos.z += platVel.z;
         // platVel.y пропускаем — CheckCollision уже снэпнул игрока на верх платформы
         savedPlatVel = onGround ? platVel : VGet(0, 0, 0);
 
         // Телепорт — обрабатывается снаружи (cooldown)
-        // Кнопка — здесь вызываем
-        level->ActivateButton(pos, size, activateKeyPressed);
+        // Кнопка — здесь вызываем, по уже обновлённой позиции (согласовано с
+        // CheckTeleportTrigger в main.cpp, который тоже использует позицию после коллизии)
+        level->ActivateButton(newPos, size, activateKeyPressed);
     }
 
     pos = newPos;
@@ -155,7 +165,7 @@ bool Player::Update(float dt, const Camera& camera, Level* level, AudioManager& 
     if (level && level->CheckDeadlyTrigger(pos, size)) {
         dead = true;
     }
-    if (pos.y < -10.0f) {
+    if (pos.y < DEATH_FALL_Y) {
         dead = true;
     }
 
@@ -217,7 +227,8 @@ void Player::DrawFacingCamera(VECTOR camPos) const {
 void Player::DrawShadow(Level* level) const {
     if (!level) return;
 
-    float shadowY       = -100.0f;
+    bool  foundPlatform = false;
+    float shadowY       = 0.0f;
     float closestDist   = 1000.0f;
 
     for (const auto& block : level->GetBlocks()) {
@@ -232,11 +243,11 @@ void Player::DrawShadow(Level* level) const {
         float top = block.pos.y + block.size.y;
         if (top < pos.y) {
             float dist = pos.y - top;
-            if (dist < closestDist) { closestDist = dist; shadowY = top + 0.01f; }
+            if (dist < closestDist) { closestDist = dist; shadowY = top + 0.01f; foundPlatform = true; }
         }
     }
 
-    if (shadowY <= -99.0f) return;
+    if (!foundPlatform) return;
 
     float shadowSize = 0.8f + closestDist * 0.05f;
     if (shadowSize > 2.0f) shadowSize = 2.0f;
@@ -272,11 +283,11 @@ float Player::GetFacingToward(VECTOR target) const {
 // ── Private ──────────────────────────────────────────────────────────────────
 
 int Player::FindAnim(const wchar_t* substr) const {
-    if (modelHandle == -1) return 0;
+    if (modelHandle == -1) return -1;
     int n = MV1GetAnimNum(modelHandle);
     for (int i = 0; i < n; i++)
         if (wcsstr(MV1GetAnimName(modelHandle, i), substr)) return i;
-    return 0;
+    return -1;
 }
 
 void Player::SwitchAnim(int animIdx) {
@@ -291,7 +302,7 @@ void Player::ApplyAnimation(float dt, bool looping) {
     if (modelHandle == -1 || animAttach == -1) return;
     float total = MV1GetAttachAnimTotalTime(modelHandle, animAttach);
     if (total <= 0.0f) return;
-    animTime += dt * 24.0f;
+    animTime += dt * ANIM_FRAMERATE;
     if (looping) {
         animTime = fmodf(animTime, total);
     } else {

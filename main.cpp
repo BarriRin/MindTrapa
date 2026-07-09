@@ -1,5 +1,5 @@
 #include "DxLib.h"
-#include "Types.h"
+#include "Constants.h"
 #include "AudioManager.h"
 #include "Camera.h"
 #include "LevelManager.h"
@@ -71,12 +71,11 @@ const float STAR_THRESHOLDS[50][2] = {
 
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     ChangeWindowMode(FALSE);
-    SetGraphMode(1920, 1080, 32);
+    SetGraphMode(SCREEN_W, SCREEN_H, 32);
     if (DxLib_Init() == -1) return -1;
 
     SetUseZBuffer3D(TRUE);
     SetWriteZBuffer3D(TRUE);
-    SetUseBackCulling(TRUE);
     SetUseLighting(FALSE);
     SetDrawScreen(DX_SCREEN_BACK);
     SetupCamera_Perspective(60.0f * DX_PI_F / 180.0f);
@@ -249,6 +248,21 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
         }
     };
 
+    // Общий "хвост" запуска/рестарта/следующего уровня — вызывается уже ПОСЛЕ того,
+    // как конкретное место вызова само применило applyBlockTheme(...) и выбрало нужный
+    // способ загрузки (LoadLevel/RestartLevel/ReloadCurrentLevel/NextLevel), т.к. эти
+    // операции семантически разные (RestartLevel считает смерть, ReloadCurrentLevel — нет)
+    // и не годятся для схлопывания в одну функцию. Раньше этот блок был продублирован
+    // в 6 местах и один из них случайно не содержал PauseMovieToGraph.
+    auto finishLevelStart = [&]() {
+        player.Reset(levelManager.GetCurrentLevel()->GetPlayerSpawn());
+        darknessLevel = 0.0f;
+        gameState = GameState::PLAYING;
+        if (menuBgMovie != -1) PauseMovieToGraph(menuBgMovie);
+        audio.PlayBgm((levelManager.GetCurrentLevelId() - 1) / 10, menu.GetSettings().musicVolume);
+        SetMouseDispFlag(FALSE);
+    };
+
     SetMouseDispFlag(TRUE);
 
     // ═════════════════════════════════════════════════════════════════════════
@@ -272,9 +286,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
             SetMouseDispFlag(TRUE);
 
             if (menuBgMovie != -1) {
-                DrawExtendGraph(0, 0, 1920, 1080, menuBgMovie, FALSE);
+                DrawExtendGraph(0, 0, SCREEN_W, SCREEN_H, menuBgMovie, FALSE);
                 SetDrawBlendMode(DX_BLENDMODE_ALPHA, 100);
-                DrawBox(0, 0, 1920, 1080, GetColor(0, 0, 0), TRUE);
+                DrawBox(0, 0, SCREEN_W, SCREEN_H, GetColor(0, 0, 0), TRUE);
                 SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
                 const Profile* p = profileMgr.GetCurrentProfile();
                 // Аудио видео тише BGM-треков по записи — сдвигаем кривую так,
@@ -286,8 +300,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
             menu.Draw();
 
-            int blockToLoad = -1, levelToLoad = -1;
-            ButtonAction action = menu.HandleInput(blockToLoad, levelToLoad);
+            int dummyBlock = -1, levelToLoad = -1;
+            ButtonAction action = menu.HandleInput(dummyBlock, levelToLoad);
 
             switch (action) {
             case ButtonAction::START_GAME:
@@ -295,12 +309,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
                 menu.SetState(GameState::PLAYING);
                 applyBlockTheme(0);
                 levelManager.LoadLevel(1);
-                player.Reset(levelManager.GetCurrentLevel()->GetPlayerSpawn());
-                darknessLevel = 0.0f;
-                gameState = GameState::PLAYING;
-                if (menuBgMovie != -1) PauseMovieToGraph(menuBgMovie);
-                audio.PlayBgm(0, menu.GetSettings().musicVolume);
-                SetMouseDispFlag(FALSE);
+                finishLevelStart();
                 break;
 
             case ButtonAction::OPEN_LEVEL_SELECT:
@@ -345,12 +354,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
                     menu.SetState(GameState::PLAYING);
                     applyBlockTheme((levelToLoad - 1) / 10);
                     levelManager.LoadLevel(levelToLoad);
-                    player.Reset(levelManager.GetCurrentLevel()->GetPlayerSpawn());
-                    darknessLevel = 0.0f;
-                    gameState = GameState::PLAYING;
-                    if (menuBgMovie != -1) PauseMovieToGraph(menuBgMovie);
-                    audio.PlayBgm((levelToLoad - 1) / 10, menu.GetSettings().musicVolume);
-                    SetMouseDispFlag(FALSE);
+                    finishLevelStart();
                 } else {
                     gameState = menu.GetState();
                 }
@@ -382,8 +386,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
             menu.Draw();
 
-            int blockToLoad = -1, levelToLoad = -1;
-            ButtonAction action = menu.HandleInput(blockToLoad, levelToLoad);
+            int dummyBlock = -1, levelToLoad = -1;
+            ButtonAction action = menu.HandleInput(dummyBlock, levelToLoad);
 
             switch (action) {
             case ButtonAction::CONTINUE:
@@ -395,12 +399,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
             case ButtonAction::RESTART:
                 applyBlockTheme((levelManager.GetCurrentLevelId() - 1) / 10);
                 levelManager.RestartLevel();
-                player.Reset(levelManager.GetCurrentLevel()->GetPlayerSpawn());
-                darknessLevel = 0.0f;
-                gameState = GameState::PLAYING;
-                if (menuBgMovie != -1) PauseMovieToGraph(menuBgMovie);
-                audio.PlayBgm((levelManager.GetCurrentLevelId() - 1) / 10, menu.GetSettings().musicVolume);
-                SetMouseDispFlag(FALSE);
+                finishLevelStart();
                 break;
 
             case ButtonAction::OPEN_SETTINGS:
@@ -424,11 +423,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
                     menu.SetState(GameState::PLAYING);
                     applyBlockTheme((levelToLoad - 1) / 10);
                     levelManager.LoadLevel(levelToLoad);
-                    player.Reset(levelManager.GetCurrentLevel()->GetPlayerSpawn());
-                    darknessLevel = 0.0f;
-                    gameState = GameState::PLAYING;
-                    audio.PlayBgm((levelToLoad - 1) / 10, menu.GetSettings().musicVolume);
-                    SetMouseDispFlag(FALSE);
+                    finishLevelStart();
                 } else {
                     gameState = menu.GetState();
                 }
@@ -515,7 +510,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
             if (currentLevel) currentLevel->Update(dt);
 
             // Камера
-            camera.Update(player.GetPos(), (float)menu.GetSettings().mouseSensitivity, dt);
+            camera.Update(player.GetPos(), (float)menu.GetSettings().mouseSensitivity);
 
             // Обновление игрока (физика, ввод, анимация)
             bool playerDied = player.Update(dt, camera, currentLevel, audio, menu.GetSettings().soundVolume);
@@ -545,13 +540,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
                 levelManager.OnLevelComplete();
                 float t      = levelManager.GetCurrentLevelTime();
                 int   lvlIdx = levelManager.GetCurrentLevelId() - 1;
-                int   stars  = (t <= STAR_THRESHOLDS[lvlIdx][0]) ? 3
-                             : (t <= STAR_THRESHOLDS[lvlIdx][1]) ? 2 : 1;
-                profileMgr.SetLevelResult(levelManager.GetCurrentLevelId(), stars, t);
+                if (lvlIdx < 0) lvlIdx = 0;
+                if (lvlIdx > 49) lvlIdx = 49;
+                int   earnedStars = (t <= STAR_THRESHOLDS[lvlIdx][0]) ? 3
+                                   : (t <= STAR_THRESHOLDS[lvlIdx][1]) ? 2 : 1;
+                profileMgr.SetLevelResult(levelManager.GetCurrentLevelId(), earnedStars, t);
                 menu.UpdateUnlockState();
                 levelWasCompleted = true;
 
-                pendingCelebStars  = stars;
+                pendingCelebStars  = earnedStars;
                 pendingCelebTime   = t;
                 pendingCelebIsLast = levelManager.IsLastLevel();
 
@@ -602,7 +599,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
             if (isDarkLevel) {
                 if (darknessLevel > 0.01f) {
                     SetDrawBlendMode(DX_BLENDMODE_ALPHA, (int)(darknessLevel * 240.0f));
-                    DrawBox(0, 0, 1920, 1080, GetColor(0, 0, 0), TRUE);
+                    DrawBox(0, 0, SCREEN_W, SCREEN_H, GetColor(0, 0, 0), TRUE);
                     SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
                 }
                 DrawStars(stars, player.GetPos());
@@ -750,13 +747,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
             if (action == ButtonAction::RESTART) {
                 applyBlockTheme((levelManager.GetCurrentLevelId() - 1) / 10);
                 levelManager.ReloadCurrentLevel();
-                player.Reset(levelManager.GetCurrentLevel()->GetPlayerSpawn());
-                darknessLevel = 0.0f;
                 menu.SetState(GameState::PLAYING);
-                gameState = GameState::PLAYING;
-                if (menuBgMovie != -1) PauseMovieToGraph(menuBgMovie);
-                audio.PlayBgm((levelManager.GetCurrentLevelId() - 1) / 10, menu.GetSettings().musicVolume);
-                SetMouseDispFlag(FALSE);
+                finishLevelStart();
             } else if (action == ButtonAction::BACK_TO_MENU) {
                 audio.StopBgm();
                 menu.ClearHistory();
@@ -768,13 +760,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
                 int nextId = levelManager.GetCurrentLevelId() + 1;
                 applyBlockTheme((nextId - 1) / 10);
                 levelManager.NextLevel();
-                player.Reset(levelManager.GetCurrentLevel()->GetPlayerSpawn());
-                darknessLevel = 0.0f;
                 menu.SetState(GameState::PLAYING);
-                gameState = GameState::PLAYING;
-                if (menuBgMovie != -1) PauseMovieToGraph(menuBgMovie);
-                audio.PlayBgm((levelManager.GetCurrentLevelId() - 1) / 10, menu.GetSettings().musicVolume);
-                SetMouseDispFlag(FALSE);
+                finishLevelStart();
             }
         }
 
@@ -782,8 +769,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     }
 
 END_GAME:
-    audio.StopBgm();
+    // Явно освобождаем все DxLib-ресурсы ДО DxLib_End() — деструкторы стековых
+    // menu/audio/levelManager/player сработают только при выходе из WinMain,
+    // то есть уже после DxLib_End(), что по документации DxLib не поддерживается.
     for (int i = 0; i < 5; i++) if (skyboxTextures[i] != -1) DeleteGraph(skyboxTextures[i]);
+    if (menuBgMovie != -1) DeleteGraph(menuBgMovie);
+    audio.Shutdown();
+    levelManager.Shutdown();
+    player.ReleaseModel();
+    menu.Shutdown();
     modelMgr.Cleanup();
     DxLib_End();
     return 0;

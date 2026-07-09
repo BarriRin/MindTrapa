@@ -1,5 +1,4 @@
 #pragma once
-#pragma once
 #include "Level.h"
 #include <memory>
 #include <map>
@@ -19,13 +18,17 @@ public:
     LevelManager();
     ~LevelManager();
 
-    // �T�����p�r�|�u�~�y�u �������r�~���}�y
+    // Явное освобождение DxLib-моделей текущего уровня — вызывать до DxLib_End(),
+    // иначе деструктор сделает это уже после выгрузки DxLib при выходе из программы
+    void Shutdown();
+
+    // Управление уровнями
     void LoadLevel(int levelId);
     void NextLevel();
     void RestartLevel();
     void ReloadCurrentLevel();
 
-    // �C�u�����u����
+    // Геттеры
     Level* GetCurrentLevel() const { return currentLevel.get(); }
     int GetCurrentLevelId() const { return currentLevelId; }
     int GetTotalLevels() const { return totalLevels; }
@@ -34,12 +37,12 @@ public:
     float GetBestTime(int levelId) const;
     bool HasBestTime(int levelId) const;
 
-    // �I�s�����r���u �����q�����y��
+    // Игровые события
     void OnPlayerDeath();
     bool IsLastLevel() const;
     void OnLevelComplete(); // Вызывается при прохождении уровня
     void UpdateTimer(float deltaTime); // Обновление таймера
 
-    // �D�|�� UI
+    // Для UI
     void DrawLevelInfo(bool debugMode = false) const;
 };

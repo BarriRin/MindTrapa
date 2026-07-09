@@ -9,13 +9,17 @@ AudioManager::AudioManager()
 }
 
 AudioManager::~AudioManager() {
+    Shutdown();
+}
+
+void AudioManager::Shutdown() {
     StopBgm();
     for (int i = 0; i < BGM_COUNT; i++)
-        if (bgmHandles[i] != -1) DeleteSoundMem(bgmHandles[i]);
-    if (sfxJump  != -1) DeleteSoundMem(sfxJump);
-    if (sfxLand  != -1) DeleteSoundMem(sfxLand);
-    if (sfxDeath != -1) DeleteSoundMem(sfxDeath);
-    if (sfxWin   != -1) DeleteSoundMem(sfxWin);
+        if (bgmHandles[i] != -1) { DeleteSoundMem(bgmHandles[i]); bgmHandles[i] = -1; }
+    if (sfxJump  != -1) { DeleteSoundMem(sfxJump);  sfxJump  = -1; }
+    if (sfxLand  != -1) { DeleteSoundMem(sfxLand);  sfxLand  = -1; }
+    if (sfxDeath != -1) { DeleteSoundMem(sfxDeath); sfxDeath = -1; }
+    if (sfxWin   != -1) { DeleteSoundMem(sfxWin);   sfxWin   = -1; }
 }
 
 void AudioManager::LoadBgm(const std::wstring& packFolder) {

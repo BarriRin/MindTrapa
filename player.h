@@ -13,6 +13,10 @@ public:
     // Загружает модель и анимации из файла
     bool LoadModel(const wchar_t* path);
 
+    // Явное освобождение DxLib-модели — вызывать до DxLib_End(), иначе деструктор
+    // сделает это уже после выгрузки DxLib при выходе из программы
+    void ReleaseModel();
+
     // Основное обновление: ввод + физика + анимация. Возвращает true если игрок умер.
     bool Update(float deltaTime, const Camera& camera, Level* level, AudioManager& audio, int soundVolume);
 
@@ -69,6 +73,8 @@ private:
     static constexpr float JUMP_POWER    = 0.4f;
     static constexpr float GRAVITY       = -0.015f;
     static constexpr float MAX_FALL_SPEED = -0.6f;  // предел |vel.y| (падение и reverse-гравитация симметрично) — иначе высокая гравитация даёт скачок сквозь тонкие коллайдеры
+    static constexpr float ANIM_FRAMERATE = 24.0f;  // предполагаемый фреймрейт исходной анимации модели
+    static constexpr float DEATH_FALL_Y   = -10.0f; // порог смерти от падения за пределы уровня
 
     // Модель и анимации
     int modelHandle;

@@ -51,7 +51,7 @@ private:
     Localization& operator=(const Localization&)  = delete;
 
     Language currentLanguage = Language::EN;
-    int fontHandles[(int)Language::COUNT][(int)FontSize::COUNT];
+    int fontHandles[(int)Language::COUNT][(int)FontSize::COUNT] = {}; // заполняется -1 в Init()
     bool initialized = false;
 
     void LoadFontsForLanguage(Language lang, const wchar_t* regularPath, const wchar_t* boldPath, const wchar_t* familyName);

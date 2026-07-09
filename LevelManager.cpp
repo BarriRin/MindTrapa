@@ -8,6 +8,10 @@ LevelManager::LevelManager()
 }
 
 LevelManager::~LevelManager() {
+    Shutdown();
+}
+
+void LevelManager::Shutdown() {
     currentLevel.reset();
 }
 

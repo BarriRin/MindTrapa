@@ -47,8 +47,8 @@ public:
 
     Profile*       GetCurrentProfile();
     const Profile* GetCurrentProfile() const;
-    const Profile& GetSlot(int slot) const { return slots[slot]; }
-    bool           IsSlotEmpty(int slot)   const { return slots[slot].isEmpty; }
+    const Profile& GetSlot(int slot) const { return slots[(slot >= 0 && slot < PROFILE_SLOT_COUNT) ? slot : 0]; }
+    bool           IsSlotEmpty(int slot)   const { return (slot >= 0 && slot < PROFILE_SLOT_COUNT) ? slots[slot].isEmpty : true; }
 
     // Progress helpers (operate on current profile)
     int   GetStars(int levelId)    const;

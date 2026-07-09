@@ -232,8 +232,10 @@ Localization& Localization::GetInstance() {
 }
 
 void Localization::LoadFontsForLanguage(Language lang, const wchar_t* regularPath, const wchar_t* boldPath, const wchar_t* familyName) {
-    AddFontResourceEx(regularPath, FR_PRIVATE, NULL);
-    AddFontResourceEx(boldPath,    FR_PRIVATE, NULL);
+    if (AddFontResourceEx(regularPath, FR_PRIVATE, NULL) == 0)
+        OutputDebugStringW((std::wstring(L"[Localization] AddFontResourceEx failed: ") + regularPath + L"\n").c_str());
+    if (AddFontResourceEx(boldPath, FR_PRIVATE, NULL) == 0)
+        OutputDebugStringW((std::wstring(L"[Localization] AddFontResourceEx failed: ") + boldPath + L"\n").c_str());
 
     int idx = (int)lang;
     fontHandles[idx][(int)FontSize::Title]   = CreateFontToHandle(familyName, 60, -1, DX_FONTTYPE_ANTIALIASING_EDGE_4X4, -1, 3);
@@ -241,6 +243,13 @@ void Localization::LoadFontsForLanguage(Language lang, const wchar_t* regularPat
     fontHandles[idx][(int)FontSize::Button]  = CreateFontToHandle(familyName, 22, -1, DX_FONTTYPE_ANTIALIASING_4X4);
     fontHandles[idx][(int)FontSize::Normal]  = CreateFontToHandle(familyName, 18, -1, DX_FONTTYPE_ANTIALIASING_4X4);
     fontHandles[idx][(int)FontSize::Small]   = CreateFontToHandle(familyName, 13, -1, DX_FONTTYPE_ANTIALIASING_4X4);
+
+    for (int s = 0; s < (int)FontSize::COUNT; s++) {
+        if (fontHandles[idx][s] == -1) {
+            OutputDebugStringW((std::wstring(L"[Localization] CreateFontToHandle failed for family: ") + familyName + L"\n").c_str());
+            break;
+        }
+    }
 }
 
 void Localization::Init() {

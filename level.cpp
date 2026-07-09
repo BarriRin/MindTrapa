@@ -287,7 +287,7 @@ void Level::Draw(bool debugMode) const {
     }
 }
 
-bool Level::CheckCollision(VECTOR playerPos, VECTOR playerSize, VECTOR& newPos, VECTOR& velocity, bool& onGround, VECTOR& platformVelocity) {
+bool Level::CheckCollision(VECTOR playerPos, VECTOR playerSize, VECTOR& newPos, VECTOR& velocity, bool& onGround, VECTOR& platformVelocity, bool gravityReversed) {
     onGround = false;
     platformVelocity = VGet(0, 0, 0);
     bool collisionOccurred = false;
@@ -337,13 +337,21 @@ bool Level::CheckCollision(VECTOR playerPos, VECTOR playerSize, VECTOR& newPos, 
                     // collisionOccurred выставлялся, а newPos.y оставался непоправленным
                     // (игрок на кадр тонул в геометрии).
                     bool cameFromAbove = playerPos.y > block.pos.y + block.size.y - 1.5f;
+                    // В зонах обратной гравитации "пол" физически находится сверху —
+                    // игрок подходит к нему снизу, поэтому роли сторон меняются местами.
+                    bool isFloorContact = gravityReversed ? !cameFromAbove : cameFromAbove;
 
-                    if (cameFromAbove) {
-                        newPos.y = block.pos.y + block.size.y;
+                    if (cameFromAbove) newPos.y = block.pos.y + block.size.y;
+                    else                newPos.y = block.pos.y - playerSize.y;
 
+                    if (isFloorContact) {
                         if (block.type == BlockType::BOUNCE_PAD) {
-                            if (!bounced) { velocity.y = 0.6f; bounced = true; }
-                        } else if (velocity.y <= 0) {
+                            // Батут переопределяет исход независимо от порядка блоков в
+                            // списке: если обычная платформа успела в этом же кадре
+                            // выставить onGround, батут его снимает — иначе получаем
+                            // противоречивое состояние onGround=true с ненулевой velocity.y.
+                            if (!bounced) { velocity.y = gravityReversed ? -0.6f : 0.6f; bounced = true; onGround = false; }
+                        } else if (gravityReversed ? (velocity.y >= 0) : (velocity.y <= 0)) {
                             if (!bounced) { velocity.y = 0; onGround = true; }
                         }
 
@@ -368,7 +376,6 @@ bool Level::CheckCollision(VECTOR playerPos, VECTOR playerSize, VECTOR& newPos, 
                         }
                     }
                     else {
-                        newPos.y = block.pos.y - playerSize.y;
                         if (!bounced) velocity.y = 0;
                     }
                 }
@@ -601,18 +608,19 @@ bool Level::CheckTeleportTrigger(VECTOR playerPos, VECTOR playerSize, VECTOR& te
                     }
                 }
 
-                if (block.linkId == 1) {
-                    teleportTarget = VGet(25, 7, 0);
-                    return true;
+                // "Ложные" телепорты уровня 5 (level_block1.cpp:48-50) — единственное
+                // место, где непарный linkId 1/2/3 намеренно уводит в случайную точку
+                // внутри уровня (часть механики), а не на спавн. Привязано к levelId,
+                // чтобы будущий уровень, случайно переиспользовавший linkId 1/2/3 без
+                // пары, не улетал в эти координаты молча — для него сработает fallback
+                // на спавн ниже, как и для linkId == 0.
+                if (levelId == 5) {
+                    if (block.linkId == 1) { teleportTarget = VGet(25, 7, 0); return true; }
+                    if (block.linkId == 2) { teleportTarget = VGet(5, 15, 0); return true; }
+                    if (block.linkId == 3) { teleportTarget = VGet(20, 3, 3); return true; }
                 }
-                else if (block.linkId == 2) {
-                    teleportTarget = VGet(5, 15, 0);
-                    return true;
-                }
-                else if (block.linkId == 3) {
-                    teleportTarget = VGet(20, 3, 3);
-                    return true;
-                }
+                teleportTarget = VGet(playerSpawn.x + 0.5f, playerSpawn.y + 2.0f, playerSpawn.z + 0.5f);
+                return true;
             }
         }
     }
@@ -622,12 +630,16 @@ bool Level::CheckTeleportTrigger(VECTOR playerPos, VECTOR playerSize, VECTOR& te
 void Level::ActivateButton(VECTOR playerPos, VECTOR playerSize, bool keyPressed) {
     for (auto& block : blocks) {
         if (block.type == BlockType::BUTTON) {
-            float distance = sqrtf(
+            float horizDist = sqrtf(
                 (playerPos.x - (block.pos.x + block.size.x / 2)) * (playerPos.x - (block.pos.x + block.size.x / 2)) +
                 (playerPos.z - (block.pos.z + block.size.z / 2)) * (playerPos.z - (block.pos.z + block.size.z / 2))
             );
+            // Без вертикальной проверки кнопку можно было "нажать" сквозь пол/потолок
+            // на многоуровневых секциях — если игрок в пределах 3 юнитов по XZ, но
+            // находится этажом выше/ниже.
+            float vertDist = fabsf(playerPos.y - (block.pos.y + block.size.y / 2));
 
-            if (distance < 3.0f && keyPressed) {
+            if (horizDist < 3.0f && vertDist < 3.0f && keyPressed) {
                 block.isActive = !block.isActive;
 
                 if (block.linkId != 0) {
@@ -653,12 +665,37 @@ bool Level::IsAnyLightPulseZoneActive() const {
     return false;
 }
 
+ModelID Level::BlockTypeToModelID(BlockType type) {
+    // Явное соответствие вместо позиционного совпадения значений enum'ов —
+    // BlockType::LIGHT_PULSE_ZONE(14) и ModelID::PLAYER(14) уже разъехались.
+    switch (type) {
+        case BlockType::PLATFORM:            return ModelID::PLATFORM;
+        case BlockType::TRIGGER:             return ModelID::TRIGGER;
+        case BlockType::INVISIBLE_WALL:      return ModelID::INVISIBLE_WALL;
+        case BlockType::FAKE_PLATFORM:       return ModelID::FAKE_PLATFORM;
+        case BlockType::SPIKES:              return ModelID::SPIKES;
+        case BlockType::DISAPPEARING:        return ModelID::DISAPPEARING;
+        case BlockType::MOVING:              return ModelID::MOVING;
+        case BlockType::BUTTON:              return ModelID::BUTTON;
+        case BlockType::TELEPORT:            return ModelID::TELEPORT;
+        case BlockType::RETRACTABLE_SPIKES:  return ModelID::RETRACTABLE_SPIKES;
+        case BlockType::CRUMBLING:           return ModelID::CRUMBLING;
+        case BlockType::FAKE_SPIKES:         return ModelID::FAKE_SPIKES;
+        case BlockType::GRAVITY_ZONE:        return ModelID::GRAVITY_ZONE;
+        case BlockType::PENDULUM_BLADE:      return ModelID::PENDULUM_BLADE;
+        case BlockType::ICE_PLATFORM:        return ModelID::ICE_PLATFORM;
+        case BlockType::BOUNCE_PAD:          return ModelID::BOUNCE_PAD;
+        case BlockType::LIGHT_PULSE_ZONE:    return ModelID::COUNT; // нет модели, зона невидима
+        default:                             return ModelID::COUNT;
+    }
+}
+
 void Level::InitializeModels() {
     ModelManager& modelMgr = ModelManager::GetInstance();
 
     for (auto& block : blocks) {
         // Определить ModelID по BlockType
-        ModelID modelId = static_cast<ModelID>(static_cast<int>(block.type));
+        ModelID modelId = BlockTypeToModelID(block.type);
 
         // Если модель загружена для данного типа блока
         if (modelMgr.IsModelLoaded(modelId)) {

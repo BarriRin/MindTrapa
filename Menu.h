@@ -1,6 +1,7 @@
 #pragma once
 #include "DxLib.h"
 #include "Localization.h"
+#include "Constants.h"
 #include <vector>
 #include <string>
 
@@ -37,11 +38,6 @@ enum class ButtonAction {
     SELECT_BLOCK_3,
     SELECT_BLOCK_4,
     SELECT_BLOCK_5,
-    SELECT_BLOCK_6,
-    SELECT_BLOCK_7,
-    SELECT_BLOCK_8,
-    SELECT_BLOCK_9,
-    SELECT_BLOCK_10,
     LOAD_LEVEL,
     NEXT_LEVEL,
     // Profile actions
@@ -131,6 +127,14 @@ private:
     // Стек навигации (для ESC/Back)
     std::vector<GameState> stateHistory;
 
+    // Геометрия слайдеров экрана SETTINGS — общая для Draw() и HandleInput(),
+    // чтобы хитбокс не мог разъехаться с отрисовкой
+    static constexpr int SLIDER_X       = SCREEN_W / 2 - 200;
+    static constexpr int SLIDER_WIDTH   = 400;
+    static constexpr int SLIDER_Y_MUSIC = 350;
+    static constexpr int SLIDER_Y_SOUND = 470;
+    static constexpr int SLIDER_Y_MOUSE = 590;
+
     void ApplyFontToButtons(int handle);
 
     // Состояния ввода (member variables, не static)
@@ -165,6 +169,11 @@ private:
     void CreateProfileCreateButtons();
     void UpdateHover(int mouseX, int mouseY);
 
+    // Общая логика возврата назад для PROFILE_SELECT/PROFILE_CREATE — используется
+    // и из ESC (HandleInput), и из клика по Back-кнопке (ActivateSelectedButton),
+    // чтобы поведение (в т.ч. отмена подтверждения удаления) не расходилось между ними
+    bool HandleBackNavigation(ButtonAction& outAction);
+
     // Ползунки
     void DrawSlider(int x, int y, int width, int value, const wchar_t* label) const;
     int HandleSliderClick(int x, int y, int width, int mouseX, int mouseY);
@@ -172,6 +181,10 @@ private:
 public:
     Menu(int levels);
     ~Menu();
+
+    // Явное освобождение DxLib-ресурсов (шрифты, key input) — вызывать до
+    // DxLib_End(), иначе деструктор сделает это уже после выгрузки DxLib
+    void Shutdown();
 
     // Основные методы
     void SetState(GameState state);          // Переход без сохранения истории
@@ -190,7 +203,6 @@ public:
     ButtonAction HandleInput(int& blockToLoad, int& levelToLoad);
 
     // Геттеры
-    int GetSelectedBlock() const { return selectedBlock; }
     void SetSelectedBlock(int block) { selectedBlock = block; }
     Settings& GetSettings() { return settings; }
 
