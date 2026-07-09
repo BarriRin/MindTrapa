@@ -18,7 +18,12 @@ AudioManager::~AudioManager() {
     if (sfxWin   != -1) DeleteSoundMem(sfxWin);
 }
 
-void AudioManager::LoadBgm() {
+void AudioManager::LoadBgm(const std::wstring& packFolder) {
+    StopBgm();
+    for (int i = 0; i < BGM_COUNT; i++) {
+        if (bgmHandles[i] != -1) { DeleteSoundMem(bgmHandles[i]); bgmHandles[i] = -1; }
+    }
+
     SetCreateSoundDataType(DX_SOUNDDATATYPE_FILE);
 
     const wchar_t* names[BGM_COUNT] = { L"block1", L"block2", L"block3", L"block4", L"block5" };
@@ -26,13 +31,15 @@ void AudioManager::LoadBgm() {
 
     for (int i = 0; i < BGM_COUNT; i++) {
         for (auto ext : exts) {
-            std::wstring path = std::wstring(L"media/music/") + names[i] + ext;
+            std::wstring path = L"media/" + packFolder + L"/music/" + names[i] + ext;
             int h = LoadSoundMem(path.c_str());
             if (h != -1) { bgmHandles[i] = h; break; }
         }
     }
 
     SetCreateSoundDataType(DX_SOUNDDATATYPE_MEMNOPRESS);
+    // currentBgmIdx уже сброшен в -1 через StopBgm() — вызывающая сторона
+    // сама решает, нужно ли тут же перезапустить PlayBgm(blockIdx, ...)
 }
 
 void AudioManager::LoadSfx() {

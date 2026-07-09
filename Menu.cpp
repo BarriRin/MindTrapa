@@ -222,19 +222,33 @@ void Menu::CreateSettingsButtons() {
 }
 
 void Menu::CreateMusicSelectButtons() {
-    Localization& loc = Localization::GetInstance();
-    int centerX = 1920 / 2;
-    int startY = 300;
+    Localization&  loc     = Localization::GetInstance();
+    ProfileManager& pm     = ProfileManager::GetInstance();
+    int centerX     = 1920 / 2;
+    int startY      = 300;
     int buttonWidth = 400;
     int buttonHeight = 70;
-    int spacing = 90;
+    int spacing      = 90;
 
-    // 5 music tracks: Default + 4 custom (unlocked by achievements)
-    buttons.push_back(Button(loc.Tr(StrId::DEFAULT_THEME), centerX - buttonWidth / 2, startY, buttonWidth, buttonHeight, ButtonAction::NONE));
-    for (int i = 1; i < 5; i++) {
-        wchar_t buf[48];
-        swprintf_s(buf, loc.Tr(StrId::TRACK_LOCKED), i);
-        buttons.push_back(Button(buf, centerX - buttonWidth / 2, startY + i * spacing, buttonWidth, buttonHeight, ButtonAction::NONE));
+    int currentPack = pm.GetThemePack();
+
+    const StrId packLabels[THEME_PACK_COUNT] = { StrId::DEFAULT_THEME, StrId::THEME_PACK_1, StrId::THEME_PACK_2 };
+    const ButtonAction packActions[THEME_PACK_COUNT] = {
+        ButtonAction::SELECT_THEME_PACK_0, ButtonAction::SELECT_THEME_PACK_1, ButtonAction::SELECT_THEME_PACK_2
+    };
+
+    for (int i = 0; i < THEME_PACK_COUNT; i++) {
+        bool unlocked = pm.IsThemePackUnlocked(i);
+        std::wstring label = loc.Tr(packLabels[i]);
+        if (!unlocked) {
+            wchar_t buf[64];
+            swprintf_s(buf, loc.Tr(StrId::PACK_LOCKED_FMT), THEME_PACK_THRESHOLDS[i - 1]);
+            label = label + L" — " + buf;
+        } else if (i == currentPack) {
+            label = L"> " + label;
+        }
+        buttons.push_back(Button(label, centerX - buttonWidth / 2, startY + i * spacing, buttonWidth, buttonHeight,
+                                  packActions[i], !unlocked));
     }
 
     buttons.push_back(Button(loc.Tr(StrId::BACK), 100, 950, 200, 60, ButtonAction::BACK_TO_SETTINGS));
@@ -294,6 +308,7 @@ void Menu::SyncSettingsFromProfile() {
     settings.musicVolume      = p->musicVolume;
     settings.soundVolume      = p->sfxVolume;
     settings.mouseSensitivity = p->mouseSensitivity;
+    settings.selectedThemePack = p->themePack;
     UpdateUnlockState();
 }
 

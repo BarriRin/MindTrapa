@@ -65,9 +65,10 @@ private:
     VECTOR savedPlatVel;  // скорость платформы прошлого кадра (для спуска)
 
     // Параметры
-    static constexpr float SPEED      = 0.2f;
-    static constexpr float JUMP_POWER = 0.4f;
-    static constexpr float GRAVITY    = -0.015f;
+    static constexpr float SPEED         = 0.2f;
+    static constexpr float JUMP_POWER    = 0.4f;
+    static constexpr float GRAVITY       = -0.015f;
+    static constexpr float MAX_FALL_SPEED = -0.6f;  // предел |vel.y| (падение и reverse-гравитация симметрично) — иначе высокая гравитация даёт скачок сквозь тонкие коллайдеры
 
     // Модель и анимации
     int modelHandle;

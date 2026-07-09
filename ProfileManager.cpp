@@ -127,6 +127,28 @@ void ProfileManager::SetLevelResult(int levelId, int newStars, float time) {
     SaveCurrentProfile();
 }
 
+// ── Паки оформления ───────────────────────────────────────────────────────────
+
+int ProfileManager::GetThemePack() const {
+    const Profile* p = GetCurrentProfile();
+    return p ? p->themePack : 0;
+}
+
+bool ProfileManager::IsThemePackUnlocked(int pack) const {
+    if (pack <= 0) return true;
+    if (pack > THEME_PACK_COUNT - 1) return false;
+    const Profile* p = GetCurrentProfile();
+    if (!p) return false;
+    return p->TotalStars() >= THEME_PACK_THRESHOLDS[pack - 1];
+}
+
+void ProfileManager::SetThemePack(int pack) {
+    Profile* p = GetCurrentProfile();
+    if (!p || !IsThemePackUnlocked(pack)) return;
+    p->themePack = pack;
+    SaveCurrentProfile();
+}
+
 // ── File I/O ──────────────────────────────────────────────────────────────────
 
 void ProfileManager::LoadSlotFromFile(int slot) {
@@ -158,6 +180,8 @@ void ProfileManager::LoadSlotFromFile(int slot) {
             slots[slot].musicVolume = safeStoi(val, 80);
         } else if (key == "SFX_VOL") {
             slots[slot].sfxVolume = safeStoi(val, 60);
+        } else if (key == "THEME_PACK") {
+            slots[slot].themePack = safeStoi(val, 0);
         } else if (key == "STARS") {
             std::stringstream ss(val);
             std::string item;
@@ -183,6 +207,7 @@ void ProfileManager::SaveSlotToFile(int slot) const {
     f << "MOUSE_SENS=" << slots[slot].mouseSensitivity << "\n";
     f << "MUSIC_VOL=" << slots[slot].musicVolume << "\n";
     f << "SFX_VOL=" << slots[slot].sfxVolume << "\n";
+    f << "THEME_PACK=" << slots[slot].themePack << "\n";
 
     f << "STARS=";
     for (int i = 0; i < PROFILE_LEVEL_COUNT; i++) {

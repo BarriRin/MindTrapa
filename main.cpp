@@ -146,15 +146,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
         }
     };
 
-    // ── Аудио ─────────────────────────────────────────────────────────────────
-    AudioManager audio;
-    audio.LoadBgm();
-    audio.LoadSfx();
-
-    // ── Видеофон меню ─────────────────────────────────────────────────────────
-    int menuBgMovie = OpenMovieToGraph(L"media/menu_bg.mp4", TRUE);
-    if (menuBgMovie != -1) PlayMovieToGraph(menuBgMovie, DX_PLAYTYPE_LOOP);
-
     // ── Профили и меню ────────────────────────────────────────────────────────
     ProfileManager& profileMgr = ProfileManager::GetInstance();
     profileMgr.Initialize();
@@ -167,17 +158,41 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     else
         menu.SyncSettingsFromProfile();
 
-    // ── Скайбокс-текстуры (media/skybox/biomeN.png, -1 = файл не найден)
+    // ── Паки оформления (папка внутри media/: Defolt_Pack/Pack1/Pack2) ─────────
+    auto packFolder = [](int pack) -> std::wstring {
+        switch (pack) {
+            case 1:  return L"Pack1";
+            case 2:  return L"Pack2";
+            default: return L"Defolt_Pack";
+        }
+    };
+
+    // ── Аудио ─────────────────────────────────────────────────────────────────
+    AudioManager audio;
+    audio.LoadBgm(packFolder(profileMgr.GetThemePack()));
+    audio.LoadSfx();
+
+    // ── Видеофон меню ─────────────────────────────────────────────────────────
+    int menuBgMovie = OpenMovieToGraph(L"media/menu_bg.mp4", TRUE);
+    if (menuBgMovie != -1) PlayMovieToGraph(menuBgMovie, DX_PLAYTYPE_LOOP);
+
+    // ── Скайбокс-текстуры (media/<Pack>/skybox/biomeN, -1 = файл не найден)
     // Пробуем JPG, потом PNG как fallback
     auto loadSkybox = [](const wchar_t* jpgPath, const wchar_t* pngPath) -> int {
         int h = LoadGraph(jpgPath);
         return (h != -1) ? h : LoadGraph(pngPath);
     };
-    skyboxTextures[0] = loadSkybox(L"media/skybox/biome0.jpg", L"media/skybox/biome0.png");
-    skyboxTextures[1] = loadSkybox(L"media/skybox/biome1.jpg", L"media/skybox/biome1.png");
-    skyboxTextures[2] = loadSkybox(L"media/skybox/biome2.jpg", L"media/skybox/biome2.png");
-    skyboxTextures[3] = loadSkybox(L"media/skybox/biome3.jpg", L"media/skybox/biome3.png");
-    skyboxTextures[4] = loadSkybox(L"media/skybox/biome4.jpg", L"media/skybox/biome4.png");
+    auto loadSkyboxPack = [&](int pack) {
+        for (int i = 0; i < 5; i++) {
+            if (skyboxTextures[i] != -1) { DeleteGraph(skyboxTextures[i]); skyboxTextures[i] = -1; }
+        }
+        std::wstring base = L"media/" + packFolder(pack) + L"/skybox/biome";
+        for (int i = 0; i < 5; i++) {
+            std::wstring path = base + std::to_wstring(i);
+            skyboxTextures[i] = loadSkybox((path + L".jpg").c_str(), (path + L".png").c_str());
+        }
+    };
+    loadSkyboxPack(profileMgr.GetThemePack());
 
     // ── Звёздный фон ─────────────────────────────────────────────────────────
     stars = GenerateStars(1000, 400.0f, currentBiome);
@@ -219,6 +234,20 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     // Таймер
     int   lastFrameTime  = GetNowCount();
     const float maxDeltaTime = 0.1f;
+
+    // Переключение пака оформления (музыка+скайбоксы) — вызывается из меню Theme Packs.
+    // Если игрок сменил пак прямо во время партии (пауза → настройки), тут же
+    // перезапускает BGM текущего блока новым треком.
+    auto applyThemePack = [&](int pack) {
+        if (!profileMgr.IsThemePackUnlocked(pack)) return;
+        profileMgr.SetThemePack(pack);
+        loadSkyboxPack(pack);
+        audio.LoadBgm(packFolder(pack));
+        if (gameState == GameState::PLAYING || gameState == GameState::PAUSED) {
+            int blockIdx = (levelManager.GetCurrentLevelId() - 1) / 10;
+            audio.PlayBgm(blockIdx, menu.GetSettings().musicVolume);
+        }
+    };
 
     SetMouseDispFlag(TRUE);
 
@@ -286,6 +315,24 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
             case ButtonAction::OPEN_MUSIC_SELECT:
                 menu.PushState(GameState::MUSIC_SELECT);
+                gameState = menu.GetState();
+                break;
+
+            case ButtonAction::SELECT_THEME_PACK_0:
+                applyThemePack(0);
+                menu.SetState(GameState::MUSIC_SELECT); // перерисовать список с новой пометкой "текущий"
+                gameState = menu.GetState();
+                break;
+
+            case ButtonAction::SELECT_THEME_PACK_1:
+                applyThemePack(1);
+                menu.SetState(GameState::MUSIC_SELECT);
+                gameState = menu.GetState();
+                break;
+
+            case ButtonAction::SELECT_THEME_PACK_2:
+                applyThemePack(2);
+                menu.SetState(GameState::MUSIC_SELECT);
                 gameState = menu.GetState();
                 break;
 

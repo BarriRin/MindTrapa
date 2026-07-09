@@ -1,12 +1,15 @@
 #pragma once
 #include "DxLib.h"
+#include <string>
 
 class AudioManager {
 public:
     AudioManager();
     ~AudioManager();
 
-    void LoadBgm();
+    // packFolder — имя папки пака внутри media/ (напр. L"Defolt_Pack", L"Pack1");
+    // при повторном вызове выгружает предыдущие хендлы и грузит заново
+    void LoadBgm(const std::wstring& packFolder);
     void LoadSfx();
 
     // BGM

@@ -106,6 +106,9 @@ bool Player::Update(float dt, const Camera& camera, Level* level, AudioManager& 
     // === ГРАВИТАЦИЯ И ЗОНЫ ===
     float gravMult = level ? level->CheckGravityZone(pos, size) : 1.0f;
     vel.y += GRAVITY * gravMult * (dt * 60.0f);
+    // Симметрично: gravityMultiplier бывает отрицательным (reverse-зоны), там разгон идёт вверх
+    if (vel.y < MAX_FALL_SPEED)  vel.y = MAX_FALL_SPEED;
+    if (vel.y > -MAX_FALL_SPEED) vel.y = -MAX_FALL_SPEED;
 
     // === ИНЕРЦИЯ ЛЬДА ===
     if (iceFriction < 1.0f) {

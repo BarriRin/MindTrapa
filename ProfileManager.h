@@ -5,6 +5,11 @@
 static const int PROFILE_SLOT_COUNT  = 5;
 static const int PROFILE_LEVEL_COUNT = 50;
 
+// Паки оформления (музыка+скайбоксы): 0 = Default (всегда открыт),
+// THEME_PACK_THRESHOLDS[pack-1] звёзд суммарно нужно для pack 1/2
+static const int THEME_PACK_COUNT = 3;
+static const int THEME_PACK_THRESHOLDS[2] = { 75, 150 };
+
 struct Profile {
     std::wstring nickname;
     bool  isEmpty           = true;
@@ -13,6 +18,7 @@ struct Profile {
     int   mouseSensitivity = 50;   // 0-100, 50 = 1.0x
     int   musicVolume      = 80;   // 0-100
     int   sfxVolume        = 60;   // 0-100
+    int   themePack        = 0;    // 0 = Default, 1/2 = разблокируемый пак
 
     int TotalStars() const {
         int total = 0;
@@ -49,6 +55,11 @@ public:
     float GetBestTime(int levelId) const;
     bool  HasBestTime(int levelId) const;
     void  SetLevelResult(int levelId, int stars, float time);
+
+    // Паки оформления
+    int  GetThemePack() const;
+    bool IsThemePackUnlocked(int pack) const;
+    void SetThemePack(int pack);
 
 private:
     ProfileManager()                               = default;

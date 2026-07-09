@@ -331,12 +331,19 @@ bool Level::CheckCollision(VECTOR playerPos, VECTOR playerSize, VECTOR& newPos, 
                 }
 
                 if (overlapY <= overlapX && overlapY <= overlapZ) {
-                    if (velocity.y <= 0 && playerPos.y > block.pos.y + block.size.y - 1.5f) {
+                    // Сторону контакта решаем по СТАРОЙ позиции игрока (а не по знаку
+                    // скорости), иначе при быстром падении/толчке платформой старая
+                    // позиция могла не попасть ни под "приземление", ни под "потолок" —
+                    // collisionOccurred выставлялся, а newPos.y оставался непоправленным
+                    // (игрок на кадр тонул в геометрии).
+                    bool cameFromAbove = playerPos.y > block.pos.y + block.size.y - 1.5f;
+
+                    if (cameFromAbove) {
                         newPos.y = block.pos.y + block.size.y;
 
                         if (block.type == BlockType::BOUNCE_PAD) {
                             if (!bounced) { velocity.y = 0.6f; bounced = true; }
-                        } else {
+                        } else if (velocity.y <= 0) {
                             if (!bounced) { velocity.y = 0; onGround = true; }
                         }
 
@@ -360,7 +367,7 @@ bool Level::CheckCollision(VECTOR playerPos, VECTOR playerSize, VECTOR& newPos, 
                             }
                         }
                     }
-                    else if (velocity.y > 0) {
+                    else {
                         newPos.y = block.pos.y - playerSize.y;
                         if (!bounced) velocity.y = 0;
                     }

@@ -52,6 +52,9 @@ enum class ButtonAction {
     DELETE_PROFILE_CANCEL,
     CREATE_PROFILE_CONFIRM,
     CYCLE_LANGUAGE,
+    SELECT_THEME_PACK_0,
+    SELECT_THEME_PACK_1,
+    SELECT_THEME_PACK_2,
     NONE
 };
 
@@ -109,7 +112,7 @@ struct Settings {
     int musicVolume      = 80;   // 0-100
     int soundVolume      = 60;   // 0-100
     int mouseSensitivity = 50;   // 0-100, 50 = 1.0x
-    int selectedMusicTrack = 0;
+    int selectedThemePack = 0;   // 0 = Default, 1/2 = разблокируемые паки
 };
 
 // Класс меню
