@@ -100,7 +100,7 @@ public:
     void Update(float deltaTime);
 
     // Проверки коллизий и триггеров
-    bool CheckCollision(VECTOR playerPos, VECTOR playerSize, VECTOR& newPos, VECTOR& velocity, bool& onGround, VECTOR& platformVelocity, bool gravityReversed = false);
+    bool CheckCollision(VECTOR playerPos, VECTOR playerSize, VECTOR& newPos, VECTOR& velocity, bool& onGround, VECTOR& platformVelocity, bool gravityReversed = false, bool* justBounced = nullptr);
     bool CheckWinTrigger(VECTOR playerPos, VECTOR playerSize) const;
     bool CheckDeadlyTrigger(VECTOR playerPos, VECTOR playerSize) const;
     bool CheckTeleportTrigger(VECTOR playerPos, VECTOR playerSize, VECTOR& teleportTarget) const;

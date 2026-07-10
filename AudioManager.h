@@ -23,10 +23,12 @@ public:
 
     // SFX
     void PlaySfx(int handle, int volumePct);
-    void PlayJump(int volumePct)  { PlaySfx(sfxJump,  volumePct); }
-    void PlayLand(int volumePct)  { PlaySfx(sfxLand,  volumePct); }
-    void PlayDeath(int volumePct) { PlaySfx(sfxDeath, volumePct); }
-    void PlayWin(int volumePct)   { PlaySfx(sfxWin,   volumePct); }
+    void PlayJump(int volumePct)   { PlaySfx(sfxJump,   volumePct); }
+    void PlayLand(int volumePct)   { PlaySfx(sfxLand,   volumePct); }
+    void PlayDeath(int volumePct)  { PlaySfx(sfxDeath,  volumePct); }
+    void PlayWin(int volumePct)    { PlaySfx(sfxWin,    volumePct); }
+    void PlayBounce(int volumePct)   { PlaySfx(sfxBounce,   volumePct); }
+    void PlayTeleport(int volumePct) { PlaySfx(sfxTeleport, volumePct); }
 
 private:
     static constexpr int BGM_COUNT = 5;
@@ -38,4 +40,6 @@ private:
     int sfxLand;
     int sfxDeath;
     int sfxWin;
+    int sfxBounce;
+    int sfxTeleport;
 };

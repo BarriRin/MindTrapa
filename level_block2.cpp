@@ -90,56 +90,60 @@ void Level::LoadBlock2(int id) {
         blocks.push_back(Block(VGet(68, 2,  0), VGet(2, 1, 2), BlockType::TRIGGER));
         break;
 
-    case 14: // Level 14 - Обман ожиданий: "чистый" путь убивает, "страшный" розовый — безопасен
+    case 14: { // Level 14 - Обман ожиданий: "чистый" путь убивает, "страшный" розовый — безопасен
         playerSpawn = VGet(0, 1, 0);
         blocks.push_back(Block(VGet(-5, -1, -5), VGet(8, 1, 8), BlockType::PLATFORM));
+
+        // Поля шипов — тайлы 1x1x1 с моделью (не примитив): поля меньше, чем были
+        // до правки (см. ниже), но модель на каждом тайле не растягивается и не искажается
+        auto redSpikes = [this](int x0, int x1, int z0, int z1) {
+            for (int tx = x0; tx < x1; tx++)
+                for (int tz = z0; tz < z1; tz++)
+                    blocks.push_back(Block(VGet((float)tx, 1.f, (float)tz), VGet(1, 1, 1), BlockType::SPIKES));
+        };
+        auto pinkSpikes = [this](int x0, int x1, int z0, int z1) {
+            for (int tx = x0; tx < x1; tx++)
+                for (int tz = z0; tz < z1; tz++)
+                    blocks.push_back(Block(VGet((float)tx, 1.f, (float)tz), VGet(1, 1, 1), BlockType::FAKE_SPIKES));
+        };
 
         // === СЕКЦИЯ 1: Вилка ===
         blocks.push_back(Block(VGet(5, 0, -7), VGet(5, 1, 16), BlockType::PLATFORM));
 
-        // ПУТЬ A — чистый → реальные шипы у конца (тайлы 1x1x1)
-        blocks.push_back(Block(VGet(10, 0, 5), VGet(12, 1, 5), BlockType::PLATFORM));
-        for (int tx = 18; tx < 22; tx++)
-            for (int tz = 5; tz < 10; tz++)
-                blocks.push_back(Block(VGet((float)tx, 1.f, (float)tz), VGet(1, 1, 1), BlockType::SPIKES));
+        // ПУТЬ A — чистый → упирается в реальные шипы (тупик, дальше пустота)
+        blocks.push_back(Block(VGet(10, 0, 5), VGet(5, 1, 5), BlockType::PLATFORM));
+        redSpikes(13, 15, 5, 10);
 
-        // ПУТЬ B — весь в розовых шипах → безопасен (тайлы 1x1x1)
-        blocks.push_back(Block(VGet(10, 0, -8), VGet(12, 1, 5), BlockType::PLATFORM));
-        for (int tx = 10; tx < 22; tx++)
-            for (int tz = -8; tz < -3; tz++)
-                blocks.push_back(Block(VGet((float)tx, 1.f, (float)tz), VGet(1, 1, 1), BlockType::FAKE_SPIKES));
+        // ПУТЬ B — весь пол в розовых шипах → безопасен
+        blocks.push_back(Block(VGet(10, 0, -8), VGet(5, 1, 5), BlockType::PLATFORM));
+        pinkSpikes(10, 15, -8, -3);
 
-        // Посадочная
-        blocks.push_back(Block(VGet(26, 0, -9), VGet(6, 1, 6), BlockType::PLATFORM));
+        // Посадочная (прыжок через разрыв 4 — как и было; по Z совпадает только с ПУТЁМ B,
+        // так что перепрыгнуть шипы ПУТИ A с посадкой на неё не получится — мимо в пустоту)
+        blocks.push_back(Block(VGet(19, 0, -9), VGet(5, 1, 6), BlockType::PLATFORM));
 
         // === СЕКЦИЯ 2: Открытое поле ===
-        blocks.push_back(Block(VGet(36, 0, -4), VGet(20, 1, 11), BlockType::PLATFORM));
-        // Реальные шипы блокируют правый выход (тайлы 1x1x1)
-        for (int tx = 48; tx < 56; tx++)
-            for (int tz = -4; tz < 2; tz++)
-                blocks.push_back(Block(VGet((float)tx, 1.f, (float)tz), VGet(1, 1, 1), BlockType::SPIKES));
-        // Розовая задняя стена — единственный выход (тайлы 1x1x1)
-        for (int tx = 36; tx < 56; tx++)
-            for (int tz = 4; tz < 7; tz++)
-                blocks.push_back(Block(VGet((float)tx, 1.f, (float)tz), VGet(1, 1, 1), BlockType::FAKE_SPIKES));
+        blocks.push_back(Block(VGet(28, 0, -4), VGet(12, 1, 9), BlockType::PLATFORM));
+        // Реальные шипы блокируют прямой проход к выходу (вся глубина поля, кроме розовой полосы)
+        redSpikes(36, 40, -4, 3);
+        // Розовая полоса вдоль дальней стены — единственный безопасный проход
+        pinkSpikes(28, 40, 3, 5);
 
-        // Выход из секции 2
-        blocks.push_back(Block(VGet(56, 0, 3), VGet(6, 1, 5), BlockType::PLATFORM));
+        // Выход из секции 2 — по Z совпадает ТОЛЬКО с розовой полосой (3..5), а не со всей
+        // шириной поля, иначе шипы можно перепрыгнуть напрямую, приземлившись мимо них
+        blocks.push_back(Block(VGet(40, 0, 3), VGet(5, 1, 2), BlockType::PLATFORM));
 
         // === СЕКЦИЯ 3: Финал — две дорожки ===
-        blocks.push_back(Block(VGet(66, 0, -2), VGet(16, 1, 12), BlockType::PLATFORM));
-        // Чистая дорожка → реальные шипы (тайлы 1x1x1)
-        for (int tx = 71; tx < 78; tx++)
-            for (int tz = -2; tz < 4; tz++)
-                blocks.push_back(Block(VGet((float)tx, 1.f, (float)tz), VGet(1, 1, 1), BlockType::SPIKES));
-        // Розовая дорожка → безопасна (тайлы 1x1x1)
-        for (int tx = 66; tx < 82; tx++)
-            for (int tz = 5; tz < 10; tz++)
-                blocks.push_back(Block(VGet((float)tx, 1.f, (float)tz), VGet(1, 1, 1), BlockType::FAKE_SPIKES));
-        // Посадочная за шипами + финальный флаг
-        blocks.push_back(Block(VGet(82, 0, 5), VGet(4, 1, 4), BlockType::PLATFORM));
-        blocks.push_back(Block(VGet(83, 1, 6), VGet(2, 1, 2), BlockType::TRIGGER));
+        blocks.push_back(Block(VGet(49, 0, -2), VGet(9, 1, 12), BlockType::PLATFORM));
+        // Чистая дорожка → упирается в реальные шипы у конца
+        redSpikes(54, 58, -2, 3);
+        // Розовая дорожка на всю длину → безопасна, ведёт к финишу
+        pinkSpikes(49, 58, 5, 9);
+        // Посадочная за шипами + финальный флаг (по Z совпадает только с розовой дорожкой)
+        blocks.push_back(Block(VGet(58, 0, 5), VGet(4, 1, 4), BlockType::PLATFORM));
+        blocks.push_back(Block(VGet(59, 1, 6), VGet(2, 1, 2), BlockType::TRIGGER));
         break;
+    }
 
     case 15: // Level 15 - CRUMBLING + тайминг: зазоры 3 в X, поворот в +Z с зазором 4
         playerSpawn = VGet(0, 1, 0);

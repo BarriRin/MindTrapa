@@ -3,7 +3,7 @@
 
 AudioManager::AudioManager()
     : currentBgmIdx(-1)
-    , sfxJump(-1), sfxLand(-1), sfxDeath(-1), sfxWin(-1)
+    , sfxJump(-1), sfxLand(-1), sfxDeath(-1), sfxWin(-1), sfxBounce(-1), sfxTeleport(-1)
 {
     for (int i = 0; i < BGM_COUNT; i++) bgmHandles[i] = -1;
 }
@@ -20,6 +20,8 @@ void AudioManager::Shutdown() {
     if (sfxLand  != -1) { DeleteSoundMem(sfxLand);  sfxLand  = -1; }
     if (sfxDeath != -1) { DeleteSoundMem(sfxDeath); sfxDeath = -1; }
     if (sfxWin   != -1) { DeleteSoundMem(sfxWin);   sfxWin   = -1; }
+    if (sfxBounce != -1) { DeleteSoundMem(sfxBounce); sfxBounce = -1; }
+    if (sfxTeleport != -1) { DeleteSoundMem(sfxTeleport); sfxTeleport = -1; }
 }
 
 void AudioManager::LoadBgm(const std::wstring& packFolder) {
@@ -51,6 +53,8 @@ void AudioManager::LoadSfx() {
     sfxLand  = LoadSoundMem(L"media/sfx/land.wav");
     sfxDeath = LoadSoundMem(L"media/sfx/fall.wav");
     sfxWin   = LoadSoundMem(L"media/sfx/win.wav");
+    sfxBounce = LoadSoundMem(L"media/sfx/bounce.wav");
+    sfxTeleport = LoadSoundMem(L"media/sfx/teleport.wav");
 }
 
 void AudioManager::PlayBgm(int blockIdx, int volumePct) {

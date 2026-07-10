@@ -10,6 +10,7 @@ Player::Player()
     , size(VGet(1,1,1))
     , onGround(false), wasOnGround(false), dead(false)
     , facingAngle(0.0f), iceFriction(1.0f), savedPlatVel(VGet(0,0,0))
+    , groundedStreak(0)
     , modelHandle(-1), animAttach(-1), animTime(0.0f), currentAnim(-1)
     , animIdle(-1), animRun(-1), animJump(-1), animFall(-1)
     , animDeath(-1), animWave(-1), animYes(-1)
@@ -31,19 +32,6 @@ bool Player::LoadModel(const wchar_t* path) {
     modelHandle = MV1LoadModel(path);
     if (modelHandle == -1) return false;
 
-#ifdef _DEBUG
-    // Debug: записать список анимаций
-    int animCount = MV1GetAnimNum(modelHandle);
-    FILE* f = nullptr;
-    fopen_s(&f, "AnimList.txt", "w");
-    if (f) {
-        fprintf(f, "Character.mv1 — %d animations:\n", animCount);
-        for (int i = 0; i < animCount; i++)
-            fprintf(f, "  [%d] %ls\n", i, MV1GetAnimName(modelHandle, i));
-        fclose(f);
-    }
-#endif
-
     animIdle  = FindAnim(L"Idle");
     animRun   = FindAnim(L"Run");
     animJump  = FindAnim(L"Jump");
@@ -53,6 +41,25 @@ bool Player::LoadModel(const wchar_t* path) {
     if (animDeath == -1) animDeath = FindAnim(L"Defeat");
     animWave  = FindAnim(L"Wave");
     animYes   = FindAnim(L"Yes");
+
+#ifdef _DEBUG
+    // Debug: список анимаций + какие индексы реально резолвятся и с каким total time
+    // (диагностика "модель подвисает в воздухе" — total<=0 у animJump/animFall
+    // означает, что ApplyAnimation молча не обновляет позу все время в воздухе)
+    int animCount = MV1GetAnimNum(modelHandle);
+    FILE* f = nullptr;
+    fopen_s(&f, "AnimList.txt", "w");
+    if (f) {
+        fprintf(f, "Character.mv1 — %d animations:\n", animCount);
+        for (int i = 0; i < animCount; i++)
+            fprintf(f, "  [%d] %ls  total=%.3f\n", i, MV1GetAnimName(modelHandle, i), MV1GetAnimTotalTime(modelHandle, i));
+        fprintf(f, "\nRESOLVED:\n");
+        fprintf(f, "  animIdle=%d animRun=%d animJump=%d animFall=%d animDeath=%d animWave=%d animYes=%d\n",
+            animIdle, animRun, animJump, animFall, animDeath, animWave, animYes);
+        fclose(f);
+    }
+#endif
+
     return true;
 }
 
@@ -65,6 +72,7 @@ void Player::Reset(VECTOR spawnPos) {
     dead      = false;
     iceFriction = 1.0f;
     savedPlatVel = VGet(0, 0, 0);
+    groundedStreak = 0;
     if (modelHandle != -1 && animAttach != -1) {
         MV1DetachAnim(modelHandle, animAttach);
         animAttach   = -1;
@@ -144,7 +152,9 @@ bool Player::Update(float dt, const Camera& camera, Level* level, AudioManager& 
 
     if (level) {
         VECTOR platVel = VGet(0, 0, 0);
-        level->CheckCollision(pos, size, newPos, vel, onGround, platVel, gravMult < 0.0f);
+        bool   justBounced = false;
+        level->CheckCollision(pos, size, newPos, vel, onGround, platVel, gravMult < 0.0f, &justBounced);
+        if (justBounced) audio.PlayBounce(soundVol);
         newPos.x += platVel.x;
         newPos.z += platVel.z;
         // platVel.y пропускаем — CheckCollision уже снэпнул игрока на верх платформы
@@ -181,8 +191,14 @@ bool Player::Update(float dt, const Camera& camera, Level* level, AudioManager& 
     bool isMovingH = (fabsf(move.x) > 0.001f || fabsf(move.z) > 0.001f);
     if (isMovingH) facingAngle = atan2f(move.x, move.z);
 
+    // onGround у краёв платформ может мигать true/false покадрово (AABB-контакт на грани) —
+    // не даём одиночному "заземлению" сразу переключать на Idle/Run, иначе SwitchAnim()
+    // сбрасывает animTime каждый такой кадр и поза Jump/Fall визуально подвисает
+    groundedStreak = onGround ? groundedStreak + 1 : 0;
+    bool animGrounded = groundedStreak >= 2;
+
     int targetAnim;
-    if (!onGround)    targetAnim = (vel.y > 0.0f) ? animJump : animFall;
+    if (!animGrounded) targetAnim = (vel.y > 0.0f) ? animJump : animFall;
     else if (isMovingH) targetAnim = animRun;
     else                targetAnim = animIdle;
 

@@ -277,6 +277,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
         lastFrameTime = now;
         float dt = realDt * gameSpeed;
 
+        // Громкость BGM применяется живьём при любом состоянии (не только PLAYING),
+        // чтобы слайдер музыки в настройках было слышно сразу, откуда бы их ни открыли
+        audio.SetBgmVolume(menu.GetSettings().musicVolume);
+
         // ── МЕНЮ ─────────────────────────────────────────────────────────────
         if (gameState == GameState::PROFILE_SELECT || gameState == GameState::PROFILE_CREATE ||
             gameState == GameState::MAIN_MENU      || gameState == GameState::LEVEL_SELECT_BLOCKS ||
@@ -302,6 +306,29 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
             int dummyBlock = -1, levelToLoad = -1;
             ButtonAction action = menu.HandleInput(dummyBlock, levelToLoad);
+
+            // Превью SFX при движении слайдера звука — иначе громкость эффектов
+            // не с чем послушать вживую, пока сидишь в настройках
+            {
+                static int   lastPreviewSoundVolume = -1;
+                static bool  wasInSettings           = false;
+                static float sfxPreviewCooldown      = 0.0f;
+                if (sfxPreviewCooldown > 0.0f) sfxPreviewCooldown -= realDt;
+
+                bool inSettingsNow = (gameState == GameState::SETTINGS);
+                if (inSettingsNow && !wasInSettings) {
+                    lastPreviewSoundVolume = menu.GetSettings().soundVolume; // синхронизация без звука
+                }
+                if (inSettingsNow) {
+                    int curSoundVolume = menu.GetSettings().soundVolume;
+                    if (curSoundVolume != lastPreviewSoundVolume && sfxPreviewCooldown <= 0.0f) {
+                        audio.PlayJump(curSoundVolume);
+                        sfxPreviewCooldown      = 0.15f;
+                        lastPreviewSoundVolume  = curSoundVolume;
+                    }
+                }
+                wasInSettings = inSettingsNow;
+            }
 
             switch (action) {
             case ButtonAction::START_GAME:
@@ -474,7 +501,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
             } else zeroP = false;
 
             levelManager.UpdateTimer(dt);
-            audio.SetBgmVolume(menu.GetSettings().musicVolume);
 
             // Block 4 / Level 48: темнота
             int  curLvlId    = levelManager.GetCurrentLevelId();
@@ -509,8 +535,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
             // Обновление уровня (движущиеся платформы, выдвижные шипы, исчезающие блоки)
             if (currentLevel) currentLevel->Update(dt);
 
-            // Камера
-            camera.Update(player.GetPos(), (float)menu.GetSettings().mouseSensitivity);
+            // Углы камеры — до player.Update(), чтобы движение шло относительно взгляда
+            // уже этого кадра
+            camera.UpdateAngles((float)menu.GetSettings().mouseSensitivity);
 
             // Обновление игрока (физика, ввод, анимация)
             bool playerDied = player.Update(dt, camera, currentLevel, audio, menu.GetSettings().soundVolume);
@@ -522,15 +549,22 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
                 gameState        = GameState::DYING;
             }
 
-            // Телепорт
+            // Телепорт — до camera.Apply(), иначе на кадре телепорта камера ещё смотрит
+            // на позицию ДО прыжка, а модель уже рисуется ПОСЛЕ него (тот же рассинхрон
+            // на кадр, который мы только что убрали для обычного движения/падения)
             if (!playerDied && teleportCooldown <= 0 && currentLevel) {
                 VECTOR teleTarget;
                 if (currentLevel->CheckTeleportTrigger(player.GetPos(), player.GetSize(), teleTarget)) {
                     player.SetPos(teleTarget);
                     player.SetVel(VGet(0,0,0));
                     teleportCooldown = 1.0f;
+                    audio.PlayTeleport(menu.GetSettings().soundVolume);
                 }
             }
+
+            // Позиция камеры — после player.Update()/телепорта, чтобы следовать за
+            // актуальной позицией игрока уже этого кадра, а не прошлого
+            camera.Apply(player.GetPos());
 
             // Победа
             if (gameState == GameState::PLAYING && currentLevel &&

@@ -366,6 +366,8 @@ FodyWeavers.xsd
 .claude/
 # DxLib runtime log
 Log.txt
+# Debug-only animation dump (Player::LoadModel, _DEBUG builds)
+AnimList.txt
 
 # Windows null device artifact
 nul

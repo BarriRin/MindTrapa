@@ -67,6 +67,8 @@ private:
     float  facingAngle;
     float  iceFriction;
     VECTOR savedPlatVel;  // скорость платформы прошлого кадра (для спуска)
+    int    groundedStreak; // кадров подряд onGround==true — гасит дребезг анимации у краёв
+                            // платформ, где AABB-контакт по Y может мигать true/false покадрово
 
     // Параметры
     static constexpr float SPEED         = 0.2f;

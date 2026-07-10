@@ -79,12 +79,6 @@ void LevelManager::DrawLevelInfo(bool debugMode) const {
     if (currentLevelId == 6) {
         DrawStringToHandle(10, 110, loc.Tr(StrId::HUD_HINT_BUTTON), GetColor(255, 255, 0), fontNormal);
     }
-    if (currentLevelId == 8) {
-        DrawStringToHandle(10, 110, loc.Tr(StrId::HUD_HINT_CRUMBLE), GetColor(255, 50, 50), fontNormal);
-    }
-    if (currentLevelId == 9) {
-        DrawStringToHandle(10, 110, loc.Tr(StrId::HUD_HINT_SPIKES), GetColor(255, 150, 50), fontNormal);
-    }
 
     // Debug информация (только если F3 нажат)
     if (debugMode) {

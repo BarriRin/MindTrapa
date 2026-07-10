@@ -287,11 +287,12 @@ void Level::Draw(bool debugMode) const {
     }
 }
 
-bool Level::CheckCollision(VECTOR playerPos, VECTOR playerSize, VECTOR& newPos, VECTOR& velocity, bool& onGround, VECTOR& platformVelocity, bool gravityReversed) {
+bool Level::CheckCollision(VECTOR playerPos, VECTOR playerSize, VECTOR& newPos, VECTOR& velocity, bool& onGround, VECTOR& platformVelocity, bool gravityReversed, bool* justBounced) {
     onGround = false;
     platformVelocity = VGet(0, 0, 0);
     bool collisionOccurred = false;
     bool bounced = false; // флаг: батут уже сработал — пол не должен обнулять velocity.y
+    if (justBounced) *justBounced = false;
 
     for (auto& block : blocks) {
         if (block.type == BlockType::PLATFORM ||
@@ -350,7 +351,12 @@ bool Level::CheckCollision(VECTOR playerPos, VECTOR playerSize, VECTOR& newPos, 
                             // списке: если обычная платформа успела в этом же кадре
                             // выставить onGround, батут его снимает — иначе получаем
                             // противоречивое состояние onGround=true с ненулевой velocity.y.
-                            if (!bounced) { velocity.y = gravityReversed ? -0.6f : 0.6f; bounced = true; onGround = false; }
+                            if (!bounced) {
+                                velocity.y = gravityReversed ? -0.6f : 0.6f;
+                                bounced = true;
+                                onGround = false;
+                                if (justBounced) *justBounced = true;
+                            }
                         } else if (gravityReversed ? (velocity.y >= 0) : (velocity.y <= 0)) {
                             if (!bounced) { velocity.y = 0; onGround = true; }
                         }

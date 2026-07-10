@@ -18,7 +18,7 @@ void Camera::Apply(VECTOR targetPos) const {
     SetCameraPositionAndTarget_UpVecY(camPos, VAdd(targetPos, VGet(0, 1, 0)));
 }
 
-void Camera::Update(VECTOR targetPos, float sensitivity) {
+void Camera::UpdateAngles(float sensitivity) {
     int mouseX, mouseY;
     GetMousePoint(&mouseX, &mouseY);
 
@@ -32,7 +32,4 @@ void Camera::Update(VECTOR targetPos, float sensitivity) {
     if (angleX < -ANGLE_X_MAX) angleX = -ANGLE_X_MAX;
 
     SetMousePoint(centerX, centerY);
-
-    VECTOR camPos = GetPosition(targetPos);
-    SetCameraPositionAndTarget_UpVecY(camPos, VAdd(targetPos, VGet(0, 1, 0)));
 }
