@@ -1,117 +1,69 @@
-# MindTrapa - 3D Trolling Puzzle Platformer
+# MindTrapa
 
-A 3D puzzle platformer inspired by levelDEVIL, designed to troll and challenge players with creative mechanics and unexpected twists.
+A 3D puzzle-platformer inspired by *levelDEVIL* — levels that look simple but punish trust in the obvious. 50 hand-designed levels across 5 themed space blocks, built from scratch in C++ on top of DxLib, with no commercial game engine.
 
-## 🎮 Game Concept
+**Status:** 1.0 — feature-complete, all 50 levels playable, solo-developed by Ivan Danisheuski.
 
-50 levels divided into 5 blocks (10 levels each), where each block introduces new trolling mechanics:
-- **Block 1** (Levels 1-10): **Basics** - Movement, jumps, teleports ✅ COMPLETE
-- **Block 2** (Levels 11-20): **Timing & Precision** - Retractable spikes, crumbling platforms ✅ COMPLETE
-- **Block 3** (Levels 21-30): **Gravity & Blades** - Gravity zones, pendulum blades ✅ COMPLETE
-- **Block 4** (Levels 31-40): **TBD** - To be designed
-- **Block 5** (Levels 41-50): **Final Challenge** - Combines all mechanics
+## Concept
 
-## 🛠️ Tech Stack
+The core trick: appearances lie. A clean-looking platform may not be solid. Spikes that look lethal may be harmless. A wall you can't see may still stop you. Every level teaches the player to verify before committing — then breaks that trust again in a new way in the next block.
 
-- **Language**: C++
-- **Graphics Library**: DxLib (DirectX wrapper)
-- **Platform**: Windows
-- **IDE**: Visual Studio
+## Tech Stack
 
-## 🎯 Current Status
+- **Language:** C++ (Visual Studio 2022)
+- **Graphics:** [DxLib](https://dxlib.xyz/) 3.24f — a DirectX wrapper, no engine (Unity/Unreal) involved
+- **Platform:** Windows 10/11, built as Win32
+- **Everything hand-rolled:** physics/collision, camera, animation state machine, audio (streamed BGM + SFX), localization, save/profile system, menu navigation, particle effects, skybox/fog rendering
 
-**Version**: Alpha 0.4
-**Levels**: 30/50 implemented (60% complete!)
-**Mechanics**: 14 block types implemented (including gravity zones & pendulum blades)
+See [ARCHITECTURE.md](ARCHITECTURE.md) for how the code is organized.
 
-### Working Features:
-- ✅ 3D platformer movement (WASD + mouse camera)
-- ✅ Jump mechanics (Space)
-- ✅ Collision system (all axes)
-- ✅ Death counter and level restart (R)
-- ✅ Multiple spike types (static, retractable, fake)
-- ✅ Invisible walls
-- ✅ Teleports (portal mechanics)
-- ✅ Buttons and doors (E to activate)
-- ✅ Moving platforms with player physics
-- ✅ Crumbling platforms (fall after touch)
-- ✅ Disappearing platforms (timed)
-- ✅ Level progression system with timer
-- ✅ Main menu and pause system
-- ✅ ModelManager for 3D models/skyboxes (ready for assets)
+## Levels & Mechanics
 
-## 🚀 How to Build
+50 levels split into 5 blocks of 10, each introducing a mechanic that recontextualizes everything learned before it:
 
-1. Install DxLib library
-2. Open `MindTrapa.sln` in Visual Studio
-3. Configure DxLib paths in project settings
-4. Build and run
+| Block | Levels | Theme | Core mechanics |
+|---|---|---|---|
+| 1 | 1–10 | Basics | platforms, fake platforms, invisible walls, spikes, teleports, buttons, moving/disappearing platforms |
+| 2 | 11–20 | Timing & Precision | retractable spikes, crumbling platforms, fake spikes |
+| 3 | 21–30 | Gravity & Blades | gravity zones (low/high/reverse), pendulum blades |
+| 4 | 31–40 | Darkness | vision that fades the more you move |
+| 5 | 41–50 | Ice & Bounce | inertia-based ice platforms (no jumping), bounce pads |
 
-## 🎮 Controls
+17 distinct mechanics in total. Full breakdown in [MECHANICS.md](MECHANICS.md).
 
-- **WASD** - Movement (relative to camera)
-- **Mouse** - Camera rotation
-- **Space** - Jump
-- **E** - Activate button/switch
-- **R** - Restart level
-- **ESC** - Quit game
+## Features
 
-## 📁 Project Structure
+- Full 3D model pipeline (custom OBJ→X converter, see `tools/`) with block-specific themes per space-station biome
+- Spherical skybox with procedural fallback, biome fog, twinkling starfield
+- Player character with a real animation state machine (idle/run/jump/fall/death/celebration)
+- Streamed background music per level block + SFX (jump, land, death, win, bounce, teleport), all volume-adjustable live in Settings
+- 5-slot save/profile system: per-profile stars, best times, settings, unlockable cosmetic theme packs (alternate skyboxes + music, unlocked by star count)
+- Full localization: English, Russian, Japanese (including dedicated font sets for Cyrillic/Kana)
+- Star rating (1–3) per level based on completion time, F3 debug overlay (wireframes, block counts)
 
-```
-MindTrapa/
-├── Level.h / Level.cpp           - Level class (loading, rendering, collision)
-├── LevelManager.h / LevelManager.cpp - Level management (transitions, deaths)
-├── main.cpp                      - Game loop, input, rendering
-├── ARCHITECTURE.md               - Architecture documentation
-├── MECHANICS.md                  - Implemented mechanics list
-└── ROADMAP.md                    - Development roadmap
-```
+## Controls
 
-## 🎨 Block Types
+| Key | Action |
+|---|---|
+| WASD | Move (camera-relative) |
+| Mouse | Look / camera orbit |
+| Space | Jump |
+| E | Activate button/switch |
+| R | Restart level |
+| ESC | Pause / back |
+| F3 | Debug overlay |
 
-```cpp
-enum class BlockType {
-    PLATFORM,            // Normal solid platform
-    TRIGGER,             // Level completion trigger
-    INVISIBLE_WALL,      // Invisible but solid wall
-    FAKE_PLATFORM,       // Looks solid but you fall through
-    SPIKES,              // Instant death (static or timed)
-    DISAPPEARING,        // Platform that appears/disappears
-    MOVING,              // Moving platform
-    BUTTON,              // Activatable button (E key)
-    TELEPORT,            // Portal to another location
-    RETRACTABLE_SPIKES,  // Spikes that retract on timer (Block 2)
-    CRUMBLING,           // Falls after player touches (Block 2)
-    FAKE_SPIKES,         // Looks deadly but harmless (trolling!)
-    GRAVITY_ZONE,        // Changes gravity direction/strength (Block 3)
-    PENDULUM_BLADE       // Swinging blade trap (Block 3)
-};
-```
+## Assets & Credits
 
-## 🚧 Coming Soon
+- **3D models (all CC0):** [Quaternius](https://quaternius.com/) Ultimate Platformer Pack (player character, Block 1–2 terrain), [Kenney](https://kenney.nl/) Space Kit / Modular Space Kit / Space Station Kit and [KayKit](https://kaylousberg.com/) Space Base Bits (Block 3–5 terrain)
+- **Music:** 5 original tracks generated with Suno AI, one per block
+- **SFX:** [Freesound.org](https://freesound.org/), CC0
+- **Font:** [Orbitron](https://fonts.google.com/specimen/Orbitron) (SIL OFL 1.1) for UI, plus Exo 2 / Noto Sans JP for Russian/Japanese localization
 
-**In Active Development:**
-- 🎨 **3D Models** — replacing placeholder cubes with proper models
-- 🎮 **Block 4-5** — 20 remaining levels (design complete, implementation pending)
-- ✨ **Polish Phase** — visual effects, sound, UI improvements
+## Building
 
-**Next Milestone**: Alpha 0.5 (40 levels)
+Open `MindTrapa.sln` in Visual Studio 2022, build `Debug|x86` or `Release|x86`. Requires the DxLib SDK (not included). No other external dependencies.
 
-See [ROADMAP.md](ROADMAP.md) for detailed development plan.
+## Development History
 
-## 🤝 Contributing
-
-This is a personal learning project, but feedback and suggestions are welcome!
-
-## 📄 License
-
-Personal project - all rights reserved
-
-## 🎓 Learning Resources
-
-This project was developed as a learning exercise in:
-- C++ game development
-- 3D collision detection
-- Game architecture patterns
-- DxLib library usage
+See [DEVELOPMENT_HISTORY.md](DEVELOPMENT_HISTORY.md) for how the project actually got built — active development spanned ~13 months (June 2025 – July 2026) in 5 distinct work periods separated by breaks, not a single continuous push.

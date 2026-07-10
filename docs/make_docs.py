@@ -93,7 +93,7 @@ def build_ru(path):
 
     sub = doc.add_paragraph()
     sub.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    r2 = sub.add_run('Описание проекта · Апрель 2026')
+    r2 = sub.add_run('Описание проекта · Июль 2026')
     r2.font.size = Pt(12)
     r2.font.color.rgb = RGBColor(0x88, 0x88, 0x88)
     sub.paragraph_format.space_after = Pt(14)
@@ -106,7 +106,7 @@ def build_ru(path):
         ('Название:', 'MindTrapa'),
         ('Жанр:', '3D головоломка-платформер'),
         ('Платформа:', 'Windows (Desktop)'),
-        ('Стадия:', 'Alpha 0.5.1'),
+        ('Стадия:', '1.0 (релиз)'),
         ('Разработчик:', 'Иван Данишевский (BarriRin), соло-проект'),
         ('Вдохновение:', 'levelDEVIL'),
     ]:
@@ -129,8 +129,10 @@ def build_ru(path):
         ('Графика:', 'DxLib 3.24f (обёртка над DirectX 11)'),
         ('Рендеринг:', '3D-модели (.mv1, .x), скайбокс, генерация звёздного неба'),
         ('Физика:', 'Собственный движок: AABB-коллизии, deltaTime-физика (60 FPS)'),
-        ('Анимации:', 'Стейт-машина: Idle, Run, Jump, Fall'),
-        ('Ресурсы:', 'Модели из паков Quaternius (CC0)'),
+        ('Анимации:', 'Стейт-машина: Idle, Run, Jump, Fall, Death, Wave/Yes (победа)'),
+        ('Ресурсы:', 'Quaternius, Kenney, KayKit (все CC0); музыка — Suno AI; SFX — Freesound.org (CC0)'),
+        ('Локализация:', 'EN / RU / JA, отдельные шрифты под кириллицу и кану'),
+        ('Сохранения:', '5 слотов профилей, INI-формат: звёзды, рекорды, настройки, паки оформления'),
     ]:
         add_status_row(doc, label, val)
 
@@ -177,8 +179,8 @@ def build_ru(path):
             ('TELEPORT', 'мгновенно перемещает в заданную точку'),
         ]),
         ('Физические зоны', [
-            ('GRAVITY_ZONE', 'меняет гравитацию (замедление, ускорение; в планах — обратная)'),
-            ('LIGHT_PULSE_ZONE', 'зона темноты (Блок 4): темнеет при движении'),
+            ('GRAVITY_ZONE', 'меняет гравитацию: пониженная, повышенная или обратная (ходьба по потолку)'),
+            ('LIGHT_PULSE_ZONE', 'периодическая вспышка света в тёмных уровнях Блока 4'),
             ('ICE_PLATFORM', 'скользкая поверхность: инерция, прыжок недоступен'),
             ('BOUNCE_PAD', 'батут: единственный способ прыгнуть со льда'),
         ]),
@@ -224,7 +226,7 @@ def build_ru(path):
         ('Блок 5 — Лёд и батуты (уровни 41–50)',
          'Инерция и альтернативные прыжки',
          'ледяные платформы (скользкость, запрет прыжка), батуты',
-         'Уровни 41–47 завершены. Уровни 48–50 — в разработке.'),
+         'Завершён ✓'),
     ]
 
     for title_b, theme, mechanics, status in blocks_data:
@@ -243,64 +245,42 @@ def build_ru(path):
     add_separator(doc)
 
     # 6. Текущее состояние
-    add_heading(doc, '6. Текущее состояние (апрель 2026 — Alpha 0.5.1)', 1)
+    add_heading(doc, '6. Текущее состояние (июль 2026 — версия 1.0)', 1)
 
     add_heading(doc, 'Реализовано:', 2)
     done = [
-        '47 из 50 уровней — полностью спроектированы и одобрены',
+        '50 из 50 уровней — завершены, пройдены и отбалансированы автором',
         'Все 17 механик реализованы и протестированы',
-        '3D-модели для 10 типов блоков подключены',
-        'Персонаж игрока с 4 анимациями (Idle, Run, Jump, Fall)',
-        'Меню с выбором блоков и уровней',
-        'Система смертей и таймера на уровне',
-        'Сохранение лучшего времени в сессии',
-        'Скайбокс и генерация звёзд для фона',
+        'Полный pipeline 3D-моделей: собственный конвертер OBJ→X, темы под каждый блок',
+        'Персонаж игрока с полной стейт-машиной анимаций (Idle/Run/Jump/Fall/Death/победа)',
+        'Сферический скайбокс с процедурным фоллбеком, туман по биомам, мерцающие звёзды',
+        'Полное меню: выбор блока/уровня, настройки с живым применением слайдеров, пауза',
+        'Система профилей: 5 слотов, звёзды, рекорды, постоянное сохранение на диск',
+        'Разблокируемые паки оформления (скайбокс + музыка) за суммарные звёзды',
+        'Полная локализация: EN / RU / JA, включая отдельные шрифты под кириллицу и кану',
+        'Стриминг фоновой музыки по блокам + SFX (прыжок, приземление, смерть, победа, батут, телепорт)',
+        'Независимый аудит кода (3 агента, 36 находок) — все дофикшены и проверены',
     ]
     for item in done:
         add_bullet(doc, item)
 
-    add_heading(doc, 'В разработке:', 2)
-    wip = [
-        'Уровни 48–50 (финальная тройка Блока 5)',
-        'Экран завершения уровня (время, звёзды, навигация)',
-        'Постоянное сохранение прогресса на диск',
-    ]
-    for item in wip:
-        add_bullet(doc, item)
-
     add_separator(doc)
 
-    # 7. Планы
-    add_heading(doc, '7. Планы развития', 1)
-
-    add_heading(doc, 'Краткосрочные (до Alpha 1.0):', 2)
-    short = [
-        'Спроектировать и реализовать уровни 48, 49, 50 (дизайн → тест → итерация)',
-        'Экран завершения уровня: время прохождения, оценка 1–3 звезды, кнопки меню / рестарт / следующий',
-        'Сохранение прогресса на диск: лучшее время и звёзды на каждый уровень',
-    ]
-    for i, item in enumerate(short, 1):
-        add_bullet(doc, f'{i}. {item}')
-
-    add_heading(doc, 'Среднесрочные:', 2)
-    mid = [
-        'Музыка и звуковые эффекты: фоновая музыка по блокам, звуки прыжка / смерти / финиша, разблокировка треков',
-        '3D-модели для ICE_PLATFORM и BOUNCE_PAD',
-        'Полировка и ребаланс уровней Блоков 2–4',
-        'Визуальное оформление интерфейса: иллюстрации на главном меню, заставки и превью для каждого блока, оформление экрана выбора уровня',
-        'Косметические разблокировки через достижения: новые 3D-модели блоков или скины персонажа (например, за прохождение блока без смертей)',
-    ]
-    for i, item in enumerate(mid, 4):
-        add_bullet(doc, f'{i}. {item}')
-
-    add_heading(doc, 'Долгосрочные (Beta и далее):', 2)
-    long_ = [
+    # 7. Возможные направления развития
+    add_heading(doc, '7. Возможные направления развития (пост-релиз)', 1)
+    add_body(doc,
+        'Проект завершён и закрыт как версия 1.0. Ниже — идеи, которые не входили '
+        'в исходный скоуп и не планируются в ближайшее время, но могли бы стать '
+        'отдельным дополнением:')
+    doc.add_paragraph()
+    future = [
         'Режим «Один забег» (Hardcore Run): фиксированное количество жизней на все 50 уровней, единый таймер, отдельная таблица рекордов',
-        'Локальная таблица рекордов',
+        'Локальная таблица рекордов / speedrun-режим',
+        'Экран достижений с косметическими разблокировками (скины персонажа, доп. модели блоков)',
         'Возможный портинг на другие платформы',
     ]
-    for i, item in enumerate(long_, 9):
-        add_bullet(doc, f'{i}. {item}')
+    for item in future:
+        add_bullet(doc, item)
 
     add_separator(doc)
 
@@ -334,7 +314,7 @@ def build_en(path):
 
     sub = doc.add_paragraph()
     sub.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    r2 = sub.add_run('Project Overview · April 2026')
+    r2 = sub.add_run('Project Overview · July 2026')
     r2.font.size = Pt(12)
     r2.font.color.rgb = RGBColor(0x88, 0x88, 0x88)
     sub.paragraph_format.space_after = Pt(14)
@@ -346,7 +326,7 @@ def build_en(path):
         ('Title:', 'MindTrapa'),
         ('Genre:', '3D Puzzle Platformer'),
         ('Platform:', 'Windows (Desktop)'),
-        ('Stage:', 'Alpha 0.5.1'),
+        ('Stage:', '1.0 (Release)'),
         ('Developer:', 'Ivan Danisheuski (BarriRin), solo project'),
         ('Inspiration:', 'levelDEVIL'),
     ]:
@@ -368,8 +348,10 @@ def build_en(path):
         ('Graphics:', 'DxLib 3.24f (DirectX 11 wrapper)'),
         ('Rendering:', '3D models (.mv1, .x), skybox, procedural star field'),
         ('Physics:', 'Custom engine: AABB collisions, deltaTime physics (60 FPS)'),
-        ('Animations:', 'State machine: Idle, Run, Jump, Fall'),
-        ('Assets:', 'Models from Quaternius packs (CC0)'),
+        ('Animations:', 'State machine: Idle, Run, Jump, Fall, Death, Wave/Yes (celebration)'),
+        ('Assets:', 'Quaternius, Kenney, KayKit (all CC0); music — Suno AI; SFX — Freesound.org (CC0)'),
+        ('Localization:', 'EN / RU / JA, separate font sets for Cyrillic and Kana'),
+        ('Save system:', '5 profile slots, INI format: stars, best times, settings, theme packs'),
     ]:
         add_status_row(doc, label, val)
 
@@ -414,8 +396,8 @@ def build_en(path):
             ('TELEPORT', 'instantly moves the player to a set location'),
         ]),
         ('Physics Zones', [
-            ('GRAVITY_ZONE', 'alters gravity (low, high; reverse gravity planned)'),
-            ('LIGHT_PULSE_ZONE', 'darkness zone (Block 4): screen darkens while moving'),
+            ('GRAVITY_ZONE', 'alters gravity: low, high, or reversed (walk on the ceiling)'),
+            ('LIGHT_PULSE_ZONE', 'periodic light flash inside Block 4\'s darkness-affected levels'),
             ('ICE_PLATFORM', 'slippery surface: inertia applies, jumping is disabled'),
             ('BOUNCE_PAD', 'launch pad: the only way to jump from ice'),
         ]),
@@ -458,7 +440,7 @@ def build_en(path):
         ('Block 5 — Ice & Bounce (Levels 41–50)',
          'Inertia and alternative jumping',
          'ice platforms (slipperiness, no jumping), bounce pads',
-         'Levels 41–47 complete. Levels 48–50 — in active development.'),
+         'Complete ✓'),
     ]
 
     for title_b, theme, mechanics, status in blocks_data:
@@ -474,57 +456,38 @@ def build_en(path):
 
     add_separator(doc)
 
-    add_heading(doc, '6. Current State (April 2026 — Alpha 0.5.1)', 1)
+    add_heading(doc, '6. Current State (July 2026 — version 1.0)', 1)
     add_heading(doc, 'Implemented:', 2)
     for item in [
-        '47 of 50 levels — fully designed and approved',
+        '50 of 50 levels — complete, played through and balanced by the author',
         'All 17 mechanics implemented and tested',
-        '3D models connected for 10 block types',
-        'Player character with 4 animations (Idle, Run, Jump, Fall)',
-        'Menu with block and level selection',
-        'Death counter and per-level timer',
-        'Best-time saving within a session',
-        'Skybox and procedural star field',
-    ]:
-        add_bullet(doc, item)
-
-    add_heading(doc, 'In Progress:', 2)
-    for item in [
-        'Levels 48–50 (final three of Block 5)',
-        'Level completion screen (time, stars, navigation)',
-        'Persistent progress saving to disk',
+        'Full 3D model pipeline: custom OBJ→X converter, per-block themes',
+        'Player character with a full animation state machine (Idle/Run/Jump/Fall/Death/celebration)',
+        'Spherical skybox with procedural fallback, per-biome fog, twinkling starfield',
+        'Full menu system: block/level select, settings with live slider apply, pause',
+        'Profile system: 5 slots, stars, best times, persistent save to disk',
+        'Unlockable cosmetic theme packs (skybox + music), unlocked by total star count',
+        'Full localization: EN / RU / JA, including dedicated font sets for Cyrillic and Kana',
+        'Streamed per-block background music + SFX (jump, land, death, win, bounce, teleport)',
+        'Independent code audit (3 agents, 36 findings) — all fixed and verified',
     ]:
         add_bullet(doc, item)
 
     add_separator(doc)
 
-    add_heading(doc, '7. Development Roadmap', 1)
-
-    add_heading(doc, 'Short-term (by Alpha 1.0):', 2)
-    for i, item in enumerate([
-        'Design and implement levels 48, 49, 50 (design → test → iterate)',
-        'Level completion screen: time, 1–3 star rating, menu / restart / next buttons',
-        'Persistent progress: best time and star count per level saved to disk',
-    ], 1):
-        add_bullet(doc, f'{i}. {item}')
-
-    add_heading(doc, 'Mid-term:', 2)
-    for i, item in enumerate([
-        'Music and SFX: per-block background music, jump / death / finish sounds, star-based track unlocks',
-        '3D models for ICE_PLATFORM and BOUNCE_PAD',
-        'Polish and rebalance of Blocks 2–4',
-        'UI visual design: main menu illustrations, block preview screens, level select screen art',
-        'Cosmetic achievement unlocks: new block models or character skins (e.g. completing a block without dying)',
-    ], 4):
-        add_bullet(doc, f'{i}. {item}')
-
-    add_heading(doc, 'Long-term (Beta and beyond):', 2)
-    for i, item in enumerate([
-        '"One Run" mode (Hardcore Run): fixed lives across all 50 levels, single global timer, separate leaderboard',
-        'Local leaderboard',
+    add_heading(doc, '7. Possible Future Directions (Post-Release)', 1)
+    add_body(doc,
+        'The project is complete and closed out as version 1.0. The ideas below were '
+        'not part of the original scope and are not currently planned, but could form '
+        'a separate future addition:')
+    doc.add_paragraph()
+    for item in [
+        '"One Run" (Hardcore) mode: fixed lives across all 50 levels, single global timer, separate leaderboard',
+        'Local leaderboard / speedrun mode',
+        'Achievements screen with cosmetic unlocks (character skins, extra block models)',
         'Potential porting to other platforms',
-    ], 9):
-        add_bullet(doc, f'{i}. {item}')
+    ]:
+        add_bullet(doc, item)
 
     add_separator(doc)
 
@@ -556,7 +519,7 @@ def build_ja(path):
 
     sub = doc.add_paragraph()
     sub.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    r2 = sub.add_run('プロジェクト概要 · 2026年4月')
+    r2 = sub.add_run('プロジェクト概要 · 2026年7月')
     r2.font.size = Pt(12)
     r2.font.color.rgb = RGBColor(0x88, 0x88, 0x88)
     sub.paragraph_format.space_after = Pt(14)
@@ -568,7 +531,7 @@ def build_ja(path):
         ('タイトル:', 'MindTrapa'),
         ('ジャンル:', '3Dパズルプラットフォーマー'),
         ('プラットフォーム:', 'Windows（デスクトップ）'),
-        ('開発段階:', 'Alpha 0.5.1'),
+        ('開発段階:', '1.0（リリース版）'),
         ('開発者:', 'イワン・ダニシェフスキー（BarriRin）、個人開発'),
         ('インスピレーション:', 'levelDEVIL'),
     ]:
@@ -589,8 +552,10 @@ def build_ja(path):
         ('グラフィック:', 'DxLib 3.24f（DirectX 11ラッパー）'),
         ('レンダリング:', '3Dモデル（.mv1, .x）、スカイボックス、星空生成'),
         ('物理演算:', '自作エンジン：AABB衝突判定、deltaTime物理（60FPS基準）'),
-        ('アニメーション:', 'ステートマシン：待機・走り・ジャンプ・落下'),
-        ('アセット:', 'Quaterniusパック（CC0ライセンス）'),
+        ('アニメーション:', 'ステートマシン：待機・走り・ジャンプ・落下・死亡・勝利'),
+        ('アセット:', 'Quaternius, Kenney, KayKit（すべてCC0）；音楽はSuno AI、効果音はFreesound.org（CC0）'),
+        ('ローカライズ:', 'EN／RU／JA、キリル文字・かな用に専用フォントを使用'),
+        ('セーブ:', 'プロファイル5枠、INI形式：スター・ベストタイム・設定・テーマパック'),
     ]:
         add_status_row(doc, label, val)
 
@@ -634,10 +599,10 @@ def build_ja(path):
             ('TELEPORT', '指定地点に瞬間移動'),
         ]),
         ('物理ゾーン', [
-            ('GRAVITY_ZONE', '重力を変化させるゾーン（低重力・高重力、逆重力は開発予定）'),
-            ('LIGHT_PULSE_ZONE', '暗闇ゾーン（ブロック4）：動くほど画面が暗くなる'),
+            ('GRAVITY_ZONE', '重力を変化させるゾーン：低重力・高重力・逆重力（天井を歩く）'),
+            ('LIGHT_PULSE_ZONE', 'ブロック4の暗闇エリアで周期的に光るゾーン'),
             ('ICE_PLATFORM', '滑りやすい床：慣性あり、ジャンプ不可'),
-            ('BOUNCE_PADE', 'バウンスパッド：氷の上から唯一飛び出せる手段'),
+            ('BOUNCE_PAD', 'バウンスパッド：氷の上から唯一飛び出せる手段'),
         ]),
     ]
 
@@ -677,7 +642,7 @@ def build_ja(path):
         ('ブロック5 — 氷とバウンス（レベル41〜50）',
          '慣性と代替ジャンプ手段',
          '氷床（滑り・ジャンプ不可）、バウンスパッド',
-         'レベル41〜47は完成。レベル48〜50は開発中。'),
+         '完成 ✓'),
     ]
 
     for title_b, theme, mechanics, status in blocks_data:
@@ -693,57 +658,39 @@ def build_ja(path):
 
     add_separator(doc)
 
-    add_heading(doc, '6. 現在の開発状況（2026年4月 — Alpha 0.5.1）', 1)
+    add_heading(doc, '6. 現在の開発状況（2026年7月 — バージョン1.0）', 1)
     add_heading(doc, '実装済み:', 2)
     for item in [
-        '50レベル中47レベル — 設計・承認済み',
+        '50レベル中50レベル — 全て完成、作者本人がプレイ・調整済み',
         '全17メカニクス — 実装・テスト済み',
-        '10種類のブロックに3Dモデルを適用済み',
-        'プレイヤーキャラクターに4種のアニメーション（待機・走り・ジャンプ・落下）',
-        'ブロック・レベル選択メニュー',
-        '死亡カウンターとレベル内タイマー',
-        'セッション内のベストタイム記録',
-        'スカイボックスおよびプロシージャル星空',
-    ]:
-        add_bullet(doc, item)
-
-    add_heading(doc, '開発中:', 2)
-    for item in [
-        'レベル48〜50（ブロック5の最終3レベル）',
-        'レベルクリア画面（タイム・スター評価・ナビゲーション）',
-        'ディスクへの進捗の永続保存',
+        '完全な3Dモデルパイプライン：自作OBJ→Xコンバーター、ブロックごとのテーマ',
+        'プレイヤーキャラクターに完全なアニメーションステートマシン（待機・走り・ジャンプ・落下・死亡・勝利）',
+        '球面スカイボックス（プロシージャルフォールバック付き）、バイオームごとの霧、瞬くスターフィールド',
+        '完全なメニューシステム：ブロック・レベル選択、ライブ反映される設定スライダー、ポーズ',
+        'プロファイルシステム：5枠、スター、ベストタイム、ディスクへの永続保存',
+        '解放可能なテーマパック（スカイボックス＋音楽）、累計スター数で解放',
+        '完全なローカライズ：EN／RU／JA、キリル文字・かな用の専用フォント込み',
+        'ブロックごとのストリーミングBGM＋効果音（ジャンプ・着地・死亡・勝利・バウンス・テレポート）',
+        '独立コードレビュー（3エージェント、36件の指摘）— 全て修正・検証済み',
     ]:
         add_bullet(doc, item)
 
     add_separator(doc)
 
-    add_heading(doc, '7. 開発ロードマップ', 1)
+    add_heading(doc, '7. 今後の可能性（リリース後）', 1)
+    add_body(doc,
+        '本プロジェクトはバージョン1.0として完成・クローズしています。以下は当初のスコープには'
+        '含まれておらず、現時点で計画もされていませんが、将来的な追加コンテンツとして'
+        '考えられるアイデアです：')
+    doc.add_paragraph()
 
-    add_heading(doc, '短期（Alpha 1.0まで）:', 2)
-    for i, item in enumerate([
-        'レベル48・49・50の設計と実装（設計 → テスト → 改善のサイクル）',
-        'レベルクリア画面：タイム表示・1〜3スター評価・メニュー／リスタート／次レベルボタン',
-        '進捗の永続保存：レベルごとのベストタイムとスター数をディスクに保存',
-    ], 1):
-        add_bullet(doc, f'{i}. {item}')
-
-    add_heading(doc, '中期:', 2)
-    for i, item in enumerate([
-        '音楽・効果音：ブロックごとのBGM、ジャンプ・死亡・クリア音、スター数に応じた楽曲解放',
-        'ICE_PLATFORMとBOUNCE_PADの3Dモデル制作',
-        'ブロック2〜4のレベル調整とブラッシュアップ',
-        'UIビジュアルデザイン：メインメニューのイラスト、ブロックプレビュー画面、レベル選択画面のアートワーク',
-        '実績による外見解放：条件達成（例：死なずにブロッククリア）で新3Dモデルやキャラクタースキンを解放',
-    ], 4):
-        add_bullet(doc, f'{i}. {item}')
-
-    add_heading(doc, '長期（Beta以降）:', 2)
-    for i, item in enumerate([
+    for item in [
         '「ワンラン」モード（Hardcore Run）：全50レベルで残機制・単一グローバルタイマー・専用ランキング',
-        'ローカルランキング',
+        'ローカルランキング／スピードランモード',
+        '実績画面と外見解放（キャラクタースキン、追加3Dモデル）',
         '他プラットフォームへの移植検討',
-    ], 9):
-        add_bullet(doc, f'{i}. {item}')
+    ]:
+        add_bullet(doc, item)
 
     add_separator(doc)
 

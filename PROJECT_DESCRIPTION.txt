@@ -3,8 +3,8 @@ MindTrapa - Project Description
 
 Project: 3D Puzzle Platformer Game
 Author: Ivan Danisheuski
-Version: Alpha 0.4
-Status: In Active Development (60% complete)
+Version: 1.0 (Release)
+Status: Complete — all 50 levels finished
 
 
 CONCEPT
@@ -14,42 +14,46 @@ challenges players with creative mechanics and unexpected twists. The core
 idea is to create levels that look simple but require careful observation
 and timing to complete.
 
-The game combines classic platforming with "trolling" elements - fake platforms
-that look solid but aren't, harmless spikes that look deadly, invisible walls,
-and gravity manipulation zones.
+The game combines classic platforming with mechanics that subvert trust -
+fake platforms that look solid but aren't, harmless spikes that look deadly,
+invisible walls, and gravity manipulation zones.
 
 
 CURRENT STATE
 -------------
-- 30 out of 50 planned levels completed
-- 14 unique game mechanics implemented
-- 3 thematic blocks finished:
-  * Block 1 (Levels 1-10): Basics - movement, teleports, buttons
-  * Block 2 (Levels 11-20): Timing - retractable spikes, crumbling platforms
-  * Block 3 (Levels 21-30): Gravity - gravity zones, pendulum blades
+- 50 out of 50 levels complete
+- 17 unique game mechanics implemented
+- 5 thematic blocks, all finished:
+  * Block 1 (Levels 1-10): Basics - platforms, spikes, teleports, buttons
+  * Block 2 (Levels 11-20): Timing & Precision - retractable spikes, crumbling platforms
+  * Block 3 (Levels 21-30): Gravity & Blades - gravity zones (incl. reverse), pendulum blades
+  * Block 4 (Levels 31-40): Darkness - vision that fades the more you move
+  * Block 5 (Levels 41-50): Ice & Bounce - inertia-based ice platforms, bounce pads
 
-- Full menu system with level selection
-- Debug mode for testing (F3)
-- Level timer system
+- Full menu system: level selection, settings with live-applied sliders, pause
+- 5-slot profile system: stars, best times, persistent save to disk
+- Unlockable cosmetic theme packs (skybox + music), unlocked by star count
+- Full 3D model pipeline (custom OBJ->X converter) with per-block theming
+- Player character with a full animation state machine
+- Streamed background music per block + SFX (jump, land, death, win, bounce, teleport)
+- Full localization: English, Russian, Japanese
+- Debug mode for testing (F3), level timer, star rating system
 
 
 TECHNOLOGY
 ----------
 - Language: C++
-- Graphics: DxLib (DirectX wrapper library)
+- Graphics: DxLib 3.24f (DirectX wrapper library, no commercial engine)
 - Platform: Windows
 - IDE: Visual Studio 2022
 
 
-WHAT'S NEXT
+DEVELOPMENT
 -----------
-Currently working on:
-- 3D models to replace placeholder cubes
-- Remaining 20 levels (Blocks 4-5)
-- Visual polish and sound effects
-
-The game design for all 50 levels is complete. Implementation of the
-remaining content is in progress.
+Solo project, developed part-time over ~13 months (June 2025 - July 2026)
+in five active work periods separated by breaks. See DEVELOPMENT_HISTORY.md
+for the full breakdown, and ARCHITECTURE.md / MECHANICS.md for technical
+detail on how the game is built.
 
 
 CONTROLS
@@ -59,13 +63,14 @@ CONTROLS
 - Space: Jump
 - E: Activate buttons
 - R: Restart level
-- ESC: Menu
+- ESC: Pause / menu
+- F3: Debug overlay
 
 
 REPOSITORY
 ----------
-Full source code available at: [GitHub link]
+https://github.com/BarriRin/MindTrapa
 
 
 ================================
-Alpha 0.4 | January 2026
+Version 1.0 | July 2026
