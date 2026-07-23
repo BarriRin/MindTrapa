@@ -44,8 +44,8 @@ void AudioManager::LoadBgm(const std::wstring& packFolder) {
     }
 
     SetCreateSoundDataType(DX_SOUNDDATATYPE_MEMNOPRESS);
-    // currentBgmIdx уже сброшен в -1 через StopBgm() — вызывающая сторона
-    // сама решает, нужно ли тут же перезапустить PlayBgm(blockIdx, ...)
+    // currentBgmIdx has already been reset to -1 by StopBgm() — it's up to the
+    // caller to decide whether to immediately restart PlayBgm(blockIdx, ...)
 }
 
 void AudioManager::LoadSfx() {

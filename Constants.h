@@ -1,7 +1,7 @@
 #pragma once
 
-// Разрешение экрана — единственное место для правки при смене резолюции
-// (раньше 1920/1080 было захардкожено отдельно в main.cpp, Camera.h и ~38 местах Menu.cpp)
+// Screen resolution — the single place to edit when changing resolution
+// (used to be hardcoded separately in main.cpp, Camera.h, and ~38 spots in Menu.cpp)
 static constexpr int SCREEN_W = 1920;
 static constexpr int SCREEN_H = 1080;
 

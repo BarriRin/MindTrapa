@@ -3,7 +3,7 @@
 #include <locale>
 #include <codecvt>
 
-// Вспомогательная функция для конвертации std::string в std::wstring
+// Helper to convert std::string to std::wstring
 static std::wstring StringToWString(const std::string& str) {
     if (str.empty()) return std::wstring();
     int size_needed = MultiByteToWideChar(CP_UTF8, 0, &str[0], (int)str.size(), NULL, 0);

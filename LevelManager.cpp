@@ -21,7 +21,7 @@ void LevelManager::LoadLevel(int levelId) {
 
     currentLevelId = levelId;
     currentLevel = std::make_unique<Level>(levelId);
-    currentLevelTime = 0.0f; // Сброс таймера при загрузке уровня
+    currentLevelTime = 0.0f; // Reset the timer on level load
 }
 
 void LevelManager::NextLevel() {
@@ -53,16 +53,16 @@ void LevelManager::DrawLevelInfo(bool debugMode) const {
     Localization& loc = Localization::GetInstance();
     int fontNormal = loc.GetFont(FontSize::Normal);
 
-    // Всегда показываем базовую информацию
+    // Always show the basic info
     DrawFormatStringToHandle(10, 10, GetColor(255, 255, 255), fontNormal, loc.Tr(StrId::HUD_LEVEL), currentLevelId, totalLevels);
     DrawFormatStringToHandle(10, 30, GetColor(255, 255, 255), fontNormal, loc.Tr(StrId::HUD_DEATHS), deathCount);
 
-    // Таймер (всегда показываем)
+    // Timer (always shown)
     int minutes = (int)(currentLevelTime / 60.0f);
     float seconds = currentLevelTime - (minutes * 60.0f);
     DrawFormatStringToHandle(10, 50, GetColor(255, 255, 255), fontNormal, loc.Tr(StrId::TIME_LABEL), minutes, seconds);
 
-    // Лучшее время (если есть)
+    // Best time (if any)
     if (HasBestTime(currentLevelId)) {
         float bestTime = GetBestTime(currentLevelId);
         int bestMinutes = (int)(bestTime / 60.0f);
@@ -70,17 +70,17 @@ void LevelManager::DrawLevelInfo(bool debugMode) const {
 
         unsigned int bestColor = GetColor(100, 255, 100);
         if (currentLevelTime < bestTime) {
-            bestColor = GetColor(255, 215, 0); // Золотой - бьём рекорд!
+            bestColor = GetColor(255, 215, 0); // Gold - beating the record!
         }
         DrawFormatStringToHandle(10, 70, bestColor, fontNormal, loc.Tr(StrId::HUD_BEST), bestMinutes, bestSeconds);
     }
 
-    // Tutorial подсказки (всегда показываем)
+    // Tutorial hints (always shown)
     if (currentLevelId == 6) {
         DrawStringToHandle(10, 110, loc.Tr(StrId::HUD_HINT_BUTTON), GetColor(255, 255, 0), fontNormal);
     }
 
-    // Debug информация (только если F3 нажат)
+    // Debug info (only when F3 is pressed)
     if (debugMode) {
         DrawStringToHandle(10, 130, loc.Tr(StrId::HUD_CONTROLS), GetColor(200, 200, 200), fontNormal);
         DrawStringToHandle(10, 150, loc.Tr(StrId::HUD_BUTTON_HINT), GetColor(200, 200, 200), fontNormal);
@@ -96,7 +96,7 @@ void LevelManager::UpdateTimer(float deltaTime) {
 }
 
 void LevelManager::OnLevelComplete() {
-    // Проверяем, побили ли мы рекорд
+    // Check whether we beat the record
     if (!HasBestTime(currentLevelId) || currentLevelTime < bestTimes[currentLevelId]) {
         bestTimes[currentLevelId] = currentLevelTime;
     }

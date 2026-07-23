@@ -11,7 +11,7 @@ struct FontFiles {
     const wchar_t* family;
 };
 
-// Индекс совпадает с Language enum (EN, RU, JA)
+// Index matches the Language enum (EN, RU, JA)
 const FontFiles LANG_FONTS[3] = {
     { L"fonts/Orbitron/static/Orbitron-Regular.ttf",   L"fonts/Orbitron/static/Orbitron-Bold.ttf",   L"Orbitron" },
     { L"fonts/Exo2/Exo2-Regular.ttf",                  L"fonts/Exo2/Exo2-Bold.ttf",                  L"Exo 2" },
@@ -20,7 +20,7 @@ const FontFiles LANG_FONTS[3] = {
 
 const wchar_t* LANG_NAMES[3] = { L"English", L"Русский", L"日本語" };
 
-// STRINGS[язык][StrId] — таблица переводов
+// STRINGS[language][StrId] — translation table
 const wchar_t* const STRINGS[3][(int)StrId::COUNT] = {
     // ── EN ──────────────────────────────────────────────────────────────
     {

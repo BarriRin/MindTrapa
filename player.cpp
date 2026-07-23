@@ -43,9 +43,9 @@ bool Player::LoadModel(const wchar_t* path) {
     animYes   = FindAnim(L"Yes");
 
 #ifdef _DEBUG
-    // Debug: список анимаций + какие индексы реально резолвятся и с каким total time
-    // (диагностика "модель подвисает в воздухе" — total<=0 у animJump/animFall
-    // означает, что ApplyAnimation молча не обновляет позу все время в воздухе)
+    // Debug: dump the animation list plus which indices actually resolved and their
+    // total time (diagnoses the "model freezes mid-air" case — total<=0 on animJump/
+    // animFall means ApplyAnimation silently stops updating the pose the whole time airborne)
     int animCount = MV1GetAnimNum(modelHandle);
     FILE* f = nullptr;
     fopen_s(&f, "AnimList.txt", "w");
@@ -84,7 +84,7 @@ bool Player::Update(float dt, const Camera& camera, Level* level, AudioManager& 
     dead = false;
     wasOnGround = onGround;
 
-    // === ВВОД ===
+    // === INPUT ===
     float moveSpeed = SPEED * (dt * 60.0f);
     float ay = camera.GetAngleY();
     VECTOR forward = VGet( sinf(ay), 0,  cosf(ay));
@@ -96,7 +96,7 @@ bool Player::Update(float dt, const Camera& camera, Level* level, AudioManager& 
     if (CheckHitKey(KEY_INPUT_A)) move = VAdd(move, VScale(right,    moveSpeed));
     if (CheckHitKey(KEY_INPUT_D)) move = VAdd(move, VScale(right,   -moveSpeed));
 
-    // Кнопка активации E (единичный импульс)
+    // Activation key E (single-shot pulse)
     bool activateKeyPressed = false;
     if (CheckHitKey(KEY_INPUT_E)) {
         if (!activatePressed) activateKeyPressed = true;
@@ -105,10 +105,10 @@ bool Player::Update(float dt, const Camera& camera, Level* level, AudioManager& 
         activatePressed = false;
     }
 
-    // === ЗОНА ЛЬДА (Block 5) ===
+    // === ICE ZONE (Block 5) ===
     iceFriction = level ? level->CheckIcePlatform(pos, size) : 1.0f;
 
-    // === ПРЫЖОК ===
+    // === JUMP ===
     if (CheckHitKey(KEY_INPUT_SPACE)) {
         if (!jumpPressed && onGround && iceFriction >= 1.0f) {
             vel.y    = JUMP_POWER;
@@ -120,14 +120,14 @@ bool Player::Update(float dt, const Camera& camera, Level* level, AudioManager& 
         jumpPressed = false;
     }
 
-    // === ГРАВИТАЦИЯ И ЗОНЫ ===
+    // === GRAVITY AND ZONES ===
     float gravMult = level ? level->CheckGravityZone(pos, size) : 1.0f;
     vel.y += GRAVITY * gravMult * (dt * 60.0f);
-    // Симметрично: gravityMultiplier бывает отрицательным (reverse-зоны), там разгон идёт вверх
+    // Symmetric clamp: gravityMultiplier can be negative (reverse-gravity zones), where acceleration points upward
     if (vel.y < MAX_FALL_SPEED)  vel.y = MAX_FALL_SPEED;
     if (vel.y > -MAX_FALL_SPEED) vel.y = -MAX_FALL_SPEED;
 
-    // === ИНЕРЦИЯ ЛЬДА ===
+    // === ICE INERTIA ===
     if (iceFriction < 1.0f) {
         bool hasInput = (move.x != 0.0f || move.z != 0.0f);
         if (hasInput) {
@@ -143,10 +143,10 @@ bool Player::Update(float dt, const Camera& camera, Level* level, AudioManager& 
         horizVel = move;
     }
 
-    // === КОЛЛИЗИЯ ===
+    // === COLLISION ===
     VECTOR newPos = VAdd(pos, VAdd(horizVel, VGet(0, vel.y * (dt * 60.0f), 0)));
 
-    // Тянем игрока вниз за опускающейся платформой (иначе AABB не засечёт перекрытие)
+    // Pull the player down along with a descending platform (otherwise the AABB never catches the overlap)
     if (savedPlatVel.y < 0.0f)
         newPos.y += savedPlatVel.y;
 
@@ -157,21 +157,21 @@ bool Player::Update(float dt, const Camera& camera, Level* level, AudioManager& 
         if (justBounced) audio.PlayBounce(soundVol);
         newPos.x += platVel.x;
         newPos.z += platVel.z;
-        // platVel.y пропускаем — CheckCollision уже снэпнул игрока на верх платформы
+        // platVel.y is skipped — CheckCollision already snapped the player onto the platform's top
         savedPlatVel = onGround ? platVel : VGet(0, 0, 0);
 
-        // Телепорт — обрабатывается снаружи (cooldown)
-        // Кнопка — здесь вызываем, по уже обновлённой позиции (согласовано с
-        // CheckTeleportTrigger в main.cpp, который тоже использует позицию после коллизии)
+        // Teleport is handled outside (cooldown)
+        // Button is called here, against the already-updated position (this matches
+        // CheckTeleportTrigger in main.cpp, which also uses the post-collision position)
         level->ActivateButton(newPos, size, activateKeyPressed);
     }
 
     pos = newPos;
 
-    // Приземление
+    // Landing
     if (!wasOnGround && onGround) audio.PlayLand(soundVol);
 
-    // Упал за пределы / смерть от шипов
+    // Fell out of bounds / died to spikes
     if (level && level->CheckDeadlyTrigger(pos, size)) {
         dead = true;
     }
@@ -184,16 +184,17 @@ bool Player::Update(float dt, const Camera& camera, Level* level, AudioManager& 
         horizVel = VGet(0, 0, 0);
         audio.PlayDeath(soundVol);
         SwitchAnim(animDeath);
-        return true; // умер
+        return true; // died
     }
 
-    // === АНИМАЦИЯ ===
+    // === ANIMATION ===
     bool isMovingH = (fabsf(move.x) > 0.001f || fabsf(move.z) > 0.001f);
     if (isMovingH) facingAngle = atan2f(move.x, move.z);
 
-    // onGround у краёв платформ может мигать true/false покадрово (AABB-контакт на грани) —
-    // не даём одиночному "заземлению" сразу переключать на Idle/Run, иначе SwitchAnim()
-    // сбрасывает animTime каждый такой кадр и поза Jump/Fall визуально подвисает
+    // onGround can flicker true/false frame to frame at platform edges (AABB contact
+    // right on the boundary) — don't let a single "grounded" frame immediately switch
+    // to Idle/Run, or SwitchAnim() resets animTime every such frame and the Jump/Fall
+    // pose visibly freezes
     groundedStreak = onGround ? groundedStreak + 1 : 0;
     bool animGrounded = groundedStreak >= 2;
 
@@ -205,7 +206,7 @@ bool Player::Update(float dt, const Camera& camera, Level* level, AudioManager& 
     if (targetAnim != currentAnim) SwitchAnim(targetAnim);
     ApplyAnimation(dt, true);
 
-    // Поворот лицом к направлению движения
+    // Turn to face the movement direction
     if (modelHandle != -1) {
         VECTOR modelPos = VGet(pos.x + size.x * 0.5f, pos.y, pos.z + size.z * 0.5f);
         MV1SetPosition(modelHandle, modelPos);
@@ -213,7 +214,7 @@ bool Player::Update(float dt, const Camera& camera, Level* level, AudioManager& 
         MV1SetRotationXYZ(modelHandle, VGet(0.0f, facingAngle + DX_PI_F, 0.0f));
     }
 
-    return false; // жив
+    return false; // alive
 }
 
 void Player::Draw() const {

@@ -127,7 +127,7 @@ void ProfileManager::SetLevelResult(int levelId, int newStars, float time) {
     SaveCurrentProfile();
 }
 
-// ── Паки оформления ───────────────────────────────────────────────────────────
+// ── Theme packs ───────────────────────────────────────────────────────────────
 
 int ProfileManager::GetThemePack() const {
     const Profile* p = GetCurrentProfile();

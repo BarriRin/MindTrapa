@@ -41,7 +41,7 @@ void Menu::SetState(GameState state) {
         ApplyFontToButtons(loc.GetFont(FontSize::Button));
         break;
     case GameState::LEVEL_SELECT_BLOCKS:
-        // НЕ обнуляем selectedBlock - он уже установлен если пришли из выбора блока
+        // Do NOT reset selectedBlock - it's already set if we came from block selection
         CreateBlockSelectButtons();
         ApplyFontToButtons(loc.GetFont(FontSize::Button));
         break;
@@ -95,23 +95,23 @@ void Menu::ShowResultScreen(bool completed, int stars, float time, bool isLastLe
 }
 
 void Menu::PushState(GameState newState) {
-    // Сохраняем текущее состояние в стек
+    // Save the current state onto the stack
     stateHistory.push_back(currentState);
-    // Переходим в новое
+    // Transition to the new one
     SetState(newState);
 }
 
 void Menu::PopState() {
-    // Если стек пуст, ничего не делаем
+    // Nothing to do if the stack is empty
     if (stateHistory.empty()) {
         return;
     }
 
-    // Достаём предыдущее состояние
+    // Pop the previous state
     GameState previousState = stateHistory.back();
     stateHistory.pop_back();
 
-    // Переходим в него
+    // Transition to it
     SetState(previousState);
 }
 
@@ -120,7 +120,7 @@ void Menu::ClearHistory() {
 }
 
 void Menu::ResetInputFlags() {
-    mousePressed = true;   // Устанавливаем в true чтобы не обработать текущее нажатие
+    mousePressed = true;   // Set to true so the current click isn't reprocessed
     upPressed = true;
     downPressed = true;
     enterPressed = true;
@@ -152,7 +152,7 @@ void Menu::CreateBlockSelectButtons() {
     int spacingY = 150;
     int buttonsPerRow = 3;
 
-    // Создаём 5 кнопок блоков (блоки 6-10 удалены, игра 50 уровней)
+    // Create the 5 block buttons (blocks 6-10 were removed, the game has 50 levels)
     for (int i = 0; i < 5; i++) {
         int row = i / buttonsPerRow;
         int col = i % buttonsPerRow;
@@ -170,7 +170,7 @@ void Menu::CreateBlockSelectButtons() {
         buttons.push_back(Button(blockText, x, y, buttonWidth, buttonHeight, action));
     }
 
-    // Кнопка назад
+    // Back button
     buttons.push_back(Button(loc.Tr(StrId::BACK), 100, 950, 200, 60, ButtonAction::BACK_TO_MENU));
 }
 
@@ -267,7 +267,7 @@ void Menu::CreatePauseMenuButtons() {
     int buttonHeight = 60;
     int spacing = 80;
 
-    // 4 кнопки: Continue, Restart, Settings, Main Menu
+    // 4 buttons: Continue, Restart, Settings, Main Menu
     buttons.push_back(Button(loc.Tr(StrId::CONTINUE),      centerX - buttonWidth / 2, startY,             buttonWidth, buttonHeight, ButtonAction::CONTINUE));
     buttons.push_back(Button(loc.Tr(StrId::RESTART_LEVEL),  centerX - buttonWidth / 2, startY + spacing,   buttonWidth, buttonHeight, ButtonAction::RESTART));
     buttons.push_back(Button(loc.Tr(StrId::SETTINGS_BTN),   centerX - buttonWidth / 2, startY + spacing*2, buttonWidth, buttonHeight, ButtonAction::OPEN_SETTINGS));
@@ -324,15 +324,15 @@ void Menu::UpdateUnlockState() {
         unlockedBlocks = 1;
         return;
     }
-    // Уровень N открыт, если N-1 пройден (stars > 0); уровень 1 всегда открыт
+    // Level N is unlocked once N-1 is completed (stars > 0); level 1 is always unlocked
     unlockedLevels = 1;
     for (int i = 0; i < PROFILE_LEVEL_COUNT - 1; i++) {
         if (p->stars[i] > 0)
-            unlockedLevels = i + 2; // следующий за пройденным
+            unlockedLevels = i + 2; // one past the completed level
         else
-            break; // цепочка прерывается
+            break; // chain breaks here
     }
-    // Блок N открыт если в нём есть хотя бы один доступный уровень
+    // Block N is unlocked if it contains at least one reachable level
     unlockedBlocks = (unlockedLevels - 1) / 10 + 1;
     if (unlockedBlocks > 5) unlockedBlocks = 5;
 }
@@ -388,7 +388,7 @@ void Menu::UpdateHover(int mouseX, int mouseY) {
     for (size_t i = 0; i < buttons.size(); i++) {
         buttons[i].isHovered = buttons[i].Contains(mouseX, mouseY);
         if (buttons[i].isHovered) {
-            selectedButtonIndex = i; // Синхронизация с клавиатурной навигацией
+            selectedButtonIndex = i; // Stay in sync with keyboard navigation
         }
     }
 }
@@ -396,7 +396,7 @@ void Menu::UpdateHover(int mouseX, int mouseY) {
 void Menu::Draw() const {
     Localization& loc = Localization::GetInstance();
 
-    // Затемнённый фон
+    // Dimmed background
     if (currentState == GameState::PAUSED || currentState == GameState::LEVEL_RESULT) {
         int alpha = (currentState == GameState::LEVEL_RESULT) ? 180 : 128;
         SetDrawBlendMode(DX_BLENDMODE_ALPHA, alpha);
@@ -404,7 +404,7 @@ void Menu::Draw() const {
         SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
     }
 
-    // Заголовок
+    // Title
     unsigned int titleColor = GetColor(255, 255, 255);
     int titleSize = 48;
 
@@ -506,7 +506,7 @@ void Menu::Draw() const {
             int hw = GetDrawStringWidthToHandle(blockHeader, (int)wcslen(blockHeader), loc.GetFont(FontSize::Heading));
             DrawStringToHandle(SCREEN_W/2 - hw/2, 150, blockHeader, titleColor, loc.GetFont(FontSize::Heading));
 
-            // Звёзды под кнопками уровней
+            // Stars under the level buttons
             const Profile* p = ProfileManager::GetInstance().GetCurrentProfile();
             const float PI = 3.14159265f;
             auto drawSmallStar = [&](int cx, int cy, int earned) {
@@ -567,7 +567,7 @@ void Menu::Draw() const {
         break;
     case GameState::LEVEL_RESULT:
         {
-            // Лямбда для рисования 5-конечной звезды через треугольники
+            // Lambda that draws a 5-pointed star out of triangles
             auto drawStar = [](int cx, int cy, int outerR, int innerR, unsigned int color) {
                 const float PI        = 3.14159265f;
                 const float step      = 2.0f * PI / 5.0f;
@@ -588,13 +588,13 @@ void Menu::Draw() const {
                 }
             };
 
-            // Заголовок
+            // Headline
             const wchar_t* headline = resultCompleted ? loc.Tr(StrId::LEVEL_COMPLETE) : loc.Tr(StrId::YOU_DIED);
             unsigned int headlineColor = resultCompleted ? GetColor(100, 255, 150) : GetColor(255, 80, 80);
             int headlineW = GetDrawStringWidthToHandle(headline, (int)wcslen(headline), loc.GetFont(FontSize::Heading));
             DrawStringToHandle(SCREEN_W / 2 - headlineW / 2, 230, headline, headlineColor, loc.GetFont(FontSize::Heading));
 
-            // Время
+            // Time
             int minutes = (int)(resultTime / 60.0f);
             float secs  = resultTime - minutes * 60.0f;
             wchar_t timeBuf[64];
@@ -602,7 +602,7 @@ void Menu::Draw() const {
             int timeW = GetDrawStringWidthToHandle(timeBuf, (int)wcslen(timeBuf), loc.GetFont(FontSize::Normal));
             DrawStringToHandle(SCREEN_W / 2 - timeW / 2, 320, timeBuf, GetColor(220, 220, 220), loc.GetFont(FontSize::Normal));
 
-            // Звёзды — 3 геометрические пятиконечные звезды
+            // Stars — 3 geometric five-pointed stars
             {
                 unsigned int goldColor = GetColor(255, 210, 0);
                 unsigned int goldBorder = GetColor(200, 160, 0);
@@ -616,13 +616,13 @@ void Menu::Draw() const {
                 for (int i = 0; i < 3; i++) {
                     int cx = starStartX + i * spacing;
                     bool earned = (i < resultStars);
-                    // Обводка рисуется первой (больше), заливка поверх
+                    // Outline is drawn first (larger), fill goes on top
                     drawStar(cx, starY, outerR + 4, innerR + 4, earned ? goldBorder : grayBorder);
                     drawStar(cx, starY, outerR, innerR, earned ? goldColor : grayColor);
                 }
             }
 
-            // Подсказки клавиш
+            // Key hints
             {
                 const wchar_t* hint = (resultCompleted && !resultIsLastLevel)
                     ? loc.Tr(StrId::HINT_RESULT_NEXT)
@@ -634,11 +634,11 @@ void Menu::Draw() const {
         break;
     }
 
-    // Отрисовка кнопок
+    // Draw the buttons
     for (size_t i = 0; i < buttons.size(); i++) {
-        // Подсветка выбранной кнопки (клавиатурная навигация)
+        // Highlight the selected button (keyboard navigation)
         if (i == selectedButtonIndex && !buttons[i].isHovered) {
-            // Рамка вокруг выбранной кнопки
+            // Border around the selected button
             DrawBox(buttons[i].x - 5, buttons[i].y - 5,
                 buttons[i].x + buttons[i].width + 5,
                 buttons[i].y + buttons[i].height + 5,
@@ -647,7 +647,7 @@ void Menu::Draw() const {
         buttons[i].Draw();
     }
 
-    // Подсказки управления
+    // Control hints
     if (currentState != GameState::PLAYING) {
         const wchar_t* hint = loc.Tr(StrId::NAV_HINT);
         DrawStringToHandle(10, 1040, hint, GetColor(150, 150, 150), loc.GetFont(FontSize::Small));
@@ -694,18 +694,18 @@ ButtonAction Menu::HandleInput(int& blockToLoad, int& levelToLoad) {
 
     if (buttons.empty()) return ButtonAction::NONE;
 
-    // Обновляем наведение мыши
+    // Update mouse hover state
     int mouseX, mouseY;
     GetMousePoint(&mouseX, &mouseY);
     UpdateHover(mouseX, mouseY);
 
-    // Обновление слайдеров (с защитой от сквозных кликов)
+    // Update sliders (guarded against click-through)
     if (currentState == GameState::SETTINGS) {
         bool mouseDown = (GetMouseInput() & MOUSE_INPUT_LEFT) != 0;
         if (mouseDown) {
             bool shouldUpdate = false;
             if (!mousePressed) {
-                // Свежий клик — захватываем слайдер только если попали в него
+                // Fresh click — only grab a slider if we actually clicked on it
                 sliderGrabbed = false;
                 int v;
                 v = HandleSliderClick(SLIDER_X, SLIDER_Y_MUSIC, SLIDER_WIDTH, mouseX, mouseY);
@@ -716,7 +716,7 @@ ButtonAction Menu::HandleInput(int& blockToLoad, int& levelToLoad) {
                 if (v >= 0) { settings.mouseSensitivity = v; sliderGrabbed = true; }
                 shouldUpdate = sliderGrabbed;
             } else if (sliderGrabbed) {
-                // Продолжаем drag уже захваченного слайдера
+                // Continue dragging the already-grabbed slider
                 int v;
                 v = HandleSliderClick(SLIDER_X, SLIDER_Y_MUSIC, SLIDER_WIDTH, mouseX, mouseY);
                 if (v >= 0) settings.musicVolume = v;
@@ -739,9 +739,9 @@ ButtonAction Menu::HandleInput(int& blockToLoad, int& levelToLoad) {
         }
     }
 
-    // Ввод никнейма обрабатывается автоматически через ProcessMessage()
+    // Nickname input is handled automatically via ProcessMessage()
 
-    // Клик мыши
+    // Mouse click
     if ((GetMouseInput() & MOUSE_INPUT_LEFT) != 0) {
         if (!mousePressed) {
             for (const auto& button : buttons) {
@@ -757,7 +757,7 @@ ButtonAction Menu::HandleInput(int& blockToLoad, int& levelToLoad) {
         mousePressed = false;
     }
 
-    // Клавиатурная навигация
+    // Keyboard navigation
     if (CheckHitKey(KEY_INPUT_UP) || CheckHitKey(KEY_INPUT_W)) {
         if (!upPressed) {
             SelectPrevButton();
@@ -788,26 +788,26 @@ ButtonAction Menu::HandleInput(int& blockToLoad, int& levelToLoad) {
         enterPressed = false;
     }
 
-    // ESC - универсальный возврат назад
+    // ESC - universal "go back"
     if (CheckHitKey(KEY_INPUT_ESCAPE)) {
         if (!escPressed) {
             escPressed = true;
 
-            // Специальный случай: пауза возвращает в игру
+            // Special case: pause returns to gameplay
             if (currentState == GameState::PAUSED) {
                 return ButtonAction::CONTINUE;
             }
 
-            // Экран результата: ESC → главное меню
+            // Result screen: ESC -> main menu
             if (currentState == GameState::LEVEL_RESULT) {
                 return ButtonAction::BACK_TO_MENU;
             }
 
-            // Profile select/create: общая логика (см. HandleBackNavigation)
+            // Profile select/create: shared logic (see HandleBackNavigation)
             ButtonAction navAction;
             if (HandleBackNavigation(navAction)) return navAction;
 
-            // Все остальные состояния: возврат по стеку
+            // Every other state: go back via the stack
             PopState();
         }
     }
@@ -859,18 +859,18 @@ ButtonAction Menu::ActivateSelectedButton(int& blockToLoad, int& levelToLoad) {
 
     ButtonAction action = buttons[selectedButtonIndex].action;
 
-    // Block selection - переход к выбору уровней
+    // Block selection - move to level selection
     if (action >= ButtonAction::SELECT_BLOCK_1 && action <= ButtonAction::SELECT_BLOCK_5) {
         int blockIndex = static_cast<int>(action) - static_cast<int>(ButtonAction::SELECT_BLOCK_1);
         if (blockIndex < unlockedBlocks) {
             selectedBlock = blockIndex + 1;
             blockToLoad = selectedBlock;
-            PushState(GameState::LEVEL_SELECT_LEVELS);  // Переход с сохранением в стек
+            PushState(GameState::LEVEL_SELECT_LEVELS);  // Transition and push onto the stack
         }
         return ButtonAction::NONE;
     }
 
-    // Level selection - загружаем уровень
+    // Level selection - load the level
     if (action == ButtonAction::LOAD_LEVEL) {
         if (selectedBlock <= unlockedBlocks) {
             int calculatedLevel = (selectedBlock - 1) * 10 + selectedButtonIndex + 1;
@@ -881,8 +881,8 @@ ButtonAction Menu::ActivateSelectedButton(int& blockToLoad, int& levelToLoad) {
         return action;
     }
 
-    // Back button = PopState (как ESC)
-    // НО: BACK_TO_MENU из паузы означает "вернуться в главное меню" (не PopState)
+    // Back button = PopState (same as ESC)
+    // EXCEPT: BACK_TO_MENU from pause means "return to the main menu" (not PopState)
     if (action == ButtonAction::BACK_TO_MENU) {
         if (currentState == GameState::PAUSED || currentState == GameState::LEVEL_RESULT) {
             return action;
@@ -900,7 +900,7 @@ ButtonAction Menu::ActivateSelectedButton(int& blockToLoad, int& levelToLoad) {
 
     // ── Profile actions ───────────────────────────────────────────────────────
 
-    // SELECT_PROFILE_0..4: выбрать или создать
+    // SELECT_PROFILE_0..4: select or create
     if (action >= ButtonAction::SELECT_PROFILE_0 && action <= ButtonAction::SELECT_PROFILE_4) {
         int slot = (int)action - (int)ButtonAction::SELECT_PROFILE_0;
         if (ProfileManager::GetInstance().IsSlotEmpty(slot)) {
@@ -913,10 +913,10 @@ ButtonAction Menu::ActivateSelectedButton(int& blockToLoad, int& levelToLoad) {
         return ButtonAction::NONE;
     }
 
-    // DELETE_PROFILE_0..4: запрос подтверждения
+    // DELETE_PROFILE_0..4: ask for confirmation
     if (action >= ButtonAction::DELETE_PROFILE_0 && action <= ButtonAction::DELETE_PROFILE_4) {
         pendingDeleteSlot = (int)action - (int)ButtonAction::DELETE_PROFILE_0;
-        SetState(GameState::PROFILE_SELECT); // перестраивает кнопки (overlay mode)
+        SetState(GameState::PROFILE_SELECT); // rebuilds the buttons (overlay mode)
         return ButtonAction::NONE;
     }
 
@@ -925,7 +925,7 @@ ButtonAction Menu::ActivateSelectedButton(int& blockToLoad, int& levelToLoad) {
             ProfileManager::GetInstance().DeleteProfile(pendingDeleteSlot);
             pendingDeleteSlot = -1;
         }
-        // Если удалили активный профиль — нужно выбрать новый
+        // If we deleted the active profile, a new one needs to be selected
         if (!ProfileManager::GetInstance().HasActiveProfile()) {
             profileSelectCanGoBack = false;
             SetState(GameState::PROFILE_SELECT);
@@ -943,7 +943,7 @@ ButtonAction Menu::ActivateSelectedButton(int& blockToLoad, int& levelToLoad) {
 
     if (action == ButtonAction::CREATE_PROFILE_CONFIRM) {
         if (keyInputHandle == -1) {
-            // Что-то пошло не так — возвращаемся к выбору профиля
+            // Something went wrong — fall back to profile selection
             SetState(GameState::PROFILE_SELECT);
             return ButtonAction::NONE;
         }
@@ -959,13 +959,13 @@ ButtonAction Menu::ActivateSelectedButton(int& blockToLoad, int& levelToLoad) {
         return ButtonAction::NONE;
     }
 
-    // CHANGE_PROFILE: открыть выбор из главного меню
+    // CHANGE_PROFILE: open the picker from the main menu
     if (action == ButtonAction::CHANGE_PROFILE) {
         OpenProfileSelect(true);
         return ButtonAction::NONE;
     }
 
-    // CYCLE_LANGUAGE: EN -> RU -> JA -> EN, перестраивает экран настроек с новым языком/шрифтом
+    // CYCLE_LANGUAGE: EN -> RU -> JA -> EN, rebuilds the settings screen with the new language/font
     if (action == ButtonAction::CYCLE_LANGUAGE) {
         Localization& loc = Localization::GetInstance();
         int next = ((int)loc.GetLanguage() + 1) % (int)Language::COUNT;
@@ -974,6 +974,6 @@ ButtonAction Menu::ActivateSelectedButton(int& blockToLoad, int& levelToLoad) {
         return ButtonAction::NONE;
     }
 
-    // Эти кнопки просто возвращают action (main.cpp обработает)
+    // These buttons just return the action (main.cpp handles it)
     return action;
 }

@@ -10,38 +10,38 @@ public:
     Player();
     ~Player();
 
-    // Загружает модель и анимации из файла
+    // Loads the model and animations from a file
     bool LoadModel(const wchar_t* path);
 
-    // Явное освобождение DxLib-модели — вызывать до DxLib_End(), иначе деструктор
-    // сделает это уже после выгрузки DxLib при выходе из программы
+    // Explicitly releases the DxLib model — call before DxLib_End(), otherwise
+    // the destructor would run after DxLib is already torn down on exit
     void ReleaseModel();
 
-    // Основное обновление: ввод + физика + анимация. Возвращает true если игрок умер.
+    // Main update: input + physics + animation. Returns true if the player died.
     bool Update(float deltaTime, const Camera& camera, Level* level, AudioManager& audio, int soundVolume);
 
-    // Рисует модель (или запасной куб)
+    // Draws the model (or a fallback cube)
     void Draw() const;
 
-    // Рисует модель повёрнутой лицом к указанной точке (камере)
+    // Draws the model facing a given point (the camera)
     void DrawFacingCamera(VECTOR camPos) const;
 
-    // Рисует тень под игроком
+    // Draws the shadow under the player
     void DrawShadow(Level* level) const;
 
-    // Запускает анимацию победы (Yes, однократно)
+    // Starts the victory animation (Yes, one-shot)
     void StartCelebration();
 
-    // Переключает на зацикленную анимацию Wave (вторая фаза победы)
+    // Switches to the looping Wave animation (second phase of the victory sequence)
     void PlayWave();
 
-    // Обновляет только анимацию (без физики — для DYING/CELEBRATING состояний)
+    // Updates animation only (no physics — used for the DYING/CELEBRATING states)
     void UpdateAnimOnly(float deltaTime, bool looping = false);
 
-    // Сброс при рестарте уровня
+    // Reset on level restart
     void Reset(VECTOR spawnPos);
 
-    // Состояние
+    // State
     VECTOR GetPos()      const { return pos; }
     VECTOR GetVel()      const { return vel; }
     VECTOR GetSize()     const { return size; }
@@ -52,33 +52,33 @@ public:
     void SetPos(VECTOR p) { pos = p; }
     void SetVel(VECTOR v) { vel = v; }
 
-    // Для отображения камеры во время праздника
+    // Used to orient the camera during the victory sequence
     float GetFacingToward(VECTOR target) const;
 
 private:
-    // Физика
+    // Physics
     VECTOR pos;
     VECTOR vel;
-    VECTOR horizVel;  // инерция на льду (Block 5)
+    VECTOR horizVel;  // ice inertia (Block 5)
     VECTOR size;
     bool   onGround;
     bool   wasOnGround;
     bool   dead;
     float  facingAngle;
     float  iceFriction;
-    VECTOR savedPlatVel;  // скорость платформы прошлого кадра (для спуска)
-    int    groundedStreak; // кадров подряд onGround==true — гасит дребезг анимации у краёв
-                            // платформ, где AABB-контакт по Y может мигать true/false покадрово
+    VECTOR savedPlatVel;  // previous frame's platform velocity (for descending platforms)
+    int    groundedStreak; // consecutive frames with onGround==true — damps animation jitter
+                            // near platform edges, where the AABB's Y contact can flicker true/false frame to frame
 
-    // Параметры
+    // Parameters
     static constexpr float SPEED         = 0.2f;
     static constexpr float JUMP_POWER    = 0.4f;
     static constexpr float GRAVITY       = -0.015f;
-    static constexpr float MAX_FALL_SPEED = -0.6f;  // предел |vel.y| (падение и reverse-гравитация симметрично) — иначе высокая гравитация даёт скачок сквозь тонкие коллайдеры
-    static constexpr float ANIM_FRAMERATE = 24.0f;  // предполагаемый фреймрейт исходной анимации модели
-    static constexpr float DEATH_FALL_Y   = -10.0f; // порог смерти от падения за пределы уровня
+    static constexpr float MAX_FALL_SPEED = -0.6f;  // clamp on |vel.y| (symmetric for falling and reverse gravity) — otherwise high gravity can tunnel through thin colliders
+    static constexpr float ANIM_FRAMERATE = 24.0f;  // assumed frame rate of the source model animation
+    static constexpr float DEATH_FALL_Y   = -10.0f; // fall-death threshold below the level
 
-    // Модель и анимации
+    // Model and animations
     int modelHandle;
     int animAttach;
     float animTime;
@@ -92,7 +92,7 @@ private:
     int animWave;
     int animYes;
 
-    // Антиспам клавиш
+    // Key debounce
     bool jumpPressed;
     bool activatePressed;
 

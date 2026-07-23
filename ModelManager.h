@@ -3,7 +3,7 @@
 #include <string>
 #include <map>
 
-// Типы моделей для блоков
+// Model types for blocks
 enum class ModelID {
     PLATFORM = 0,
     TRIGGER = 1,
@@ -22,100 +22,100 @@ enum class ModelID {
     PLAYER = 14,
     ICE_PLATFORM = 15,   // Block 5
     BOUNCE_PAD = 16,     // Block 5
-    COUNT // Количество типов моделей
+    COUNT // Number of model types
 };
 
-// Структура для хранения модели и её параметров
+// Holds a model and its parameters
 struct ModelData {
-    int handle;              // DxLib handle модели
-    float scale;             // Масштаб модели
-    VECTOR rotationOffset;   // Смещение ротации (если нужно)
-    bool hasAnimation;       // Есть ли анимация
-    int animIndex;           // Индекс прикрепленной анимации
+    int handle;              // DxLib model handle
+    float scale;             // Model scale
+    VECTOR rotationOffset;   // Rotation offset (if needed)
+    bool hasAnimation;       // Whether it has an animation
+    int animIndex;           // Index of the attached animation
 
     ModelData() : handle(-1), scale(1.0f), rotationOffset(VGet(0, 0, 0)),
                   hasAnimation(false), animIndex(-1) {}
 };
 
-// Структура для skybox
+// Holds a skybox
 struct SkyboxData {
-    int handle;              // Handle модели skybox
-    float scale;             // Масштаб
-    VECTOR rotation;         // Вращение skybox
+    int handle;              // Skybox model handle
+    float scale;             // Scale
+    VECTOR rotation;         // Skybox rotation
 
     SkyboxData() : handle(-1), scale(1000.0f), rotation(VGet(0, 0, 0)) {}
 };
 
-// Менеджер моделей
+// Model manager
 class ModelManager {
 private:
-    // Карта моделей: ModelID -> ModelData
+    // Model map: ModelID -> ModelData
     std::map<ModelID, ModelData> models;
 
-    // Карта скайбоксов: level block ID -> SkyboxData
+    // Skybox map: level block ID -> SkyboxData
     std::map<int, SkyboxData> skyboxes;
 
-    // Пути к папкам с ресурсами
+    // Resource folder paths
     std::string modelsPath;
     std::string skyboxesPath;
 
-    // Приватный конструктор для singleton
+    // Private constructor for the singleton
     ModelManager();
 
-    // Запретить копирование
+    // Disallow copying
     ModelManager(const ModelManager&) = delete;
     ModelManager& operator=(const ModelManager&) = delete;
 
 public:
-    // Получить instance singleton
+    // Get the singleton instance
     static ModelManager& GetInstance();
 
-    // Деструктор
+    // Destructor
     ~ModelManager();
 
-    // Инициализация - загрузка всех моделей
+    // Initialize - loads all models
     bool Initialize();
 
-    // Очистка всех ресурсов
+    // Release all resources
     void Cleanup();
 
-    // Загрузка конкретной модели
+    // Load a specific model
     bool LoadModel(ModelID id, const std::string& filename, float scale = 1.0f);
 
-    // Загрузка скайбокса для блока уровней
+    // Load the skybox for a level block
     bool LoadSkybox(int blockId, const std::string& filename, float scale = 1000.0f);
 
-    // Получить handle модели
+    // Get a model's handle
     int GetModelHandle(ModelID id) const;
 
-    // Получить данные модели
+    // Get a model's data
     const ModelData* GetModelData(ModelID id) const;
 
-    // Получить handle скайбокса для блока
+    // Get a block's skybox handle
     int GetSkyboxHandle(int blockId) const;
 
-    // Получить данные скайбокса
+    // Get a block's skybox data
     const SkyboxData* GetSkyboxData(int blockId) const;
 
-    // Дублировать модель (для создания нескольких экземпляров)
+    // Duplicate a model (to create multiple instances)
     int DuplicateModel(ModelID id);
 
-    // Отрисовка модели в заданной позиции
+    // Draw a model at the given position
     void DrawModel(ModelID id, VECTOR pos, VECTOR scale, VECTOR rotation = VGet(0, 0, 0));
 
-    // Отрисовка скайбокса
+    // Draw the skybox
     void DrawSkybox(int blockId, VECTOR cameraPos);
 
-    // Проверка загружена ли модель
+    // Check whether a model is loaded
     bool IsModelLoaded(ModelID id) const;
 
-    // Проверка загружен ли скайбокс
+    // Check whether a skybox is loaded
     bool IsSkyboxLoaded(int blockId) const;
 
-    // Выгрузить модель (чтобы потом загрузить другую на её место)
+    // Unload a model (to load a different one in its place)
     void UnloadModel(ModelID id);
 
-    // Установить путь к папке с моделями
+    // Set the models folder path
     void SetModelsPath(const std::string& path) { modelsPath = path; }
     void SetSkyboxesPath(const std::string& path) { skyboxesPath = path; }
 };

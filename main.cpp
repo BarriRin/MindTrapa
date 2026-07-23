@@ -97,16 +97,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     modelMgr.LoadModel(ModelID::MOVING,             "converted_x/Cube_Dirt_Single.x",  1.0f);
     modelMgr.LoadModel(ModelID::DISAPPEARING,       "converted_x/Cube_Bricks.x",       1.0f);
 
-    // ── Биом и звёзды (объявляем до лямбды, т.к. она захватывает по ссылке) ──
+    // ── Biome and stars (declared before the lambda, since it captures by reference) ──
     int              currentBiome = 0;
     std::vector<Star> stars;
     int skyboxTextures[5] = {-1,-1,-1,-1,-1};
 
-    // ── Тема платформ по блокам ───────────────────────────────────────────────
+    // ── Per-block platform theme ─────────────────────────────────────────────
     int currentThemeGroup = 0;
     auto applyBlockTheme = [&](int blockIdx) {
         int theme = (blockIdx <= 1) ? 0 : (blockIdx <= 3) ? 1 : 2;
-        // Биом 1:1 к блоку (0-4)
+        // Biome maps 1:1 to the block (0-4)
         if (blockIdx != currentBiome) {
             currentBiome = blockIdx;
             stars = GenerateStars(1000, 400.0f, currentBiome);
@@ -145,7 +145,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
         }
     };
 
-    // ── Профили и меню ────────────────────────────────────────────────────────
+    // ── Profiles and menu ────────────────────────────────────────────────────
     ProfileManager& profileMgr = ProfileManager::GetInstance();
     profileMgr.Initialize();
 
@@ -157,7 +157,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     else
         menu.SyncSettingsFromProfile();
 
-    // ── Паки оформления (папка внутри media/: Defolt_Pack/Pack1/Pack2) ─────────
+    // ── Theme packs (folder under media/: Defolt_Pack/Pack1/Pack2) ─────────────
     auto packFolder = [](int pack) -> std::wstring {
         switch (pack) {
             case 1:  return L"Pack1";
@@ -166,17 +166,17 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
         }
     };
 
-    // ── Аудио ─────────────────────────────────────────────────────────────────
+    // ── Audio ─────────────────────────────────────────────────────────────────
     AudioManager audio;
     audio.LoadBgm(packFolder(profileMgr.GetThemePack()));
     audio.LoadSfx();
 
-    // ── Видеофон меню ─────────────────────────────────────────────────────────
+    // ── Menu video background ────────────────────────────────────────────────
     int menuBgMovie = OpenMovieToGraph(L"media/menu_bg.mp4", TRUE);
     if (menuBgMovie != -1) PlayMovieToGraph(menuBgMovie, DX_PLAYTYPE_LOOP);
 
-    // ── Скайбокс-текстуры (media/<Pack>/skybox/biomeN, -1 = файл не найден)
-    // Пробуем JPG, потом PNG как fallback
+    // ── Skybox textures (media/<Pack>/skybox/biomeN, -1 = file not found)
+    // Try JPG first, fall back to PNG
     auto loadSkybox = [](const wchar_t* jpgPath, const wchar_t* pngPath) -> int {
         int h = LoadGraph(jpgPath);
         return (h != -1) ? h : LoadGraph(pngPath);
@@ -193,34 +193,34 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     };
     loadSkyboxPack(profileMgr.GetThemePack());
 
-    // ── Звёздный фон ─────────────────────────────────────────────────────────
+    // ── Star field ────────────────────────────────────────────────────────────
     stars = GenerateStars(1000, 400.0f, currentBiome);
 
-    // ── Игрок ────────────────────────────────────────────────────────────────
+    // ── Player ────────────────────────────────────────────────────────────────
     Player player;
     player.LoadModel(L"models/converted_x/Character.mv1");
 
-    // ── Камера ───────────────────────────────────────────────────────────────
+    // ── Camera ────────────────────────────────────────────────────────────────
     Camera camera;
 
-    // ── Частицы ──────────────────────────────────────────────────────────────
+    // ── Particles ─────────────────────────────────────────────────────────────
     srand((unsigned int)GetNowCount());
     ParticleSystem particles;
 
-    // ── Состояние игры ───────────────────────────────────────────────────────
+    // ── Game state ────────────────────────────────────────────────────────────
     GameState gameState    = GameState::MAIN_MENU;
     float     darknessLevel = 0.0f;
     float     gameSpeed    = 1.0f;
     bool      debugMode    = false;
 
-    // Телепорт антиспам
+    // Teleport debounce
     float teleportCooldown = 0.0f;
 
-    // Экран результата
+    // Result screen
     float dyingTimer        = 0.0f;
     bool  levelWasCompleted = false;
 
-    // Праздник победы
+    // Victory celebration
     const float CELEBRATION_DURATION = 2.8f;
     float celebrationTimer  = 0.0f;
     VECTOR celebrationFlagPos = VGet(0,0,0);
@@ -230,13 +230,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     int   celebPhase        = 0;
     bool  secondBurstFired  = false;
 
-    // Таймер
+    // Timer
     int   lastFrameTime  = GetNowCount();
     const float maxDeltaTime = 0.1f;
 
-    // Переключение пака оформления (музыка+скайбоксы) — вызывается из меню Theme Packs.
-    // Если игрок сменил пак прямо во время партии (пауза → настройки), тут же
-    // перезапускает BGM текущего блока новым треком.
+    // Switches the theme pack (music+skyboxes) — called from the Theme Packs menu.
+    // If the player switches packs mid-run (pause -> settings), this immediately
+    // restarts the current block's BGM with the new track.
     auto applyThemePack = [&](int pack) {
         if (!profileMgr.IsThemePackUnlocked(pack)) return;
         profileMgr.SetThemePack(pack);
@@ -248,12 +248,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
         }
     };
 
-    // Общий "хвост" запуска/рестарта/следующего уровня — вызывается уже ПОСЛЕ того,
-    // как конкретное место вызова само применило applyBlockTheme(...) и выбрало нужный
-    // способ загрузки (LoadLevel/RestartLevel/ReloadCurrentLevel/NextLevel), т.к. эти
-    // операции семантически разные (RestartLevel считает смерть, ReloadCurrentLevel — нет)
-    // и не годятся для схлопывания в одну функцию. Раньше этот блок был продублирован
-    // в 6 местах и один из них случайно не содержал PauseMovieToGraph.
+    // Shared "tail" for start/restart/next-level — called AFTER the specific call
+    // site has already applied applyBlockTheme(...) and picked the right loading
+    // method (LoadLevel/RestartLevel/ReloadCurrentLevel/NextLevel), since those
+    // operations are semantically different (RestartLevel counts as a death,
+    // ReloadCurrentLevel doesn't) and don't collapse cleanly into one function.
+    // This block used to be duplicated across 6 call sites, and one of them
+    // happened to be missing the PauseMovieToGraph call.
     auto finishLevelStart = [&]() {
         player.Reset(levelManager.GetCurrentLevel()->GetPlayerSpawn());
         darknessLevel = 0.0f;
@@ -266,7 +267,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     SetMouseDispFlag(TRUE);
 
     // ═════════════════════════════════════════════════════════════════════════
-    // ОСНОВНОЙ ИГРОВОЙ ЦИКЛ
+    // MAIN GAME LOOP
     // ═════════════════════════════════════════════════════════════════════════
     while (ProcessMessage() == 0) {
         ClearDrawScreen();
@@ -277,11 +278,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
         lastFrameTime = now;
         float dt = realDt * gameSpeed;
 
-        // Громкость BGM применяется живьём при любом состоянии (не только PLAYING),
-        // чтобы слайдер музыки в настройках было слышно сразу, откуда бы их ни открыли
+        // BGM volume is applied live in every state (not just PLAYING), so the
+        // music slider in settings is audible immediately regardless of where it was opened from
         audio.SetBgmVolume(menu.GetSettings().musicVolume);
 
-        // ── МЕНЮ ─────────────────────────────────────────────────────────────
+        // ── MENU ─────────────────────────────────────────────────────────────
         if (gameState == GameState::PROFILE_SELECT || gameState == GameState::PROFILE_CREATE ||
             gameState == GameState::MAIN_MENU      || gameState == GameState::LEVEL_SELECT_BLOCKS ||
             gameState == GameState::LEVEL_SELECT_LEVELS || gameState == GameState::SETTINGS ||
@@ -295,8 +296,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
                 DrawBox(0, 0, SCREEN_W, SCREEN_H, GetColor(0, 0, 0), TRUE);
                 SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
                 const Profile* p = profileMgr.GetCurrentProfile();
-                // Аудио видео тише BGM-треков по записи — сдвигаем кривую так,
-                // чтобы максимум громкости видео (10000) достигался уже на 75% ползунка
+                // The background video is quieter than the BGM tracks by nature —
+                // remap the curve so the video reaches max volume (10000) at 75% of the slider
                 int vol = p ? p->musicVolume * 10000 / 75 : 10000;
                 if (vol > 10000) vol = 10000;
                 SetMovieVolumeToGraph(vol, menuBgMovie);
@@ -307,8 +308,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
             int dummyBlock = -1, levelToLoad = -1;
             ButtonAction action = menu.HandleInput(dummyBlock, levelToLoad);
 
-            // Превью SFX при движении слайдера звука — иначе громкость эффектов
-            // не с чем послушать вживую, пока сидишь в настройках
+            // Preview the SFX while dragging the sound slider — otherwise there's
+            // nothing to listen to while adjusting effect volume from the settings screen
             {
                 static int   lastPreviewSoundVolume = -1;
                 static bool  wasInSettings           = false;
@@ -317,7 +318,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
                 bool inSettingsNow = (gameState == GameState::SETTINGS);
                 if (inSettingsNow && !wasInSettings) {
-                    lastPreviewSoundVolume = menu.GetSettings().soundVolume; // синхронизация без звука
+                    lastPreviewSoundVolume = menu.GetSettings().soundVolume; // sync without playing a sound
                 }
                 if (inSettingsNow) {
                     int curSoundVolume = menu.GetSettings().soundVolume;
@@ -356,7 +357,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
             case ButtonAction::SELECT_THEME_PACK_0:
                 applyThemePack(0);
-                menu.SetState(GameState::MUSIC_SELECT); // перерисовать список с новой пометкой "текущий"
+                menu.SetState(GameState::MUSIC_SELECT); // redraw the list with the new "current" marker
                 gameState = menu.GetState();
                 break;
 
@@ -389,7 +390,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
             }
         }
 
-        // ── ПАУЗА ────────────────────────────────────────────────────────────
+        // ── PAUSE ────────────────────────────────────────────────────────────
         else if (gameState == GameState::PAUSED) {
             SetMouseDispFlag(TRUE);
 
@@ -462,7 +463,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
         else if (gameState == GameState::PLAYING) {
             SetMouseDispFlag(FALSE);
 
-            // ESC → пауза
+            // ESC -> pause
             static bool escPressed = false;
             static float escDelay  = 0.0f;
             if (escDelay > 0.0f) escDelay -= dt;
@@ -482,7 +483,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
             if (CheckHitKey(KEY_INPUT_F3)) { if (!f3Pressed) debugMode = !debugMode; f3Pressed = true; }
             else f3Pressed = false;
 
-            // Управление скоростью игры ([ ] + 0)
+            // Game speed control ([ ] + 0)
             static bool plusP = false, minusP = false, bracketLP = false, bracketRP = false, zeroP = false;
             if (CheckHitKey(KEY_INPUT_ADD) || CheckHitKey(KEY_INPUT_SEMICOLON)) {
                 if (!plusP) { gameSpeed += 0.25f; if (gameSpeed > 3.0f) gameSpeed = 3.0f; } plusP = true;
@@ -502,7 +503,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
             levelManager.UpdateTimer(dt);
 
-            // Block 4 / Level 48: темнота
+            // Block 4 / Level 48: darkness
             int  curLvlId    = levelManager.GetCurrentLevelId();
             bool inBlock4    = (curLvlId >= 31 && curLvlId <= 40);
             bool inPulseLevel = (curLvlId == 48 || curLvlId == 50);
@@ -529,17 +530,17 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
                 }
             }
 
-            // Телепорт кулдаун
+            // Teleport cooldown
             if (teleportCooldown > 0) teleportCooldown -= dt;
 
-            // Обновление уровня (движущиеся платформы, выдвижные шипы, исчезающие блоки)
+            // Update the level (moving platforms, retractable spikes, disappearing blocks)
             if (currentLevel) currentLevel->Update(dt);
 
-            // Углы камеры — до player.Update(), чтобы движение шло относительно взгляда
-            // уже этого кадра
+            // Camera angles — before player.Update(), so movement is relative to
+            // this frame's look direction
             camera.UpdateAngles((float)menu.GetSettings().mouseSensitivity);
 
-            // Обновление игрока (физика, ввод, анимация)
+            // Update the player (physics, input, animation)
             bool playerDied = player.Update(dt, camera, currentLevel, audio, menu.GetSettings().soundVolume);
 
             if (playerDied) {
@@ -549,9 +550,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
                 gameState        = GameState::DYING;
             }
 
-            // Телепорт — до camera.Apply(), иначе на кадре телепорта камера ещё смотрит
-            // на позицию ДО прыжка, а модель уже рисуется ПОСЛЕ него (тот же рассинхрон
-            // на кадр, который мы только что убрали для обычного движения/падения)
+            // Teleport — before camera.Apply(), otherwise on the teleport frame the
+            // camera would still look at the pre-jump position while the model is
+            // already drawn at the post-jump one (the same one-frame desync we just
+            // fixed for regular movement/falling)
             if (!playerDied && teleportCooldown <= 0 && currentLevel) {
                 VECTOR teleTarget;
                 if (currentLevel->CheckTeleportTrigger(player.GetPos(), player.GetSize(), teleTarget)) {
@@ -562,11 +564,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
                 }
             }
 
-            // Позиция камеры — после player.Update()/телепорта, чтобы следовать за
-            // актуальной позицией игрока уже этого кадра, а не прошлого
+            // Camera position — after player.Update()/teleport, so it follows this
+            // frame's player position rather than the previous one
             camera.Apply(player.GetPos());
 
-            // Победа
+            // Victory
             if (gameState == GameState::PLAYING && currentLevel &&
                 currentLevel->CheckWinTrigger(player.GetPos(), player.GetSize()))
             {
@@ -606,12 +608,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
                 gameState = GameState::LEVEL_CELEBRATING;
             }
 
-            // ── ОТРИСОВКА СЦЕНЫ ──────────────────────────────────────────────
+            // ── SCENE RENDERING ──────────────────────────────────────────────
             SetUseLighting(FALSE);
             SetUseBackCulling(FALSE);
 
             VECTOR camPos = camera.GetPosition(player.GetPos());
-            // Скайбокс (без тумана)
+            // Skybox (no fog)
             if (skyboxTextures[currentBiome] != -1) {
                 DrawSkyboxSphere(player.GetPos(), skyboxTextures[currentBiome]);
             } else {
@@ -620,7 +622,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
             }
             bool isDarkLevel = inBlock4 || inPulseLevel;
 
-            // Обычные уровни: звёзды до геометрии — платформы их перекрывают
+            // Regular levels: stars before geometry — platforms occlude them
             if (!isDarkLevel) DrawStars(stars, player.GetPos());
 
             ApplyBiomeFog(currentBiome);
@@ -629,7 +631,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
             player.Draw();
             DisableFog();
 
-            // Тёмные уровни: сначала оверлей темноты, потом звёзды — ADD пробивает мрак
+            // Dark levels: darkness overlay first, then stars — ADD blending punches through the dark
             if (isDarkLevel) {
                 if (darknessLevel > 0.01f) {
                     SetDrawBlendMode(DX_BLENDMODE_ALPHA, (int)(darknessLevel * 240.0f));
@@ -660,7 +662,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
             }
         }
 
-        // ── УМИРАНИЕ ─────────────────────────────────────────────────────────
+        // ── DYING ────────────────────────────────────────────────────────────
         else if (gameState == GameState::DYING) {
             SetMouseDispFlag(FALSE);
 
@@ -691,7 +693,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
             levelManager.DrawLevelInfo(false);
         }
 
-        // ── ПРАЗДНИК ПОБЕДЫ ───────────────────────────────────────────────────
+        // ── VICTORY CELEBRATION ─────────────────────────────────────────────
         else if (gameState == GameState::LEVEL_CELEBRATING) {
             SetMouseDispFlag(FALSE);
 
@@ -703,7 +705,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
             particles.Update(dt);
 
-            // Анимация: Yes (однократно, ~1.2с) → Wave (зацикленно до конца праздника)
+            // Animation: Yes (one-shot, ~1.2s) -> Wave (looping until the celebration ends)
             if (celebPhase == 0) {
                 player.UpdateAnimOnly(dt, false);
                 if (celebrationTimer < CELEBRATION_DURATION - 1.2f) {
@@ -740,7 +742,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
             levelManager.DrawLevelInfo(false);
         }
 
-        // ── ЭКРАН РЕЗУЛЬТАТА ──────────────────────────────────────────────────
+        // ── RESULT SCREEN ────────────────────────────────────────────────────
         else if (gameState == GameState::LEVEL_RESULT) {
             SetMouseDispFlag(TRUE);
 
@@ -803,9 +805,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     }
 
 END_GAME:
-    // Явно освобождаем все DxLib-ресурсы ДО DxLib_End() — деструкторы стековых
-    // menu/audio/levelManager/player сработают только при выходе из WinMain,
-    // то есть уже после DxLib_End(), что по документации DxLib не поддерживается.
+    // Explicitly release all DxLib resources BEFORE DxLib_End() — the stack-allocated
+    // menu/audio/levelManager/player destructors would otherwise only run when WinMain
+    // exits, i.e. after DxLib_End(), which DxLib's documentation says isn't supported.
     for (int i = 0; i < 5; i++) if (skyboxTextures[i] != -1) DeleteGraph(skyboxTextures[i]);
     if (menuBgMovie != -1) DeleteGraph(menuBgMovie);
     audio.Shutdown();

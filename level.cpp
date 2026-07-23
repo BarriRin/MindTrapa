@@ -1,7 +1,7 @@
 ﻿#include "Level.h"
 
 Level::Level(int id) : levelId(id) {
-    // Определить ID блока по уровню (10 уровней = 1 блок)
+    // Derive the level-block ID from the level number (10 levels per block)
     blockId = (id - 1) / 10;
 
     LoadLevelData(id);
@@ -9,7 +9,7 @@ Level::Level(int id) : levelId(id) {
 }
 
 Level::~Level() {
-    // Удалить все дублированные модели блоков
+    // Release all duplicated block models
     for (auto& block : blocks) {
         if (block.modelHandle != -1) {
             MV1DeleteModel(block.modelHandle);
@@ -58,24 +58,25 @@ static unsigned int GetDebugColor(BlockType type) {
 
 void Level::Draw(bool debugMode) const {
     for (const auto& block : blocks) {
-        // Если у блока есть модель — отрисовать модель (с учётом видимости)
-        // Некоторые типы всегда используют примитивы (INVISIBLE_WALL, зоны)
+        // If the block has a model, draw the model (respecting visibility rules).
+        // Some types always use primitives instead (INVISIBLE_WALL, zones).
         if (block.useModel && block.modelHandle != -1 &&
             block.type != BlockType::INVISIBLE_WALL &&
             block.type != BlockType::GRAVITY_ZONE &&
             block.type != BlockType::LIGHT_PULSE_ZONE) {
 
-            // Проверка видимости для блоков с состоянием
+            // Visibility check for stateful blocks
             bool visible = true;
             if ((block.type == BlockType::DISAPPEARING || block.type == BlockType::CRUMBLING) && !block.isActive)
-                visible = false;  // исчезли/упали — не рисуем
+                visible = false;  // gone/fallen — don't draw
             if (block.type == BlockType::RETRACTABLE_SPIKES && !block.isActive)
-                visible = false;  // шипы спрятаны — не рисуем
+                visible = false;  // spikes retracted — don't draw
             if (block.type == BlockType::SPIKES && block.linkId == 1 && !block.isActive)
-                visible = false;  // SPIKES(linkId=1) — выдвигающиеся, скрыты когда неактивны
+                visible = false;  // SPIKES(linkId=1) — retractable variant, hidden while inactive
 
             if (visible) {
-                // Для моделей с origin в основании — ставим по нижней грани блока (X/Z центр, Y = низ)
+                // Models whose origin sits at their base get placed at the block's
+                // bottom face (X/Z centered, Y at the bottom)
                 VECTOR modelPos;
                 if (block.type == BlockType::TRIGGER)
                     modelPos = VGet(block.pos.x + block.size.x * 0.5f, block.pos.y, block.pos.z + block.size.z * 0.5f);
@@ -87,7 +88,7 @@ void Level::Draw(bool debugMode) const {
                 MV1SetRotationXYZ(block.modelHandle, block.rotation);
                 MV1DrawModel(block.modelHandle);
 
-                // Hazard_Cylinder — полуцилиндр, рисуем зеркальную половину (180° по Y)
+                // Hazard_Cylinder is a half-cylinder — draw the mirrored half too (180° around Y)
                 if (block.type == BlockType::PENDULUM_BLADE) {
                     MV1SetRotationXYZ(block.modelHandle,
                         VGet(block.rotation.x, block.rotation.y + DX_PI_F, block.rotation.z));
@@ -97,7 +98,7 @@ void Level::Draw(bool debugMode) const {
             continue;
         }
 
-        // Иначе использовать примитивы (текущая реализация)
+        // Otherwise fall back to primitives (current implementation)
         switch (block.type) {
         case BlockType::PLATFORM:
             DrawCube3D(block.pos, VAdd(block.pos, block.size),
@@ -165,23 +166,23 @@ void Level::Draw(bool debugMode) const {
             break;
 
         case BlockType::RETRACTABLE_SPIKES:
-            // Выдвигающиеся шипы - видны только когда активны
+            // Retractable spikes - only visible while active
             if (block.isActive) {
                 DrawCube3D(block.pos, VAdd(block.pos, block.size),
                     GetColor(255, 50, 50), GetColor(200, 0, 0), TRUE);
             }
-            // else: полностью невидимы когда спрятаны
+            // else: fully hidden while retracted
             break;
 
         case BlockType::CRUMBLING:
-            // Рассыпающиеся платформы - жёлто-коричневые
+            // Crumbling platforms - yellow-brown
             if (block.isActive) {
-                // Нормальное состояние
+                // Normal state
                 DrawCube3D(block.pos, VAdd(block.pos, block.size),
                     GetColor(200, 150, 50), GetColor(150, 100, 30), TRUE);
             }
             else {
-                // Падают/исчезают (полупрозрачные)
+                // Falling/gone (semi-transparent)
                 SetDrawBlendMode(DX_BLENDMODE_ALPHA, 100);
                 DrawCube3D(block.pos, VAdd(block.pos, block.size),
                     GetColor(200, 150, 50), GetColor(150, 100, 30), TRUE);
@@ -190,48 +191,48 @@ void Level::Draw(bool debugMode) const {
             break;
 
         case BlockType::FAKE_SPIKES:
-            // Фейковые шипы - РОЗОВЫЕ (выглядят опасно, но безопасны)
+            // Fake spikes - PINK (look dangerous, but are harmless)
             DrawCube3D(block.pos, VAdd(block.pos, block.size),
                 GetColor(255, 100, 150), GetColor(200, 50, 100), TRUE);
             break;
 
         case BlockType::GRAVITY_ZONE:
-            // Гравитационные зоны - очень прозрачные с цветом зависящим от типа гравитации
+            // Gravity zones - very transparent, color depends on the gravity type
             unsigned int gravityColor;
             if (block.gravityMultiplier < 0.0f) {
-                // Обратная гравитация - фиолетовый
+                // Reverse gravity - purple
                 gravityColor = GetColor(200, 100, 255);
             } else if (block.gravityMultiplier < 1.0f) {
-                // Низкая гравитация - голубой
+                // Low gravity - light blue
                 gravityColor = GetColor(100, 200, 255);
             } else if (block.gravityMultiplier > 1.0f) {
-                // Высокая гравитация - оранжевый
+                // High gravity - orange
                 gravityColor = GetColor(255, 150, 50);
             } else {
-                // Нормальная (не должно быть, но на всякий случай)
+                // Normal (shouldn't happen, but just in case)
                 gravityColor = GetColor(150, 150, 150);
             }
-            // Отключаем запись в Z-буфер чтобы зона не перекрывала объекты внутри
+            // Disable Z-buffer writes so the zone doesn't occlude objects inside it
             SetWriteZBuffer3D(FALSE);
-            // Очень прозрачные - альфа 50 из 255 (~20% непрозрачности)
+            // Very transparent - alpha 50 out of 255 (~20% opacity)
             SetDrawBlendMode(DX_BLENDMODE_ALPHA, 50);
             DrawCube3D(block.pos, VAdd(block.pos, block.size),
                 gravityColor, gravityColor, TRUE);
             SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-            // Включаем запись в Z-буфер обратно
+            // Restore Z-buffer writes
             SetWriteZBuffer3D(TRUE);
             break;
 
         case BlockType::PENDULUM_BLADE:
-            // Маятник-топор - рисуем цепь (или трос) и лезвие
-            // Цепь от точки подвеса до лезвия
+            // Pendulum blade - draw the chain (or rope) and the blade
+            // Chain from the pivot point to the blade
             DrawLine3D(block.pivotPoint, block.pos, GetColor(100, 100, 100));
 
-            // Лезвие - красный куб (временно, потом будет модель)
+            // Blade - red cube (placeholder until there's a model)
             DrawCube3D(block.pos, VAdd(block.pos, block.size),
                 GetColor(200, 50, 50), GetColor(150, 30, 30), TRUE);
 
-            // Точка подвеса - маленькая сфера (упрощённо - куб)
+            // Pivot point - small sphere (simplified as a cube)
             VECTOR pivotSize = VGet(0.3f, 0.3f, 0.3f);
             DrawCube3D(VGet(block.pivotPoint.x - 0.15f, block.pivotPoint.y - 0.15f, block.pivotPoint.z - 0.15f),
                 VGet(block.pivotPoint.x + 0.15f, block.pivotPoint.y + 0.15f, block.pivotPoint.z + 0.15f),
@@ -239,7 +240,7 @@ void Level::Draw(bool debugMode) const {
             break;
 
         case BlockType::LIGHT_PULSE_ZONE:
-            // Зона мигающего света — очень прозрачная, чтобы игрок видел границы
+            // Flickering light zone - very transparent so the player can see its bounds
             SetWriteZBuffer3D(FALSE);
             SetDrawBlendMode(DX_BLENDMODE_ALPHA, 25);
             DrawCube3D(block.pos, VAdd(block.pos, block.size),
@@ -254,14 +255,14 @@ void Level::Draw(bool debugMode) const {
             break;
 
         case BlockType::BOUNCE_PAD:
-            // Батут — жёлто-оранжевый
+            // Bounce pad - yellow-orange
             DrawCube3D(block.pos, VAdd(block.pos, block.size),
                 GetColor(255, 200, 50), GetColor(220, 150, 20), TRUE);
             break;
         }
     }
 
-    // Постоянный wireframe на платформах Block 3+ (космический стиль)
+    // Persistent wireframe on Block 3+ platforms (space aesthetic)
     if (blockId >= 2) {
         for (const auto& block : blocks) {
             if (block.type == BlockType::PLATFORM || block.type == BlockType::FAKE_PLATFORM ||
@@ -274,7 +275,7 @@ void Level::Draw(bool debugMode) const {
     }
 
     if (debugMode) {
-        SetUseZBuffer3D(FALSE);  // отключаем Z-тест, чтобы рамки были видны поверх геометрии
+        SetUseZBuffer3D(FALSE);  // disable Z-test so the outlines show through the geometry
         for (const auto& block : blocks) {
             if (!block.isActive && (block.type == BlockType::DISAPPEARING ||
                 block.type == BlockType::CRUMBLING ||
@@ -291,7 +292,7 @@ bool Level::CheckCollision(VECTOR playerPos, VECTOR playerSize, VECTOR& newPos, 
     onGround = false;
     platformVelocity = VGet(0, 0, 0);
     bool collisionOccurred = false;
-    bool bounced = false; // флаг: батут уже сработал — пол не должен обнулять velocity.y
+    bool bounced = false; // flag: the bounce pad already fired this frame — the floor branch must not zero velocity.y
     if (justBounced) *justBounced = false;
 
     for (auto& block : blocks) {
@@ -332,14 +333,14 @@ bool Level::CheckCollision(VECTOR playerPos, VECTOR playerSize, VECTOR& newPos, 
                 }
 
                 if (overlapY <= overlapX && overlapY <= overlapZ) {
-                    // Сторону контакта решаем по СТАРОЙ позиции игрока (а не по знаку
-                    // скорости), иначе при быстром падении/толчке платформой старая
-                    // позиция могла не попасть ни под "приземление", ни под "потолок" —
-                    // collisionOccurred выставлялся, а newPos.y оставался непоправленным
-                    // (игрок на кадр тонул в геометрии).
+                    // Which side we hit is decided from the player's OLD position, not
+                    // the sign of velocity.y — otherwise a fast fall or a platform push
+                    // could leave the old position matching neither "landed" nor
+                    // "hit ceiling": collisionOccurred would still be set, but newPos.y
+                    // never got corrected, and the player sank into the geometry for a frame.
                     bool cameFromAbove = playerPos.y > block.pos.y + block.size.y - 1.5f;
-                    // В зонах обратной гравитации "пол" физически находится сверху —
-                    // игрок подходит к нему снизу, поэтому роли сторон меняются местами.
+                    // In reverse-gravity zones the "floor" is physically overhead — the
+                    // player approaches it from below, so the two sides swap roles.
                     bool isFloorContact = gravityReversed ? !cameFromAbove : cameFromAbove;
 
                     if (cameFromAbove) newPos.y = block.pos.y + block.size.y;
@@ -347,10 +348,11 @@ bool Level::CheckCollision(VECTOR playerPos, VECTOR playerSize, VECTOR& newPos, 
 
                     if (isFloorContact) {
                         if (block.type == BlockType::BOUNCE_PAD) {
-                            // Батут переопределяет исход независимо от порядка блоков в
-                            // списке: если обычная платформа успела в этом же кадре
-                            // выставить onGround, батут его снимает — иначе получаем
-                            // противоречивое состояние onGround=true с ненулевой velocity.y.
+                            // The bounce pad overrides the outcome regardless of block
+                            // order in the list: if a regular platform already set
+                            // onGround this same frame, the bounce pad clears it —
+                            // otherwise we'd end up with onGround=true and a nonzero
+                            // velocity.y, which is a contradictory state.
                             if (!bounced) {
                                 velocity.y = gravityReversed ? -0.6f : 0.6f;
                                 bounced = true;
@@ -403,7 +405,7 @@ bool Level::CheckCollision(VECTOR playerPos, VECTOR playerSize, VECTOR& newPos, 
                 }
 
                 collisionOccurred = true;
-                // Продолжаем цикл — батуты на платформах должны тоже проверяться
+                // Keep iterating — bounce pads on other platforms still need checking
             }
         }
     }
@@ -426,7 +428,7 @@ bool Level::CheckWinTrigger(VECTOR playerPos, VECTOR playerSize) const {
 
 bool Level::CheckDeadlyTrigger(VECTOR playerPos, VECTOR playerSize) const {
     for (const auto& block : blocks) {
-        // Обычные шипы
+        // Regular spikes
         if (block.type == BlockType::SPIKES) {
             if (block.linkId == 1 && !block.isActive) {
                 continue;
@@ -439,7 +441,7 @@ bool Level::CheckDeadlyTrigger(VECTOR playerPos, VECTOR playerSize) const {
             }
         }
 
-        // Выдвижные шипы - убивают только когда активны
+        // Retractable spikes - only deadly while extended
         if (block.type == BlockType::RETRACTABLE_SPIKES && block.isActive) {
             if (playerPos.x < block.pos.x + block.size.x && playerPos.x + playerSize.x > block.pos.x &&
                 playerPos.y < block.pos.y + block.size.y && playerPos.y + playerSize.y > block.pos.y &&
@@ -448,7 +450,7 @@ bool Level::CheckDeadlyTrigger(VECTOR playerPos, VECTOR playerSize) const {
             }
         }
 
-        // Маятники-топоры (Block 3) - всегда смертельны
+        // Pendulum blades (Block 3) - always deadly
         if (block.type == BlockType::PENDULUM_BLADE) {
             if (playerPos.x < block.pos.x + block.size.x && playerPos.x + playerSize.x > block.pos.x &&
                 playerPos.y < block.pos.y + block.size.y && playerPos.y + playerSize.y > block.pos.y &&
@@ -457,7 +459,7 @@ bool Level::CheckDeadlyTrigger(VECTOR playerPos, VECTOR playerSize) const {
             }
         }
 
-        // FAKE_SPIKES НЕ убивают - это троллинг!
+        // FAKE_SPIKES don't kill - that's the trick!
     }
     return false;
 }
@@ -522,37 +524,37 @@ void Level::Update(float deltaTime) {
             }
         }
 
-        // RETRACTABLE_SPIKES - выдвигаются/прячутся по таймеру
+        // RETRACTABLE_SPIKES - extend/retract on a timer
         if (block.type == BlockType::RETRACTABLE_SPIKES) {
             block.timer += deltaTime;
 
-            // speed=1.0 → 4s цикл (2s вверх + 2s вниз), speed=2.0 → 2s цикл
+            // speed=1.0 -> 4s cycle (2s up + 2s down), speed=2.0 -> 2s cycle
             float cycleTime = 4.0f / block.moveSpeed;
             float halfCycle = cycleTime / 2.0f;
             float phase = fmod(block.timer, cycleTime);
 
-            block.isActive = (phase < halfCycle); // true = шипы выдвинуты (опасно)
+            block.isActive = (phase < halfCycle); // true = spikes extended (dangerous)
         }
 
-        // CRUMBLING - платформы рассыпаются после касания игрока
-        // (логика касания будет в CheckCollision)
+        // CRUMBLING - platform breaks apart after the player touches it
+        // (the touch detection itself lives in CheckCollision)
         if (block.type == BlockType::CRUMBLING) {
-            // Если платформа начала рассыпаться (timer > 0)
+            // If the platform has started crumbling (timer > 0)
             if (block.timer > 0.0f) {
                 block.timer -= deltaTime;
 
-                // Через 0.5 сек платформа исчезает
+                // Disappears after 0.5s
                 if (block.timer <= 0.0f) {
-                    block.isActive = false; // Платформа упала
-                    block.timer = -2.0f;    // Время до возрождения
+                    block.isActive = false; // Platform has fallen
+                    block.timer = -2.0f;    // Time until respawn
                 }
             }
 
-            // Платформа исчезла, ждём возрождения
+            // Platform is gone, waiting to respawn
             if (block.timer < 0.0f) {
                 block.timer += deltaTime;
 
-                // Через 2 сек платформа возвращается
+                // Comes back after 2s
                 if (block.timer >= 0.0f) {
                     block.isActive = true;
                     block.timer = 0.0f;
@@ -560,28 +562,28 @@ void Level::Update(float deltaTime) {
             }
         }
 
-        // LIGHT_PULSE_ZONE - мигающий свет [Block 4]
-        // moveSpeed = период цикла (сек), isActive = true когда светло
+        // LIGHT_PULSE_ZONE - flickering light [Block 4]
+        // moveSpeed = cycle period (s), isActive = true during the lit phase
         if (block.type == BlockType::LIGHT_PULSE_ZONE) {
             block.timer += deltaTime;
             if (block.timer >= block.moveSpeed) {
                 block.timer -= block.moveSpeed;
             }
-            block.isActive = (block.timer < block.moveSpeed * 0.5f); // первая половина = светло
+            block.isActive = (block.timer < block.moveSpeed * 0.5f); // first half = lit
         }
 
-        // PENDULUM_BLADE - качающиеся маятники (Block 3)
+        // PENDULUM_BLADE - swinging pendulums (Block 3)
         if (block.type == BlockType::PENDULUM_BLADE) {
-            // Обновляем угол качания используя синусоиду
+            // Update the swing angle via a sine wave
             block.swingAngle = sin(block.timer * block.swingSpeed) * block.swingRange;
 
-            // Обновляем таймер
+            // Advance the timer
             block.timer += deltaTime;
 
-            // Вычисляем длину маятника как расстояние от точки подвеса до начальной позиции
+            // Pendulum length = distance from the pivot point to the starting position
             float length = VSize(VSub(block.pivotPoint, block.originalPos));
 
-            // Вычисляем позицию лезвия на основе угла качания
+            // Blade position derived from the swing angle
             block.pos.x = block.pivotPoint.x + sin(block.swingAngle) * length;
             block.pos.y = block.pivotPoint.y - cos(block.swingAngle) * length;
             block.pos.z = block.pivotPoint.z;
@@ -596,7 +598,7 @@ bool Level::CheckTeleportTrigger(VECTOR playerPos, VECTOR playerSize, VECTOR& te
                 playerPos.y < block.pos.y + block.size.y && playerPos.y + playerSize.y > block.pos.y &&
                 playerPos.z < block.pos.z + block.size.z && playerPos.z + playerSize.z > block.pos.z) {
 
-                // linkId=0: неправильный выбор — возврат на спавн уровня
+                // linkId=0: wrong choice — send the player back to the level spawn
                 if (block.linkId == 0) {
                     teleportTarget = VGet(playerSpawn.x + 0.5f, playerSpawn.y + 2.0f, playerSpawn.z + 0.5f);
                     return true;
@@ -614,12 +616,13 @@ bool Level::CheckTeleportTrigger(VECTOR playerPos, VECTOR playerSize, VECTOR& te
                     }
                 }
 
-                // "Ложные" телепорты уровня 5 (level_block1.cpp:48-50) — единственное
-                // место, где непарный linkId 1/2/3 намеренно уводит в случайную точку
-                // внутри уровня (часть механики), а не на спавн. Привязано к levelId,
-                // чтобы будущий уровень, случайно переиспользовавший linkId 1/2/3 без
-                // пары, не улетал в эти координаты молча — для него сработает fallback
-                // на спавн ниже, как и для linkId == 0.
+                // Level 5's "fake" teleports (level_block1.cpp:48-50) are the one place
+                // where an unpaired linkId 1/2/3 intentionally sends the player to a
+                // fixed point elsewhere in the level (part of the mechanic) instead of
+                // back to spawn. Gated on levelId so that if a future level happens to
+                // reuse linkId 1/2/3 without a matching pair, it won't silently jump to
+                // these coordinates — it'll fall through to the spawn fallback below,
+                // same as linkId == 0.
                 if (levelId == 5) {
                     if (block.linkId == 1) { teleportTarget = VGet(25, 7, 0); return true; }
                     if (block.linkId == 2) { teleportTarget = VGet(5, 15, 0); return true; }
@@ -640,9 +643,9 @@ void Level::ActivateButton(VECTOR playerPos, VECTOR playerSize, bool keyPressed)
                 (playerPos.x - (block.pos.x + block.size.x / 2)) * (playerPos.x - (block.pos.x + block.size.x / 2)) +
                 (playerPos.z - (block.pos.z + block.size.z / 2)) * (playerPos.z - (block.pos.z + block.size.z / 2))
             );
-            // Без вертикальной проверки кнопку можно было "нажать" сквозь пол/потолок
-            // на многоуровневых секциях — если игрок в пределах 3 юнитов по XZ, но
-            // находится этажом выше/ниже.
+            // Without the vertical check, a button could be "pressed" through a
+            // floor/ceiling in multi-level sections — whenever the player was within
+            // 3 units on XZ, even on a completely different floor.
             float vertDist = fabsf(playerPos.y - (block.pos.y + block.size.y / 2));
 
             if (horizDist < 3.0f && vertDist < 3.0f && keyPressed) {
@@ -672,8 +675,8 @@ bool Level::IsAnyLightPulseZoneActive() const {
 }
 
 ModelID Level::BlockTypeToModelID(BlockType type) {
-    // Явное соответствие вместо позиционного совпадения значений enum'ов —
-    // BlockType::LIGHT_PULSE_ZONE(14) и ModelID::PLAYER(14) уже разъехались.
+    // Explicit mapping instead of relying on the enums lining up positionally —
+    // BlockType::LIGHT_PULSE_ZONE(14) and ModelID::PLAYER(14) already diverged once.
     switch (type) {
         case BlockType::PLATFORM:            return ModelID::PLATFORM;
         case BlockType::TRIGGER:             return ModelID::TRIGGER;
@@ -691,7 +694,7 @@ ModelID Level::BlockTypeToModelID(BlockType type) {
         case BlockType::PENDULUM_BLADE:      return ModelID::PENDULUM_BLADE;
         case BlockType::ICE_PLATFORM:        return ModelID::ICE_PLATFORM;
         case BlockType::BOUNCE_PAD:          return ModelID::BOUNCE_PAD;
-        case BlockType::LIGHT_PULSE_ZONE:    return ModelID::COUNT; // нет модели, зона невидима
+        case BlockType::LIGHT_PULSE_ZONE:    return ModelID::COUNT; // no model, the zone is invisible
         default:                             return ModelID::COUNT;
     }
 }
@@ -700,17 +703,17 @@ void Level::InitializeModels() {
     ModelManager& modelMgr = ModelManager::GetInstance();
 
     for (auto& block : blocks) {
-        // Определить ModelID по BlockType
+        // Resolve the ModelID for this BlockType
         ModelID modelId = BlockTypeToModelID(block.type);
 
-        // Если модель загружена для данного типа блока
+        // If a model is loaded for this block type
         if (modelMgr.IsModelLoaded(modelId)) {
-            // Создать дубликат модели для этого блока
+            // Duplicate the model for this block
             block.modelHandle = modelMgr.DuplicateModel(modelId);
             block.useModel = true;
 
-            // Масштаб: делим на нативный размер модели (~2.0 для Quaternius pack)
-            // MV1SetScale — это множитель, не абсолютный размер
+            // Scale: divide by the model's native size (~2.0 for the Quaternius pack)
+            // MV1SetScale takes a multiplier, not an absolute size
             const float NATIVE = 2.0f;
             block.modelScale = VGet(
                 block.size.x / NATIVE,
@@ -718,15 +721,15 @@ void Level::InitializeModels() {
                 block.size.z / NATIVE
             );
 
-            // Флаг (TRIGGER): повернуть лицом к игроку
+            // Flag (TRIGGER): face the player
             if (block.type == BlockType::TRIGGER)
                 block.rotation = VGet(0, DX_PI_F * 0.5f, 0);
-            // Цилиндр маятника: модель стоит вертикально, укладываем вдоль Z (90° по X)
+            // Pendulum cylinder: the model stands vertically, lay it along Z (90° around X)
             if (block.type == BlockType::PENDULUM_BLADE)
                 block.rotation = VGet(DX_PI_F * 0.5f, 0, 0);
         }
         else {
-            // Модель не загружена - будут использоваться примитивы
+            // No model loaded - fall back to primitives
             block.modelHandle = -1;
             block.useModel = false;
         }
@@ -736,32 +739,32 @@ void Level::InitializeModels() {
 void Level::DrawSkybox(VECTOR cameraPos) const {
     ModelManager& modelMgr = ModelManager::GetInstance();
 
-    // Отрисовать скайбокс для текущего блока уровней
+    // Draw the skybox for the current level block
     if (modelMgr.IsSkyboxLoaded(blockId)) {
         modelMgr.DrawSkybox(blockId, cameraPos);
     }
 }
 
-// Block 3: Проверка гравитационных зон
+// Block 3: gravity zone checks
 float Level::CheckGravityZone(VECTOR playerPos, VECTOR playerSize) const {
     for (const auto& block : blocks) {
         if (block.type == BlockType::GRAVITY_ZONE) {
-            // Проверка нахождения игрока в зоне
+            // Check whether the player is inside the zone
             if (playerPos.x < block.pos.x + block.size.x && playerPos.x + playerSize.x > block.pos.x &&
                 playerPos.y < block.pos.y + block.size.y && playerPos.y + playerSize.y > block.pos.y &&
                 playerPos.z < block.pos.z + block.size.z && playerPos.z + playerSize.z > block.pos.z) {
-                return block.gravityMultiplier; // Возвращаем множитель гравитации
+                return block.gravityMultiplier; // Return the gravity multiplier
             }
         }
     }
-    return 1.0f; // Нормальная гравитация по умолчанию
+    return 1.0f; // Normal gravity by default
 }
 
 float Level::CheckIcePlatform(VECTOR playerPos, VECTOR playerSize) const {
     for (const auto& block : blocks) {
         if (block.type == BlockType::ICE_PLATFORM) {
             float blockTop = block.pos.y + block.size.y;
-            // Игрок стоит на льду: ноги (playerPos.y) у верхней грани блока + X/Z перекрытие
+            // Player is standing on ice: feet (playerPos.y) at the block's top face + X/Z overlap
             if (playerPos.y >= blockTop - 0.15f && playerPos.y <= blockTop + 0.15f &&
                 playerPos.x < block.pos.x + block.size.x && playerPos.x + playerSize.x > block.pos.x &&
                 playerPos.z < block.pos.z + block.size.z && playerPos.z + playerSize.z > block.pos.z) {
@@ -769,5 +772,5 @@ float Level::CheckIcePlatform(VECTOR playerPos, VECTOR playerSize) const {
             }
         }
     }
-    return 1.0f; // Не на льду — нормальное управление
+    return 1.0f; // Not on ice — normal control
 }

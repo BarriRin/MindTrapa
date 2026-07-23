@@ -7,12 +7,12 @@ public:
     AudioManager();
     ~AudioManager();
 
-    // Явное освобождение звуковых хендлов — вызывать до DxLib_End(), иначе
-    // деструктор сделает это уже после выгрузки DxLib при выходе из программы
+    // Explicitly releases sound handles — call before DxLib_End(), otherwise
+    // the destructor would run after DxLib is already torn down on exit
     void Shutdown();
 
-    // packFolder — имя папки пака внутри media/ (напр. L"Defolt_Pack", L"Pack1");
-    // при повторном вызове выгружает предыдущие хендлы и грузит заново
+    // packFolder is the pack's folder name under media/ (e.g. L"Defolt_Pack", L"Pack1");
+    // calling this again unloads the previous handles and reloads from scratch
     void LoadBgm(const std::wstring& packFolder);
     void LoadSfx();
 

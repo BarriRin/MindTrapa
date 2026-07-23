@@ -3,26 +3,26 @@
 #include <cmath>
 #include <vector>
 
-// ── Биом-конфиги ──────────────────────────────────────────────────────────────
+// ── Biome configs ────────────────────────────────────────────────────────────
 
 struct BiomeConfig {
-    // Небо: два DrawCube3D — верхняя и нижняя полусферы
-    unsigned int skyTopA, skyTopB;      // верх
-    unsigned int skyBotA, skyBotB;      // низ
+    // Sky: two DrawCube3D calls — upper and lower hemispheres
+    unsigned int skyTopA, skyTopB;      // top
+    unsigned int skyBotA, skyBotB;      // bottom
 
-    // Звёзды
+    // Stars
     unsigned int starColors[4];
     int          starColorCount;
     float        starSizeMin, starSizeMax;
 
-    // Планета (DrawSphere3D)
+    // Planet (DrawSphere3D)
     bool         hasPlanet;
-    float        planetOffX, planetOffY, planetOffZ;  // смещение от игрока
+    float        planetOffX, planetOffY, planetOffZ;  // offset from the player
     float        planetRadius;
     unsigned int planetColorDif;
     unsigned int planetColorSpc;
 
-    // Второй объект (луна, кольцо и т.п.)
+    // Secondary object (moon, ring, etc.)
     bool         hasMoon;
     float        moonOffX, moonOffY, moonOffZ;
     float        moonRadius;
@@ -31,81 +31,81 @@ struct BiomeConfig {
 
 static const BiomeConfig BIOMES[5] = {
 
-    // 0 — Deep Space (Block 1: туториал, классический космос)
+    // 0 — Deep Space (Block 1: tutorial, classic space)
     {
-        GetColor( 3,  3, 18), GetColor( 8,  8, 28),   // небо верх
-        GetColor( 8,  8, 28), GetColor(12,  8, 22),   // небо низ
+        GetColor( 3,  3, 18), GetColor( 8,  8, 28),   // sky top
+        GetColor( 8,  8, 28), GetColor(12,  8, 22),   // sky bottom
         { GetColor(255,255,255), GetColor(200,220,255),
           GetColor(255,240,200), GetColor(180,200,255) }, 4,
         0.3f, 1.6f,
-        // далёкая синеватая звезда
+        // distant bluish star
         true,  380.0f, 180.0f, -450.0f, 55.0f,
         GetColor(140, 160, 220), GetColor(80, 100, 180),
-        // маленькая луна
+        // small moon
         true,  420.0f, 130.0f, -490.0f, 18.0f, GetColor(180,180,190),
     },
 
-    // 1 — Nebula / Red Giant (Block 2: красно-оранжевая туманность)
+    // 1 — Nebula / Red Giant (Block 2: red-orange nebula)
     {
         GetColor(22,  4, 12), GetColor(35,  8, 10),
         GetColor(30,  6,  8), GetColor(18,  4, 16),
         { GetColor(255,140, 80), GetColor(255,100,120),
           GetColor(220, 80, 60), GetColor(255,200,100) }, 4,
         0.4f, 2.0f,
-        // красный гигант — большой и тусклый
+        // red giant — big and dim
         true, -350.0f, 220.0f, -500.0f, 90.0f,
         GetColor(200,  60,  20), GetColor(255, 120,  40),
-        // спутник
+        // companion body
         true, -290.0f, 160.0f, -520.0f, 22.0f, GetColor(140, 80, 60),
     },
 
-    // 2 — Gas Giant (Block 3: гравитация, фиолетово-синий)
+    // 2 — Gas Giant (Block 3: gravity, purple-blue)
     {
         GetColor( 8,  3, 30), GetColor(15,  5, 45),
         GetColor(12,  4, 40), GetColor(20,  8, 35),
         { GetColor(180,120,255), GetColor(100,140,255),
           GetColor(220,180,255), GetColor( 80,180,220) }, 4,
         0.5f, 2.2f,
-        // огромный газовый гигант
+        // huge gas giant
         true,  280.0f, 100.0f, -480.0f, 130.0f,
         GetColor(140,  80, 200), GetColor(100,  40, 160),
-        // маленький спутник
+        // small satellite
         true,  390.0f,  60.0f, -510.0f, 24.0f, GetColor(160,140,180),
     },
 
-    // 3 — Void (Block 4: темнота, почти чёрный)
+    // 3 — Void (Block 4: darkness, near-black)
     {
         GetColor( 2,  2,  5), GetColor( 4,  3,  8),
         GetColor( 4,  3,  8), GetColor( 3,  2,  6),
         { GetColor(220,220,240), GetColor(180,180,200),
           GetColor(255,255,255), GetColor(160,160,180) }, 3,
         0.2f, 1.0f,
-        // нейтронная звезда / пульсар — маленький и яркий
+        // neutron star / pulsar — small and bright
         true,  300.0f, 250.0f, -460.0f, 20.0f,
         GetColor(200,220,255), GetColor(255,255,255),
         false, 0,0,0, 0, 0,
     },
 
-    // 4 — Ice Planet (Block 5: ледяная планета, голубой)
+    // 4 — Ice Planet (Block 5: icy planet, blue)
     {
         GetColor( 2, 15, 35), GetColor( 5, 25, 55),
         GetColor( 5, 22, 50), GetColor( 8, 30, 45),
         { GetColor(200,240,255), GetColor(150,210,255),
           GetColor(255,255,255), GetColor(180,230,240) }, 4,
         0.3f, 1.8f,
-        // ледяная планета — голубая
+        // ice planet — blue
         true, -320.0f, 160.0f, -500.0f, 100.0f,
         GetColor( 80,160,220), GetColor(140,200,255),
-        // ледяная луна
+        // ice moon
         true, -220.0f, 110.0f, -530.0f, 28.0f, GetColor(180,220,240),
     },
 };
 
-// ── Сферический скайбокс ──────────────────────────────────────────────────────
+// ── Spherical skybox ────────────────────────────────────────────────────────
 
-// Форма сферы неизменна между кадрами — меняется только положение игрока.
-// Локальные смещения/нормали/UV считаются один раз и кэшируются;
-// каждый кадр обновляется только позиция (VAdd), без тригонометрии и реаллокаций.
+// The sphere's shape never changes between frames — only the player's position
+// does. Local offsets/normals/UVs are computed once and cached; every frame
+// only updates position (VAdd), with no trig or reallocation.
 static void BuildSkyboxSphereCache(float radius, std::vector<VECTOR>& offsets, std::vector<VERTEX3D>& verts) {
     const int STACKS = 18;
     const int SLICES = 36;
@@ -132,7 +132,7 @@ static void BuildSkyboxSphereCache(float radius, std::vector<VECTOR>& offsets, s
                 float y = radius * cosf(theta);
                 float z = radius * sinf(theta) * cosf(phi);
                 VERTEX3D vert;
-                vert.pos  = VGet(x, y, z);  // перезаписывается каждый кадр в DrawSkyboxSphere
+                vert.pos  = VGet(x, y, z);  // overwritten every frame in DrawSkyboxSphere
                 vert.norm = VGet(-sinf(theta)*sinf(phi), -cosf(theta), -sinf(theta)*cosf(phi));
                 vert.dif.r = 255; vert.dif.g = 255; vert.dif.b = 255; vert.dif.a = 255;
                 vert.spc.r = 0;   vert.spc.g = 0;   vert.spc.b = 0;   vert.spc.a = 0;
@@ -145,9 +145,10 @@ static void BuildSkyboxSphereCache(float radius, std::vector<VECTOR>& offsets, s
             VERTEX3D v01 = makeV(phi0, theta1, u0, v1);
             VERTEX3D v11 = makeV(phi1, theta1, u1, v1);
 
-            // Перевёрнутый winding — смотрим изнутри сферы
-            // offsets пушится в том же порядке и с той же кратностью, что и verts —
-            // иначе индексы разъезжаются (баг: offsets был короче verts в 1.5 раза)
+            // Winding is flipped — we're looking at the sphere from the inside.
+            // offsets is pushed in the same order and with the same multiplicity
+            // as verts — otherwise the indices drift apart (this used to be a bug:
+            // offsets ended up 1.5x shorter than verts).
             verts.push_back(v00); offsets.push_back(v00.pos);
             verts.push_back(v01); offsets.push_back(v01.pos);
             verts.push_back(v10); offsets.push_back(v10.pos);
@@ -188,7 +189,7 @@ void DrawSkyboxSphere(VECTOR playerPos, int graphHandle, float radius) {
     SetWriteZBuffer3D(TRUE);
 }
 
-// ── Рендер ────────────────────────────────────────────────────────────────────
+// ── Rendering ────────────────────────────────────────────────────────────────
 
 void DrawSpaceSkybox(VECTOR playerPos, int biomeIdx) {
     if (biomeIdx < 0 || biomeIdx > 4) biomeIdx = 0;
@@ -201,13 +202,13 @@ void DrawSpaceSkybox(VECTOR playerPos, int biomeIdx) {
     SetUseZBuffer3D(FALSE);
     SetWriteZBuffer3D(FALSE);
 
-    // Верхняя полусфера
+    // Upper hemisphere
     DrawCube3D(
         VGet(skyMin.x, playerPos.y, skyMin.z),
         VGet(skyMax.x, skyMax.y,    skyMax.z),
         b.skyTopA, b.skyTopB, TRUE
     );
-    // Нижняя полусфера
+    // Lower hemisphere
     DrawCube3D(
         VGet(skyMin.x, skyMin.y,    skyMin.z),
         VGet(skyMax.x, playerPos.y, skyMax.z),
@@ -231,7 +232,7 @@ void DrawBiomePlanet(VECTOR playerPos, int biomeIdx) {
         DrawSphere3D(pPos, b.planetRadius, 24,
             b.planetColorDif, b.planetColorSpc, TRUE);
 
-        // Атмосферное свечение — чуть больший полупрозрачный шар
+        // Atmospheric glow — a slightly larger, semi-transparent sphere
         SetDrawBlendMode(DX_BLENDMODE_ADD, 35);
         DrawSphere3D(pPos, b.planetRadius * 1.12f, 16,
             b.planetColorSpc, b.planetColorSpc, TRUE);
@@ -248,7 +249,7 @@ void DrawBiomePlanet(VECTOR playerPos, int biomeIdx) {
     SetWriteZBuffer3D(TRUE);
 }
 
-// ── Звёзды ────────────────────────────────────────────────────────────────────
+// ── Stars ────────────────────────────────────────────────────────────────────
 
 std::vector<Star> GenerateStars(int count, float radius, int biomeIdx) {
     if (biomeIdx < 0 || biomeIdx > 4) biomeIdx = 0;
@@ -262,7 +263,7 @@ std::vector<Star> GenerateStars(int count, float radius, int biomeIdx) {
     std::uniform_real_distribution<float> sizeFarD (b.starSizeMin, b.starSizeMax);
     std::uniform_real_distribution<float> sizeNearD(b.starSizeMax * 1.8f, b.starSizeMax * 3.5f);
 
-    // Void — заметно меньше звёзд
+    // Void gets noticeably fewer stars
     int farCount  = (biomeIdx == 3) ? count / 5      : count * 3 / 4;
     int nearCount = (biomeIdx == 3) ? count / 20     : count / 4;
 
@@ -309,7 +310,7 @@ void DrawStars(const std::vector<Star>& stars, VECTOR playerPos) {
         int sy = (int)screen.y;
         if (sx < -60 || sx > 1980 || sy < -60 || sy > 1140) continue;
 
-        // Мерцание: ближние медленнее, дальние быстрее
+        // Twinkle: near stars pulse slower, far stars faster
         float speed   = (star.layer == 1) ? 0.6f : 1.3f;
         float twinkle = 0.5f + 0.5f * sinf(t * speed + star.phase);
 
@@ -318,11 +319,11 @@ void DrawStars(const std::vector<Star>& stars, VECTOR playerPos) {
 
         if (r < 1) r = 1;
 
-        // Ядро
+        // Core
         SetDrawBlendMode(DX_BLENDMODE_ADD, core);
         DrawCircle(sx, sy, r, star.color, TRUE);
 
-        // Мягкое свечение вокруг
+        // Soft glow around it
         SetDrawBlendMode(DX_BLENDMODE_ADD, core / 5);
         DrawCircle(sx, sy, r * 3, star.color, TRUE);
     }
@@ -330,15 +331,15 @@ void DrawStars(const std::vector<Star>& stars, VECTOR playerPos) {
     SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
 }
 
-// ── Туман биома ───────────────────────────────────────────────────────────────
+// ── Biome fog ────────────────────────────────────────────────────────────────
 
 struct BiomeFogCfg { int r, g, b; float start, end; };
 static const BiomeFogCfg BIOME_FOG[5] = {
-    {  4,  6, 22, 18.0f, 55.0f },  // 0 Deep Space  — синий
-    { 28,  4,  8, 15.0f, 50.0f },  // 1 Nebula       — тёмно-красный
-    {  8,  2, 28, 12.0f, 45.0f },  // 2 Gas Giant    — фиолетовый
-    {  1,  1,  4, 25.0f, 70.0f },  // 3 Void         — почти чёрный
-    {  3, 14, 28, 16.0f, 52.0f },  // 4 Ice Planet   — тёмный голубой
+    {  4,  6, 22, 18.0f, 55.0f },  // 0 Deep Space  — blue
+    { 28,  4,  8, 15.0f, 50.0f },  // 1 Nebula       — dark red
+    {  8,  2, 28, 12.0f, 45.0f },  // 2 Gas Giant    — purple
+    {  1,  1,  4, 25.0f, 70.0f },  // 3 Void         — near black
+    {  3, 14, 28, 16.0f, 52.0f },  // 4 Ice Planet   — dark blue
 };
 
 void ApplyBiomeFog(int biomeIdx) {

@@ -5,15 +5,15 @@
 #include <vector>
 #include <string>
 
-// Состояния игры
+// Game states
 enum class GameState {
-    PROFILE_SELECT,        // Выбор/создание профиля (стартовый экран или смена)
-    PROFILE_CREATE,        // Ввод никнейма при создании профиля
+    PROFILE_SELECT,        // Select/create a profile (startup screen or profile switch)
+    PROFILE_CREATE,        // Enter a nickname while creating a profile
     MAIN_MENU,
-    LEVEL_SELECT_BLOCKS,   // Выбор блока (10 блоков)
-    LEVEL_SELECT_LEVELS,   // Выбор уровня внутри блока (10 уровней)
-    SETTINGS,              // Настройки (мышь, музыка, звук)
-    MUSIC_SELECT,          // Выбор музыкального трека
+    LEVEL_SELECT_BLOCKS,   // Block selection (10 blocks)
+    LEVEL_SELECT_LEVELS,   // Level selection within a block (10 levels)
+    SETTINGS,              // Settings (mouse, music, sound)
+    MUSIC_SELECT,          // Music track selection
     PLAYING,
     PAUSED,
     DYING,
@@ -21,7 +21,7 @@ enum class GameState {
     LEVEL_RESULT
 };
 
-// Действия кнопок
+// Button actions
 enum class ButtonAction {
     START_GAME,
     OPEN_SETTINGS,
@@ -54,7 +54,7 @@ enum class ButtonAction {
     NONE
 };
 
-// Структура кнопки
+// Button struct
 struct Button {
     std::wstring text;
     int x, y;
@@ -67,29 +67,29 @@ struct Button {
         : text(txt), x(posX), y(posY), width(w), height(h), action(act), isHovered(false), disabled(dis) {
     }
 
-    // Проверка попадания мыши
+    // Mouse hit test
     bool Contains(int mouseX, int mouseY) const {
         return mouseX >= x && mouseX <= x + width &&
             mouseY >= y && mouseY <= y + height;
     }
 
-    int fontHandle = -1;  // кастомный шрифт (-1 = системный)
+    int fontHandle = -1;  // custom font (-1 = system default)
 
-    // Отрисовка кнопки
+    // Draw the button
     void Draw() const {
         unsigned int bgColor     = disabled ? GetColor(35, 35, 35)   : (isHovered ? GetColor(60, 100, 200) : GetColor(20, 30, 80));
         unsigned int borderColor = disabled ? GetColor(55, 55, 55)   : (isHovered ? GetColor(120, 180, 255) : GetColor(60, 90, 180));
         unsigned int textColor   = disabled ? GetColor(90, 90, 90)   : GetColor(255, 255, 255);
 
-        // Полупрозрачный фон
+        // Semi-transparent background
         int bgAlpha = disabled ? 130 : (isHovered ? 220 : 170);
         SetDrawBlendMode(DX_BLENDMODE_ALPHA, bgAlpha);
         DrawBox(x, y, x + width, y + height, bgColor, TRUE);
         SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-        // Рамка
+        // Border
         DrawBox(x, y, x + width, y + height, borderColor, FALSE);
 
-        // Текст по центру
+        // Centered text
         int textWidth, textY;
         if (fontHandle != -1) {
             textWidth = GetDrawStringWidthToHandle(text.c_str(), (int)text.size(), fontHandle);
@@ -103,15 +103,15 @@ struct Button {
     }
 };
 
-// Настройки игры (кэш из текущего профиля)
+// Game settings (cached from the current profile)
 struct Settings {
     int musicVolume      = 80;   // 0-100
     int soundVolume      = 60;   // 0-100
     int mouseSensitivity = 50;   // 0-100, 50 = 1.0x
-    int selectedThemePack = 0;   // 0 = Default, 1/2 = разблокируемые паки
+    int selectedThemePack = 0;   // 0 = Default, 1/2 = unlockable packs
 };
 
-// Класс меню
+// Menu class
 class Menu {
 private:
     GameState currentState;
@@ -119,16 +119,16 @@ private:
     std::vector<Button> buttons;
 
     int totalLevels;
-    int selectedBlock;       // Какой блок выбран (1-10)
-    int unlockedBlocks;      // Сколько блоков разблокировано
-    int unlockedLevels;      // До какого уровня включительно открыто
-    Settings settings;       // Настройки игры
+    int selectedBlock;       // Which block is selected (1-10)
+    int unlockedBlocks;      // How many blocks are unlocked
+    int unlockedLevels;      // Up to which level (inclusive) is unlocked
+    Settings settings;       // Game settings
 
-    // Стек навигации (для ESC/Back)
+    // Navigation stack (for ESC/Back)
     std::vector<GameState> stateHistory;
 
-    // Геометрия слайдеров экрана SETTINGS — общая для Draw() и HandleInput(),
-    // чтобы хитбокс не мог разъехаться с отрисовкой
+    // Slider geometry for the SETTINGS screen — shared between Draw() and
+    // HandleInput() so the hitbox can never drift out of sync with the drawing
     static constexpr int SLIDER_X       = SCREEN_W / 2 - 200;
     static constexpr int SLIDER_WIDTH   = 400;
     static constexpr int SLIDER_Y_MUSIC = 350;
@@ -137,27 +137,27 @@ private:
 
     void ApplyFontToButtons(int handle);
 
-    // Состояния ввода (member variables, не static)
+    // Input state (member variables, not static)
     bool mousePressed;
     bool upPressed;
     bool downPressed;
     bool enterPressed;
     bool escPressed;
-    bool sliderGrabbed = false;  // слайдер захвачен свежим кликом (защита от сквозных кликов)
+    bool sliderGrabbed = false;  // slider was grabbed by a fresh click (guards against click-through)
 
-    // Экран результата
+    // Result screen
     bool  resultCompleted   = false;
     bool  resultIsLastLevel = false;
     int   resultStars       = 0;
     float resultTime        = 0.0f;
 
     // Profile screens
-    bool profileSelectCanGoBack = false;  // true если вошли из главного меню
-    int  pendingDeleteSlot      = -1;     // ожидает подтверждения удаления
-    int  pendingCreateSlot      = -1;     // слот для которого создаём профиль
-    int  keyInputHandle         = -1;     // DxLib key input для ввода ника
+    bool profileSelectCanGoBack = false;  // true if we entered from the main menu
+    int  pendingDeleteSlot      = -1;     // awaiting delete confirmation
+    int  pendingCreateSlot      = -1;     // slot we're creating a profile for
+    int  keyInputHandle         = -1;     // DxLib key input for nickname entry
 
-    // Создание кнопок
+    // Button creation
     void CreateMainMenuButtons();
     void CreateBlockSelectButtons();
     void CreateLevelSelectButtons();
@@ -169,12 +169,12 @@ private:
     void CreateProfileCreateButtons();
     void UpdateHover(int mouseX, int mouseY);
 
-    // Общая логика возврата назад для PROFILE_SELECT/PROFILE_CREATE — используется
-    // и из ESC (HandleInput), и из клика по Back-кнопке (ActivateSelectedButton),
-    // чтобы поведение (в т.ч. отмена подтверждения удаления) не расходилось между ними
+    // Shared "go back" logic for PROFILE_SELECT/PROFILE_CREATE — used both from
+    // ESC (HandleInput) and from clicking the Back button (ActivateSelectedButton),
+    // so the behavior (including canceling a pending delete) never diverges between them
     bool HandleBackNavigation(ButtonAction& outAction);
 
-    // Ползунки
+    // Sliders
     void DrawSlider(int x, int y, int width, int value, const wchar_t* label) const;
     int HandleSliderClick(int x, int y, int width, int mouseX, int mouseY);
 
@@ -182,31 +182,31 @@ public:
     Menu(int levels);
     ~Menu();
 
-    // Явное освобождение DxLib-ресурсов (шрифты, key input) — вызывать до
-    // DxLib_End(), иначе деструктор сделает это уже после выгрузки DxLib
+    // Explicitly releases DxLib resources (fonts, key input) — call before
+    // DxLib_End(), otherwise the destructor would run after DxLib is already torn down
     void Shutdown();
 
-    // Основные методы
-    void SetState(GameState state);          // Переход без сохранения истории
-    void PushState(GameState newState);      // Переход с сохранением в стек
-    void PopState();                         // Возврат назад по стеку
-    void ClearHistory();                     // Очистить стек
-    void ResetInputFlags();                  // Сбросить флаги ввода (предотвратить двойное нажатие)
+    // Core methods
+    void SetState(GameState state);          // Transition without saving history
+    void PushState(GameState newState);      // Transition and push onto the stack
+    void PopState();                         // Go back via the stack
+    void ClearHistory();                     // Clear the stack
+    void ResetInputFlags();                  // Reset input flags (prevents double activation)
     GameState GetState() const { return currentState; }
     void ShowResultScreen(bool completed, int stars, float time, bool isLastLevel = false);
     void OpenProfileSelect(bool canGoBack);
     void OpenProfileCreate(int slot);
     void SyncSettingsFromProfile();
-    void UpdateUnlockState();   // Пересчитать unlockedBlocks/unlockedLevels из профиля
+    void UpdateUnlockState();   // Recompute unlockedBlocks/unlockedLevels from the profile
 
     void Draw() const;
     ButtonAction HandleInput(int& blockToLoad, int& levelToLoad);
 
-    // Геттеры
+    // Getters
     void SetSelectedBlock(int block) { selectedBlock = block; }
     Settings& GetSettings() { return settings; }
 
-    // Навигация клавиатурой
+    // Keyboard navigation
     void SelectNextButton();
     void SelectPrevButton();
     ButtonAction ActivateSelectedButton(int& blockToLoad, int& levelToLoad);

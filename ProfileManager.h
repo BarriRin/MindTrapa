@@ -5,8 +5,8 @@
 static const int PROFILE_SLOT_COUNT  = 5;
 static const int PROFILE_LEVEL_COUNT = 50;
 
-// Паки оформления (музыка+скайбоксы): 0 = Default (всегда открыт),
-// THEME_PACK_THRESHOLDS[pack-1] звёзд суммарно нужно для pack 1/2
+// Theme packs (music+skyboxes): 0 = Default (always unlocked),
+// THEME_PACK_THRESHOLDS[pack-1] total stars needed for pack 1/2
 static const int THEME_PACK_COUNT = 3;
 static const int THEME_PACK_THRESHOLDS[2] = { 75, 150 };
 
@@ -18,7 +18,7 @@ struct Profile {
     int   mouseSensitivity = 50;   // 0-100, 50 = 1.0x
     int   musicVolume      = 80;   // 0-100
     int   sfxVolume        = 60;   // 0-100
-    int   themePack        = 0;    // 0 = Default, 1/2 = разблокируемый пак
+    int   themePack        = 0;    // 0 = Default, 1/2 = unlockable pack
 
     int TotalStars() const {
         int total = 0;
@@ -36,7 +36,7 @@ public:
     bool HasActiveProfile() const { return currentSlot >= 0; }
     int  GetCurrentSlot()   const { return currentSlot; }
 
-    // Глобальный язык интерфейса ("EN"/"RU"/"JA"), не привязан к профилю
+    // Global UI language ("EN"/"RU"/"JA"), not tied to a profile
     const std::string& GetLanguageCode() const { return languageCode; }
     void SetLanguageCode(const std::string& code) { languageCode = code; SaveConfig(); }
 
@@ -56,7 +56,7 @@ public:
     bool  HasBestTime(int levelId) const;
     void  SetLevelResult(int levelId, int stars, float time);
 
-    // Паки оформления
+    // Theme packs
     int  GetThemePack() const;
     bool IsThemePackUnlocked(int pack) const;
     void SetThemePack(int pack);

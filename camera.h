@@ -6,13 +6,14 @@ class Camera {
 public:
     Camera();
 
-    // Обновляет углы по движению мыши (позицию НЕ трогает) — вызывать ДО player.Update(),
-    // чтобы игрок двигался относительно направления взгляда уже этого кадра
+    // Updates angles from mouse movement (does NOT touch position) — call BEFORE
+    // player.Update(), so the player moves relative to this frame's look direction
     void UpdateAngles(float sensitivity);
 
-    // Применяет позицию/цель камеры к текущим углам — вызывать ПОСЛЕ player.Update(),
-    // чтобы камера следовала за позицией игрока уже этого кадра, а не прошлого
-    // (иначе модель на быстром падении визуально "отстаёт" от камеры на кадр)
+    // Applies the camera's position/target from the current angles — call AFTER
+    // player.Update(), so the camera follows this frame's player position rather
+    // than last frame's (otherwise the model visibly "lags" the camera by a frame
+    // during a fast fall)
     void Apply(VECTOR targetPos) const;
 
     VECTOR GetPosition(VECTOR targetPos) const;

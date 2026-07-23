@@ -10,25 +10,25 @@ private:
     int totalLevels;
     int deathCount;
 
-    // Таймер уровня
+    // Level timer
     float currentLevelTime;
-    std::map<int, float> bestTimes; // Лучшие времена для каждого уровня
+    std::map<int, float> bestTimes; // Best time per level
 
 public:
     LevelManager();
     ~LevelManager();
 
-    // Явное освобождение DxLib-моделей текущего уровня — вызывать до DxLib_End(),
-    // иначе деструктор сделает это уже после выгрузки DxLib при выходе из программы
+    // Explicitly releases the current level's DxLib models — call before DxLib_End(),
+    // otherwise the destructor would run after DxLib is already torn down on exit
     void Shutdown();
 
-    // Управление уровнями
+    // Level management
     void LoadLevel(int levelId);
     void NextLevel();
     void RestartLevel();
     void ReloadCurrentLevel();
 
-    // Геттеры
+    // Getters
     Level* GetCurrentLevel() const { return currentLevel.get(); }
     int GetCurrentLevelId() const { return currentLevelId; }
     int GetTotalLevels() const { return totalLevels; }
@@ -37,12 +37,12 @@ public:
     float GetBestTime(int levelId) const;
     bool HasBestTime(int levelId) const;
 
-    // Игровые события
+    // Gameplay events
     void OnPlayerDeath();
     bool IsLastLevel() const;
-    void OnLevelComplete(); // Вызывается при прохождении уровня
-    void UpdateTimer(float deltaTime); // Обновление таймера
+    void OnLevelComplete(); // Called when the level is completed
+    void UpdateTimer(float deltaTime); // Advances the timer
 
-    // Для UI
+    // For the UI
     void DrawLevelInfo(bool debugMode = false) const;
 };
