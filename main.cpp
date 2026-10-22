@@ -3,6 +3,7 @@
 #include "AudioManager.h"
 #include "Camera.h"
 #include "GameState.h"
+#include "Input.h"
 #include "LevelManager.h"
 #include "Menu.h"
 #include "ModelManager.h"
@@ -204,6 +205,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     // ── Camera ────────────────────────────────────────────────────────────────
     Camera camera;
 
+    // ── Input ─────────────────────────────────────────────────────────────────
+    Input input;
+
     // ── Particles ─────────────────────────────────────────────────────────────
     srand((unsigned int)GetNowCount());
     ParticleSystem particles;
@@ -272,6 +276,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     // ═════════════════════════════════════════════════════════════════════════
     while (ProcessMessage() == 0) {
         ClearDrawScreen();
+        input.Update();
 
         int   now = GetNowCount();
         float realDt = (now - lastFrameTime) / 1000.0f;
@@ -465,40 +470,34 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
             SetMouseDispFlag(FALSE);
 
             // ESC -> pause
-            static bool escPressed = false;
-            static float escDelay  = 0.0f;
+            static float escDelay = 0.0f;
             if (escDelay > 0.0f) escDelay -= dt;
-            if (CheckHitKey(KEY_INPUT_ESCAPE)) {
-                if (!escPressed && escDelay <= 0.0f) {
-                    menu.PushState(GameState::PAUSED);
-                    menu.ResetInputFlags();
-                    gameState = menu.GetState();
-                    SetMouseDispFlag(TRUE);
-                    escDelay = 0.3f;
-                }
-                escPressed = true;
-            } else { escPressed = false; }
+            if (input.IsPressed(KEY_INPUT_ESCAPE) && escDelay <= 0.0f) {
+                menu.PushState(GameState::PAUSED);
+                menu.ResetInputFlags();
+                gameState = menu.GetState();
+                SetMouseDispFlag(TRUE);
+                escDelay = 0.3f;
+            }
 
             // F3 — debug
-            static bool f3Pressed = false;
-            if (CheckHitKey(KEY_INPUT_F3)) { if (!f3Pressed) debugMode = !debugMode; f3Pressed = true; }
-            else f3Pressed = false;
+            if (input.IsPressed(KEY_INPUT_F3)) debugMode = !debugMode;
 
             // Game speed control ([ ] + 0)
             static bool plusP = false, minusP = false, bracketLP = false, bracketRP = false, zeroP = false;
-            if (CheckHitKey(KEY_INPUT_ADD) || CheckHitKey(KEY_INPUT_SEMICOLON)) {
+            if (input.IsHeld(KEY_INPUT_ADD) || input.IsHeld(KEY_INPUT_SEMICOLON)) {
                 if (!plusP) { gameSpeed += 0.25f; if (gameSpeed > 3.0f) gameSpeed = 3.0f; } plusP = true;
             } else plusP = false;
-            if (CheckHitKey(KEY_INPUT_SUBTRACT) || CheckHitKey(KEY_INPUT_MINUS)) {
+            if (input.IsHeld(KEY_INPUT_SUBTRACT) || input.IsHeld(KEY_INPUT_MINUS)) {
                 if (!minusP) { gameSpeed -= 0.25f; if (gameSpeed < 0.25f) gameSpeed = 0.25f; } minusP = true;
             } else minusP = false;
-            if (CheckHitKey(KEY_INPUT_LBRACKET)) {
+            if (input.IsHeld(KEY_INPUT_LBRACKET)) {
                 if (!bracketLP) { gameSpeed -= 0.25f; if (gameSpeed < 0.25f) gameSpeed = 0.25f; } bracketLP = true;
             } else bracketLP = false;
-            if (CheckHitKey(KEY_INPUT_RBRACKET)) {
+            if (input.IsHeld(KEY_INPUT_RBRACKET)) {
                 if (!bracketRP) { gameSpeed += 0.25f; if (gameSpeed > 3.0f) gameSpeed = 3.0f; } bracketRP = true;
             } else bracketRP = false;
-            if (CheckHitKey(KEY_INPUT_0) || CheckHitKey(KEY_INPUT_NUMPAD0)) {
+            if (input.IsHeld(KEY_INPUT_0) || input.IsHeld(KEY_INPUT_NUMPAD0)) {
                 if (!zeroP) gameSpeed = 1.0f; zeroP = true;
             } else zeroP = false;
 
@@ -768,18 +767,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
             int dummy1 = -1, dummy2 = -1;
             ButtonAction action = menu.HandleInput(dummy1, dummy2);
 
-            static bool rKeyPressed = false;
-            if (CheckHitKey(KEY_INPUT_R)) {
-                if (!rKeyPressed) action = ButtonAction::RESTART;
-                rKeyPressed = true;
-            } else rKeyPressed = false;
+            if (input.IsPressed(KEY_INPUT_R)) action = ButtonAction::RESTART;
 
-            static bool spaceKeyPressed = false;
-            if (CheckHitKey(KEY_INPUT_SPACE)) {
-                if (!spaceKeyPressed && levelWasCompleted && !levelManager.IsLastLevel())
-                    action = ButtonAction::NEXT_LEVEL;
-                spaceKeyPressed = true;
-            } else spaceKeyPressed = false;
+            if (input.IsPressed(KEY_INPUT_SPACE) && levelWasCompleted && !levelManager.IsLastLevel())
+                action = ButtonAction::NEXT_LEVEL;
 
             if (action == ButtonAction::RESTART) {
                 applyBlockTheme((levelManager.GetCurrentLevelId() - 1) / 10);
