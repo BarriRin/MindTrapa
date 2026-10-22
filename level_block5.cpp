@@ -1,4 +1,4 @@
-#include "level.h"
+#include "Level.h"
 
 void Level::LoadBlock5(int id) {
     switch (id) {

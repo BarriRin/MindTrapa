@@ -1,17 +1,21 @@
 # Architecture
 
-~7,100 lines of C++ across 28 files, no engine — just DxLib for windowing/rendering/audio/input. Everything else (physics, state machines, save format, localization) is hand-rolled.
+~7,200 lines of C++ across 36 files, no engine — just DxLib for windowing/rendering/audio/input. Everything else (physics, state machines, save format, localization) is hand-rolled.
 
 ## Directory layout
 
 ```
 MindTrapa/
-├── main.cpp                  — WinMain, game loop, top-level state dispatch
-├── level.h / level.cpp       — Block/Level: collision, block state, per-block rendering
-├── level_block1..5.cpp       — level data (block lists), one file per themed block
-├── LevelManager.h/.cpp       — current level, death count, timer, HUD text
-├── Player.h/.cpp             — physics, input, animation state machine
-├── Camera.h/.cpp             — orbit camera (mouse look + follow)
+├── main.cpp                  — WinMain: constructs Game, calls Init() -> Run() -> Shutdown()
+├── Game.h/.cpp                — owns every system; main loop and per-state update/draw
+├── GameState.h                 — GameState enum (menus, playing, paused, dying, celebrating, result)
+├── Input.h/.cpp                — per-frame keyboard state cache (IsHeld/IsPressed)
+├── Level.h / Level.cpp         — Block/Level: collision, block state, per-block rendering
+├── level_block1..5.cpp        — level data (block lists), one file per themed block
+├── LevelData.h/.cpp            — per-level star time thresholds (3-star/2-star cutoffs)
+├── LevelManager.h/.cpp        — current level, death count, timer, HUD text
+├── Player.h/.cpp              — physics, input, animation state machine
+├── Camera.h/.cpp               — orbit camera (mouse look + follow)
 ├── Menu.h/.cpp                — stack-based UI state machine, all screens
 ├── ModelManager.h/.cpp       — singleton: loads/duplicates DxLib models
 ├── AudioManager.h/.cpp       — BGM streaming + SFX playback
@@ -27,7 +31,15 @@ MindTrapa/
 
 ## Core loop
 
-`main.cpp` owns one big state machine (`GameState`: `MAIN_MENU`, `LEVEL_SELECT_BLOCKS/LEVELS`, `SETTINGS`, `PROFILE_SELECT/CREATE`, `PLAYING`, `PAUSED`, `DYING`, `LEVEL_RESULT`, `MUSIC_SELECT`) driving what gets updated/drawn each frame. Per-frame order during gameplay matters and was a real source of bugs:
+`main.cpp` is ~10 lines: it constructs a `Game`, and calls `Init()` → `Run()` → `Shutdown()`.
+
+- `Game::Init()` — engine bring-up (DxLib_Init, camera/Z-buffer setup), loads base models, profiles, levels, menu, audio, skyboxes, the player model
+- `Game::Run()` — the main `while (ProcessMessage() == 0)` loop; dispatches to one `Update*()` method per `GameState` value (`UpdateMenu`, `UpdatePaused`, `UpdatePlaying`, `UpdateDying`, `UpdateCelebrating`, `UpdateResult`)
+- `Game::Shutdown()` — releases DxLib resources (models, sounds, fonts) **before** `DxLib_End()`, since the documented teardown order requires that
+
+`LevelManager` and `Menu` are `std::unique_ptr` members rather than plain fields: both load content through DxLib in their constructors (duplicating models, creating fonts), so they can only be constructed once `DxLib_Init()` has already run inside `Init()` — a plain value member would be constructed too early, while `Game` itself is being built in `WinMain`.
+
+The in-level states (`PAUSED`/`PLAYING`/`DYING`/`LEVEL_CELEBRATING`/`LEVEL_RESULT`) share one `Game::DrawScene()` method (skybox, stars, fog, level, player), parameterized per state for the differences that matter (shadow, particles, darkness overlay, facing-camera vs. normal player draw). Per-frame order during gameplay matters and was a real source of bugs:
 
 1. `Camera::UpdateAngles()` — mouse look, **before** player physics, so movement direction uses this frame's look direction
 2. `Player::Update()` — reads input, applies gravity/collision, updates animation state
@@ -40,6 +52,8 @@ Splitting the camera update this way fixed a one-frame lag between the camera an
 
 | Class | Responsibility |
 |---|---|
+| `Game` | Owns every system; drives `Init()` → `Run()` → `Shutdown()`, one `Update*()` method per `GameState`, shared `DrawScene()` |
+| `Input` | Per-frame keyboard state cache: `IsHeld()` (currently down) / `IsPressed()` (down this frame, was up last frame) |
 | `Level` | Block list for one level: collision (`CheckCollision`, AABB, smallest-overlap-axis resolution), triggers (win/death/teleport), per-block draw (model or primitive fallback) |
 | `LevelManager` | Owns the current `Level`, tracks death count / timer, exposes best-time lookups |
 | `Player` | Physics (gravity, jump, ice inertia), collision response, animation state machine (Idle/Run/Jump/Fall/Death/Wave/Yes), facing direction |
@@ -57,7 +71,7 @@ Levels are **not** data-driven — there's no JSON/level-format parser. Each lev
 
 ## Model/asset pipeline
 
-Downloaded asset packs (Quaternius/Kenney/KayKit, all CC0) aren't used directly — `tools/ModelConverter` converts OBJ meshes to DxLib's native `.x` format. Only the specific converted files actually referenced by `ModelManager::LoadModel()` calls in `main.cpp` are kept in the repo (the original packs are multiple hundreds of MB; the game itself references a few dozen files totaling a few MB).
+Downloaded asset packs (Quaternius/Kenney/KayKit, all CC0) aren't used directly — `tools/ModelConverter` converts OBJ meshes to DxLib's native `.x` format. Only the specific converted files actually referenced by `ModelManager::LoadModel()` calls in `Game::Init()`/`Game::LoadThemeModels()` are kept in the repo (the original packs are multiple hundreds of MB; the game itself references a few dozen files totaling a few MB).
 
 ## Save system
 

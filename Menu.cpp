@@ -95,9 +95,7 @@ void Menu::ShowResultScreen(bool completed, int stars, float time, bool isLastLe
 }
 
 void Menu::PushState(GameState newState) {
-    // Save the current state onto the stack
     stateHistory.push_back(currentState);
-    // Transition to the new one
     SetState(newState);
 }
 
@@ -634,7 +632,6 @@ void Menu::Draw() const {
         break;
     }
 
-    // Draw the buttons
     for (size_t i = 0; i < buttons.size(); i++) {
         // Highlight the selected button (keyboard navigation)
         if (i == selectedButtonIndex && !buttons[i].isHovered) {

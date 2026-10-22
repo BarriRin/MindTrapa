@@ -27,6 +27,8 @@ struct Profile {
     }
 };
 
+// Singleton holding the save-slot profiles (progress, settings, theme pack)
+// and which slot is currently active.
 class ProfileManager {
 public:
     static ProfileManager& GetInstance();

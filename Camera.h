@@ -2,6 +2,8 @@
 #include "DxLib.h"
 #include "Constants.h"
 
+// Third-person orbit camera: angles come from mouse input, position is derived
+// from the current angles and the player's position.
 class Camera {
 public:
     Camera();

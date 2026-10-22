@@ -8,6 +8,7 @@ struct Particle {
     unsigned int color;
 };
 
+// Pooled particle burst effect used for the level-complete celebration.
 class ParticleSystem {
 public:
     ParticleSystem();

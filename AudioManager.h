@@ -2,6 +2,7 @@
 #include "DxLib.h"
 #include <string>
 
+// Loads and plays the current theme pack's BGM tracks and the gameplay SFX.
 class AudioManager {
 public:
     AudioManager();

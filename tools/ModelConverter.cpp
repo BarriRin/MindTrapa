@@ -6,7 +6,6 @@
 #include <string>
 #include <iostream>
 
-// Get a file's extension
 std::wstring GetExtension(const std::wstring& path) {
     size_t pos = path.rfind(L'.');
     if (pos != std::wstring::npos) {
@@ -15,7 +14,6 @@ std::wstring GetExtension(const std::wstring& path) {
     return L"";
 }
 
-// Replace the extension with .mv1
 std::wstring ReplaceExtension(const std::wstring& path) {
     size_t pos = path.rfind(L'.');
     if (pos != std::wstring::npos) {
@@ -25,7 +23,6 @@ std::wstring ReplaceExtension(const std::wstring& path) {
 }
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
-    // Get the command line arguments
     int argc;
     LPWSTR* argv = CommandLineToArgvW(GetCommandLineW(), &argc);
 
@@ -51,15 +48,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     LocalFree(argv);
 
-    // Configure DxLib to run without a window
-    SetOutApplicationLogValidFlag(FALSE);  // Disable logging
+    // Configure DxLib to run without a visible window
+    SetOutApplicationLogValidFlag(FALSE);
     SetAlwaysRunFlag(TRUE);
     ChangeWindowMode(TRUE);
-    SetGraphMode(64, 64, 32);  // Minimal window
-    SetWindowStyleMode(2);  // No border
+    SetGraphMode(64, 64, 32);  // minimal window
+    SetWindowStyleMode(2);     // no border
     SetMainWindowText(TEXT("Converting..."));
-
-    // Hide the window
     SetWindowVisibleFlag(FALSE);
 
     if (DxLib_Init() == -1) {
@@ -67,7 +62,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         return 1;
     }
 
-    // Load the model
     int handle = MV1LoadModel(inputPath.c_str());
 
     if (handle == -1) {
@@ -77,10 +71,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         return 1;
     }
 
-    // Save as MV1
     int result = MV1SaveModelToMV1File(handle, outputPath.c_str(), MV1_SAVETYPE_NORMAL, -1, TRUE);
-
-    // Free the model from memory
     MV1DeleteModel(handle);
 
     DxLib_End();

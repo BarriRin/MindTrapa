@@ -1,7 +1,7 @@
 #include "Player.h"
 #include "Camera.h"
 #include "AudioManager.h"
-#include "level.h"
+#include "Level.h"
 #include <cmath>
 #include <algorithm>
 
