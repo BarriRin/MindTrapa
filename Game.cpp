@@ -2,6 +2,44 @@
 #include "LevelData.h"
 #include <cstdlib>
 
+namespace {
+    struct ThemeModelEntry { ModelID id; const char* path; };
+
+    // Platform theme group 0: Blocks 1-2 (grass/dirt)
+    const ThemeModelEntry THEME_0_MODELS[] = {
+        { ModelID::PLATFORM,      "converted_x/Cube_Grass_Single.x" },
+        { ModelID::FAKE_PLATFORM, "converted_x/Cube_Grass_Single.x" },
+        { ModelID::CRUMBLING,     "converted_x/Cube_Crate.x" },
+        { ModelID::MOVING,        "converted_x/Cube_Dirt_Single.x" },
+        { ModelID::DISAPPEARING,  "converted_x/Cube_Bricks.x" },
+    };
+    // Platform theme group 1: Block 3 (space station)
+    const ThemeModelEntry THEME_1_MODELS[] = {
+        { ModelID::PLATFORM,      "space_station/floor-panel.x" },
+        { ModelID::FAKE_PLATFORM, "space_station/floor-panel.x" },
+        { ModelID::CRUMBLING,     "space_station/container.x" },
+        { ModelID::MOVING,        "space_station/container-flat.x" },
+        { ModelID::DISAPPEARING,  "space_station/door-single-closed.x" },
+        { ModelID::BOUNCE_PAD,    "converted_x/Bouncer.x" },
+    };
+    // Platform theme group 2: Blocks 4-5 (space station floor + KayKit cargo)
+    const ThemeModelEntry THEME_2_MODELS[] = {
+        { ModelID::PLATFORM,      "space_station/floor-panel.x" },
+        { ModelID::FAKE_PLATFORM, "space_station/floor-panel.x" },
+        { ModelID::CRUMBLING,     "space_kaykit/cargo_B_stacked.x" },
+        { ModelID::MOVING,        "space_kaykit/cargo_A.x" },
+        { ModelID::DISAPPEARING,  "space_kaykit/containers_A.x" },
+        { ModelID::BOUNCE_PAD,    "converted_x/Bouncer.x" },
+    };
+
+    struct ThemeModelTable { const ThemeModelEntry* entries; int count; };
+    const ThemeModelTable THEME_MODEL_TABLES[3] = {
+        { THEME_0_MODELS, sizeof(THEME_0_MODELS) / sizeof(THEME_0_MODELS[0]) },
+        { THEME_1_MODELS, sizeof(THEME_1_MODELS) / sizeof(THEME_1_MODELS[0]) },
+        { THEME_2_MODELS, sizeof(THEME_2_MODELS) / sizeof(THEME_2_MODELS[0]) },
+    };
+}
+
 Game::Game()
     : modelMgr(ModelManager::GetInstance())
     , profileMgr(ProfileManager::GetInstance())
@@ -582,7 +620,10 @@ void Game::ApplyBlockTheme(int blockIdx) {
     }
     if (theme == currentThemeGroup) return;
     currentThemeGroup = theme;
+    LoadThemeModels(theme);
+}
 
+void Game::LoadThemeModels(int theme) {
     modelMgr.UnloadModel(ModelID::PLATFORM);
     modelMgr.UnloadModel(ModelID::FAKE_PLATFORM);
     modelMgr.UnloadModel(ModelID::CRUMBLING);
@@ -591,26 +632,9 @@ void Game::ApplyBlockTheme(int blockIdx) {
     modelMgr.UnloadModel(ModelID::ICE_PLATFORM);
     modelMgr.UnloadModel(ModelID::BOUNCE_PAD);
 
-    if (theme == 0) {
-        modelMgr.LoadModel(ModelID::PLATFORM,      "converted_x/Cube_Grass_Single.x", 1.0f);
-        modelMgr.LoadModel(ModelID::FAKE_PLATFORM, "converted_x/Cube_Grass_Single.x", 1.0f);
-        modelMgr.LoadModel(ModelID::CRUMBLING,     "converted_x/Cube_Crate.x",        1.0f);
-        modelMgr.LoadModel(ModelID::MOVING,        "converted_x/Cube_Dirt_Single.x",  1.0f);
-        modelMgr.LoadModel(ModelID::DISAPPEARING,  "converted_x/Cube_Bricks.x",       1.0f);
-    } else if (theme == 1) {
-        modelMgr.LoadModel(ModelID::PLATFORM,      "space_station/floor-panel.x",        1.0f);
-        modelMgr.LoadModel(ModelID::FAKE_PLATFORM, "space_station/floor-panel.x",        1.0f);
-        modelMgr.LoadModel(ModelID::CRUMBLING,     "space_station/container.x",          1.0f);
-        modelMgr.LoadModel(ModelID::MOVING,        "space_station/container-flat.x",     1.0f);
-        modelMgr.LoadModel(ModelID::DISAPPEARING,  "space_station/door-single-closed.x", 1.0f);
-        modelMgr.LoadModel(ModelID::BOUNCE_PAD,    "converted_x/Bouncer.x",             1.0f);
-    } else {
-        modelMgr.LoadModel(ModelID::PLATFORM,      "space_station/floor-panel.x",      1.0f);
-        modelMgr.LoadModel(ModelID::FAKE_PLATFORM, "space_station/floor-panel.x",      1.0f);
-        modelMgr.LoadModel(ModelID::CRUMBLING,     "space_kaykit/cargo_B_stacked.x",   1.0f);
-        modelMgr.LoadModel(ModelID::MOVING,        "space_kaykit/cargo_A.x",           1.0f);
-        modelMgr.LoadModel(ModelID::DISAPPEARING,  "space_kaykit/containers_A.x",      1.0f);
-        modelMgr.LoadModel(ModelID::BOUNCE_PAD,    "converted_x/Bouncer.x",            1.0f);
+    const ThemeModelTable& table = THEME_MODEL_TABLES[theme];
+    for (int i = 0; i < table.count; i++) {
+        modelMgr.LoadModel(table.entries[i].id, table.entries[i].path, 1.0f);
     }
 }
 

@@ -100,6 +100,7 @@ private:
 
     // Per-block platform theme and theme pack (music + skyboxes) helpers
     void ApplyBlockTheme(int blockIdx);
+    void LoadThemeModels(int theme);
     void ApplyThemePack(int pack);
     void FinishLevelStart();
     std::wstring PackFolder(int pack) const;
