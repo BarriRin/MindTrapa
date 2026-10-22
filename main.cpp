@@ -2,6 +2,7 @@
 #include "Constants.h"
 #include "AudioManager.h"
 #include "Camera.h"
+#include "GameState.h"
 #include "LevelManager.h"
 #include "Menu.h"
 #include "ModelManager.h"
