@@ -96,7 +96,7 @@ struct Settings {
     int selectedThemePack = 0;   // 0 = Default, 1/2 = unlockable packs
 };
 
-// Menu class
+// Builds, draws, and handles input for every UI screen (menus, settings, pause, result).
 class Menu {
 private:
     GameState currentState;

@@ -3,6 +3,8 @@
 #include <memory>
 #include <map>
 
+// Owns the current Level and its transitions (load/restart/reload/next), plus
+// per-level timing, death count, and best-time tracking.
 class LevelManager {
 private:
     std::unique_ptr<Level> currentLevel;

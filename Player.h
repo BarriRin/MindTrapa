@@ -5,6 +5,8 @@ class Level;
 class Camera;
 class AudioManager;
 
+// Player physics (movement, jumping, collision with the current Level),
+// animation state, and death/celebration handling.
 class Player {
 public:
     Player();

@@ -46,7 +46,7 @@ struct SkyboxData {
     SkyboxData() : handle(-1), scale(1000.0f), rotation(VGet(0, 0, 0)) {}
 };
 
-// Model manager
+// Singleton cache of loaded DxLib model/skybox handles, shared across levels.
 class ModelManager {
 private:
     // Model map: ModelID -> ModelData

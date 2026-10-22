@@ -574,10 +574,7 @@ void Level::Update(float deltaTime) {
 
         // PENDULUM_BLADE - swinging pendulums (Block 3)
         if (block.type == BlockType::PENDULUM_BLADE) {
-            // Update the swing angle via a sine wave
             block.swingAngle = sin(block.timer * block.swingSpeed) * block.swingRange;
-
-            // Advance the timer
             block.timer += deltaTime;
 
             // Pendulum length = distance from the pivot point to the starting position
@@ -739,7 +736,6 @@ void Level::InitializeModels() {
 void Level::DrawSkybox(VECTOR cameraPos) const {
     ModelManager& modelMgr = ModelManager::GetInstance();
 
-    // Draw the skybox for the current level block
     if (modelMgr.IsSkyboxLoaded(blockId)) {
         modelMgr.DrawSkybox(blockId, cameraPos);
     }

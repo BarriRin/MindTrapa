@@ -71,7 +71,7 @@ struct Block {
           frictionMultiplier(0.985f) {}
 };
 
-// Level class
+// One level's blocks, player spawn, and all collision/trigger/mechanics checks.
 class Level {
 private:
     std::vector<Block> blocks;
