@@ -1,6 +1,6 @@
 # Game Mechanics
 
-All 17 mechanics are defined as `BlockType` values in `level.h` and driven by `Level::CheckCollision`/`Level::Update` in `level.cpp`. Levels are authored as plain C++ block lists in `level_block1.cpp`–`level_block5.cpp` (no data-driven level format — see [ARCHITECTURE.md](ARCHITECTURE.md)).
+All 17 mechanics are defined as `BlockType` values in `Level.h` and driven by `Level::CheckCollision`/`Level::Update` in `Level.cpp`. Levels are authored as plain C++ block lists in `level_block1.cpp`–`level_block5.cpp` (no data-driven level format — see [ARCHITECTURE.md](ARCHITECTURE.md)).
 
 ## Block 1 (Levels 1–10) — Basics
 
@@ -53,7 +53,7 @@ A blade that swings on a sine-wave arc from a fixed pivot point; deadly on conta
 ## Block 4 (Levels 31–40) — Darkness
 
 ### LIGHT_PULSE_ZONE
-Periodically flashes light in an otherwise darkness-affected level. Darkness itself isn't a block type — it's a global `darknessLevel` that rises while the player moves and fades at rest (`main.cpp`), rendered as a screen-space overlay.
+Periodically flashes light in an otherwise darkness-affected level. Darkness itself isn't a block type — it's a global `darknessLevel` that rises while the player moves and fades at rest (`Game::UpdatePlaying`), rendered as a screen-space overlay.
 
 ## Block 5 (Levels 41–50) — Ice & Bounce
 
