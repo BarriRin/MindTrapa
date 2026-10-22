@@ -4,6 +4,7 @@
 #include "Camera.h"
 #include "GameState.h"
 #include "Input.h"
+#include "LevelData.h"
 #include "LevelManager.h"
 #include "Menu.h"
 #include "ModelManager.h"
@@ -16,60 +17,6 @@
 #include <algorithm>
 #include <cstdlib>
 #include <string>
-
-// ── Star thresholds: {3★ limit, 2★ limit} in seconds ─────────────────────────
-const float STAR_THRESHOLDS[50][2] = {
-    {10.0f, 15.0f},  // 1
-    {10.0f, 15.0f},  // 2
-    {10.0f, 15.0f},  // 3
-    {10.0f, 15.0f},  // 4
-    {10.0f, 15.0f},  // 5
-    {10.0f, 15.0f},  // 6
-    {10.0f, 15.0f},  // 7
-    {10.0f, 15.0f},  // 8
-    {15.0f, 22.5f},  // 9
-    {20.0f, 30.0f},  // 10
-    {15.0f, 22.5f},  // 11
-    {15.0f, 22.5f},  // 12
-    {20.0f, 30.0f},  // 13
-    {15.0f, 22.5f},  // 14
-    {15.0f, 22.5f},  // 15
-    {15.0f, 22.5f},  // 16
-    {25.0f, 37.5f},  // 17
-    {20.0f, 30.0f},  // 18
-    {25.0f, 37.5f},  // 19
-    {30.0f, 45.0f},  // 20
-    {10.0f, 15.0f},  // 21
-    {10.0f, 15.0f},  // 22
-    {15.0f, 22.5f},  // 23
-    {10.0f, 15.0f},  // 24
-    {10.0f, 15.0f},  // 25
-    {10.0f, 15.0f},  // 26
-    {15.0f, 22.5f},  // 27
-    {15.0f, 22.5f},  // 28
-    {15.0f, 22.5f},  // 29
-    {25.0f, 37.5f},  // 30
-    {15.0f, 22.5f},  // 31
-    {20.0f, 30.0f},  // 32
-    {15.0f, 22.5f},  // 33
-    {15.0f, 22.5f},  // 34
-    {15.0f, 22.5f},  // 35
-    {15.0f, 22.5f},  // 36
-    {15.0f, 22.5f},  // 37
-    {15.0f, 22.5f},  // 38
-    {20.0f, 30.0f},  // 39
-    {25.0f, 37.5f},  // 40
-    {15.0f, 22.5f},  // 41
-    {15.0f, 22.5f},  // 42
-    {15.0f, 22.5f},  // 43
-    {15.0f, 22.5f},  // 44
-    {30.0f, 45.0f},  // 45
-    {15.0f, 22.5f},  // 46
-    {15.0f, 22.5f},  // 47
-    {20.0f, 30.0f},  // 48
-    {20.0f, 30.0f},  // 49
-    {25.0f, 37.5f},  // 50
-};
 
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     ChangeWindowMode(FALSE);
@@ -574,12 +521,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
             {
                 audio.PlayWin(menu.GetSettings().soundVolume);
                 levelManager.OnLevelComplete();
-                float t      = levelManager.GetCurrentLevelTime();
-                int   lvlIdx = levelManager.GetCurrentLevelId() - 1;
-                if (lvlIdx < 0) lvlIdx = 0;
-                if (lvlIdx > 49) lvlIdx = 49;
-                int   earnedStars = (t <= STAR_THRESHOLDS[lvlIdx][0]) ? 3
-                                   : (t <= STAR_THRESHOLDS[lvlIdx][1]) ? 2 : 1;
+                float t  = levelManager.GetCurrentLevelTime();
+                const StarThresholds& th = GetStarThresholds(levelManager.GetCurrentLevelId());
+                int   earnedStars = (t <= th.threeStarMaxTime) ? 3
+                                   : (t <= th.twoStarMaxTime) ? 2 : 1;
                 profileMgr.SetLevelResult(levelManager.GetCurrentLevelId(), earnedStars, t);
                 menu.UpdateUnlockState();
                 levelWasCompleted = true;

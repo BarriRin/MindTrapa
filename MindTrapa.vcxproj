@@ -146,6 +146,7 @@
     <ClCompile Include="AudioManager.cpp" />
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="Input.cpp" />
+    <ClCompile Include="LevelData.cpp" />
     <ClCompile Include="Level.cpp" />
     <ClCompile Include="level_block1.cpp" />
     <ClCompile Include="level_block2.cpp" />
@@ -167,6 +168,7 @@
     <ClInclude Include="Camera.h" />
     <ClInclude Include="GameState.h" />
     <ClInclude Include="Input.h" />
+    <ClInclude Include="LevelData.h" />
     <ClInclude Include="Level.h" />
     <ClInclude Include="LevelManager.h" />
     <ClInclude Include="Localization.h" />
