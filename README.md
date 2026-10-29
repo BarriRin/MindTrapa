@@ -1,6 +1,6 @@
 # MindTrapa
 
-A 3D puzzle-platformer inspired by *levelDEVIL* — levels that look simple but punish trust in the obvious. 50 hand-designed levels across 5 themed space blocks, built from scratch in C++ on top of DxLib, with no commercial game engine.
+A 3D puzzle-platformer with levels that look simple but punish trust in the obvious. 50 hand-designed levels across 5 themed space blocks, built from scratch in C++ on top of DxLib, with no commercial game engine.
 
 **Status:** 1.0 — feature-complete, all 50 levels playable, solo-developed by Ivan Danisheuski.
 

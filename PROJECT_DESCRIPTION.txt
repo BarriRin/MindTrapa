@@ -9,10 +9,9 @@ Status: Complete — all 50 levels finished
 
 CONCEPT
 -------
-MindTrapa is a 3D puzzle platformer inspired by "levelDEVIL" - a game that
-challenges players with creative mechanics and unexpected twists. The core
-idea is to create levels that look simple but require careful observation
-and timing to complete.
+MindTrapa is a 3D puzzle platformer that challenges players with creative
+mechanics and unexpected twists. The core idea is to create levels that look
+simple but require careful observation and timing to complete.
 
 The game combines classic platforming with mechanics that subvert trust -
 fake platforms that look solid but aren't, harmless spikes that look deadly,

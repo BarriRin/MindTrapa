@@ -108,7 +108,6 @@ def build_ru(path):
         ('Платформа:', 'Windows (Desktop)'),
         ('Стадия:', '1.0 (релиз)'),
         ('Разработчик:', 'Иван Данишевский (BarriRin), соло-проект'),
-        ('Вдохновение:', 'levelDEVIL'),
     ]:
         add_status_row(doc, label, val)
 
@@ -328,7 +327,6 @@ def build_en(path):
         ('Platform:', 'Windows (Desktop)'),
         ('Stage:', '1.0 (Release)'),
         ('Developer:', 'Ivan Danisheuski (BarriRin), solo project'),
-        ('Inspiration:', 'levelDEVIL'),
     ]:
         add_status_row(doc, label, val)
 
@@ -533,7 +531,6 @@ def build_ja(path):
         ('プラットフォーム:', 'Windows（デスクトップ）'),
         ('開発段階:', '1.0（リリース版）'),
         ('開発者:', 'イワン・ダニシェフスキー（BarriRin）、個人開発'),
-        ('インスピレーション:', 'levelDEVIL'),
     ]:
         add_status_row(doc, label, val)
 
