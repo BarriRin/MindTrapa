@@ -26,4 +26,4 @@ The net effect: less breadth than originally sketched, but everything that shipp
 
 ## Final pass
 
-The last active period (Jun–Jul 2026) was a dedicated audit-and-polish sprint: three independent code reviews surfaced 36 findings (2 critical, 7 high, 14 medium, 13 low), all fixed and verified before calling the project 1.0. Notable fixes from that pass: a collision edge case that could leave the player embedded in geometry for a frame during fast falls, an uncapped fall speed that could tunnel through thin colliders under reversed gravity, and a one-frame camera/player desync most visible on long falls.
+The last active period (Jun–Jul 2026) was a dedicated audit-and-polish sprint: three AI-assisted code review passes surfaced 36 findings (2 critical, 7 high, 14 medium, 13 low); I triaged every one, and all were fixed and verified in-game before calling the project 1.0. Notable fixes from that pass: a collision edge case that could leave the player embedded in geometry for a frame during fast falls, an uncapped fall speed that could tunnel through thin colliders under reversed gravity, and a one-frame camera/player desync most visible on long falls.
