@@ -4,6 +4,10 @@ A 3D puzzle-platformer inspired by *levelDEVIL* — levels that look simple but 
 
 **Status:** 1.0 — feature-complete, all 50 levels playable, solo-developed by Ivan Danisheuski.
 
+**Gameplay video:** https://youtu.be/13NVDkPvrC0
+
+**Download (Windows):** [latest release](https://github.com/BarriRin/MindTrapa/releases/latest)
+
 ## Concept
 
 The core trick: appearances lie. A clean-looking platform may not be solid. Spikes that look lethal may be harmless. A wall you can't see may still stop you. Every level teaches the player to verify before committing — then breaks that trust again in a new way in the next block.
